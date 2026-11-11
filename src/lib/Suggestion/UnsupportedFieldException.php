@@ -6,4 +6,9 @@ namespace Masilia\IbexaAi\Suggestion;
 
 final class UnsupportedFieldException extends InvalidSuggestionRequestException
 {
+    public function __construct(
+        public readonly string $fieldType,
+    ) {
+        parent::__construct(sprintf('Unsupported field type: %s', $fieldType));
+    }
 }

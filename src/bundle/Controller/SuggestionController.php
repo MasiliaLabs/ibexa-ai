@@ -95,8 +95,8 @@ final readonly class SuggestionController
 
         try {
             $payload = SuggestionPayload::fromArray($this->decode($request));
-            $suggestion = new SuggestionService($this->generators->create())
-                ->suggest($this->requests->build($payload));
+            $suggestionRequest = $this->requests->build($payload);
+            $suggestion = new SuggestionService($this->generators->create())->suggest($suggestionRequest);
         } catch (Throwable $e) {
             [$error, $status] = $this->errorFor($e);
 
@@ -175,7 +175,7 @@ final readonly class SuggestionController
     private function errorFor(Throwable $e): array
     {
         if ($e instanceof UnsupportedFieldException) {
-            return [ApiError::validation($e->getMessage()), Response::HTTP_BAD_REQUEST];
+            return [ApiError::unsupportedFieldType($e->fieldType), Response::HTTP_BAD_REQUEST];
         }
 
         if ($e instanceof InvalidSuggestionRequestException) {

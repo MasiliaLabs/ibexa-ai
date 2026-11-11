@@ -1,0 +1,20 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+        bind:
+            $aiLogger: '@logger'
+
+    Masilia\Bundle\IbexaAi\Ibexa\:
+        resource: '../../Ibexa/'
+        exclude: '../../Ibexa/ContentContext.php'
+
+    Masilia\Bundle\IbexaAi\Llm\ConfiguredTextGeneratorFactory:
+        arguments:
+            $settings: '%ibexa_ai.connection%'
+
+    Masilia\Bundle\IbexaAi\Controller\:
+        resource: '../../Controller/'
+        public: true
+        tags: ['controller.service_arguments']

@@ -1,0 +1,3 @@
+masilia_ibexa_ai_controllers:
+    resource: '../../Controller/'
+    type: attribute

@@ -34,10 +34,7 @@ enum SupportedField: string
         $canonical = self::LEGACY_IDENTIFIERS[$identifier] ?? $identifier;
 
         return self::tryFrom($canonical)
-            ?? throw new UnsupportedFieldException(sprintf(
-                'Unsupported field type: %s',
-                $identifier,
-            ));
+            ?? throw new UnsupportedFieldException($identifier);
     }
 
     /**
