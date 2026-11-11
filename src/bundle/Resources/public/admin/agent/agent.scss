@@ -176,6 +176,38 @@ $panel-width: min(420px, calc(100vw - 32px));
         }
     }
 
+    // Tables scroll sideways in the narrow panel instead of squeezing their columns letter by letter.
+    &__md-table {
+        margin: 0 0 calculateRem(8px);
+        overflow-x: auto;
+
+        table {
+            // As wide as its content (each column capped below), at least the panel width; the wrapper scrolls.
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: ibexa.$ibexa-text-font-size-small;
+            line-height: 1.4;
+        }
+
+        th,
+        td {
+            min-width: calculateRem(64px);
+            max-width: calculateRem(240px);
+            padding: calculateRem(4px) calculateRem(8px);
+            border: 1px solid ibexa.$ibexa-color-light;
+            text-align: left;
+            vertical-align: top;
+            white-space: normal;
+            overflow-wrap: break-word;
+        }
+
+        th {
+            background: ibexa.$ibexa-color-white;
+            font-weight: ibexa.$ibexa-font-weight-bold;
+        }
+    }
+
     &__md-heading {
         margin: calculateRem(12px) 0 calculateRem(4px);
         font-size: ibexa.$ibexa-text-font-size;
