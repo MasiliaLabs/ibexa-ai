@@ -53,6 +53,19 @@ final readonly class AgentFactory
         return new SQLMessageStore($this->pdo(), AiAssistantAgent::MESSAGES_TABLE);
     }
 
+    /**
+     * Removes the suspended-run state of a thread (used when the conversation is cleared).
+     */
+    public function forgetWorkflow(string $threadId): void
+    {
+        $pattern = '%' . addcslashes($threadId, '%_\\') . '%';
+
+        $statement = $this->pdo()->prepare(
+            'DELETE FROM ' . AiAssistantAgent::WORKFLOW_TABLE . ' WHERE `partition` LIKE ?',
+        );
+        $statement->execute([$pattern]);
+    }
+
     public function pdo(): PDO
     {
         $connection = $this->entities->getConnection()->getNativeConnection();

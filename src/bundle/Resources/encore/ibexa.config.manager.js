@@ -16,12 +16,12 @@ module.exports = (ibexaConfig, ibexaConfigManager) => {
     ibexaConfigManager.add({
         ibexaConfig,
         entryName: 'ibexa-admin-ui-layout-js',
-        newItems: [path.resolve(__dirname, '../public/admin/js/ai-agent-chat.js')],
+        newItems: [path.resolve(__dirname, '../public/admin/agent/index.tsx')],
     });
 
     ibexaConfigManager.add({
         ibexaConfig,
         entryName: 'ibexa-admin-ui-layout-css',
-        newItems: [path.resolve(__dirname, '../public/admin/scss/_ai-agent-chat.scss')],
+        newItems: [path.resolve(__dirname, '../public/admin/agent/agent.scss')],
     });
 };
