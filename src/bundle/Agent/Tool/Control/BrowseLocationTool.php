@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Agent\Tool\Control;
 
+use Ibexa\Contracts\Core\Repository\Repository;
+use Ibexa\Contracts\Core\Repository\Values\Content\LocationQuery;
+use Ibexa\Contracts\Core\Repository\Values\Content\Query;
+use Ibexa\Contracts\Core\Repository\Values\Content\Query\Criterion;
+use Ibexa\Contracts\Core\Repository\Values\Content\Query\SortClause;
 use Masilia\Bundle\IbexaAi\Agent\Tool\Content\LoadContentTool;
 use Masilia\Bundle\IbexaAi\Agent\Tool\Content\SearchContentTool;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
@@ -32,6 +37,7 @@ final readonly class BrowseLocationTool implements ToolInterface
         // Concrete tools, not the registry: the registry contains this tool, so depending on it would be circular.
         private SearchContentTool $searchTool,
         private LoadContentTool $loadTool,
+        private Repository $repository,
     ) {
     }
 
@@ -46,7 +52,8 @@ final readonly class BrowseLocationTool implements ToolInterface
             'Use it after explore_site to find the content IDs of individual blocks or items. ' .
             'Supports name search, full-text query and content type filter. ' .
             'Each result has content_id, content_type, name and languages (the translations that exist, ' .
-            'e.g. ["eng-GB","fre-FR"]). The result also gives total (how many contents match) and ' .
+            'e.g. ["eng-GB","fre-FR"]). The result also gives max_depth_below (how many levels the subtree ' .
+            'goes below the location: use it for depth questions instead of guessing), total (how many contents match) and ' .
             'returned: when returned is lower than total, page with offset instead of repeating the call per type. ' .
             'To answer "which contents have no translation in language X", set missing_language to X: ' .
             'the filtering is done for you and total is the exact count. ' .
@@ -149,6 +156,8 @@ final readonly class BrowseLocationTool implements ToolInterface
         $data = [
             'location_id' => $locationId,
             'total' => $total,
+            // How many levels the subtree goes below this location (1 = children only).
+            'max_depth_below' => $this->maxDepthBelow($locationId),
             'returned' => count($items),
             'offset' => $offset,
             'items' => $items,
@@ -217,6 +226,27 @@ final readonly class BrowseLocationTool implements ToolInterface
             'total' => count($matches),
             'incomplete' => $scanned < $total,
         ];
+    }
+
+    /**
+     * Number of levels between this location and its deepest descendant, or null when it cannot be read.
+     */
+    private function maxDepthBelow(int $locationId): ?int
+    {
+        try {
+            $location = $this->repository->getLocationService()->loadLocation($locationId);
+            $deepest = $this->repository->getSearchService()->findLocations(new LocationQuery([
+                'filter' => new Criterion\Subtree($location->pathString),
+                'sortClauses' => [new SortClause\Location\Depth(Query::SORT_DESC)],
+                'limit' => 1,
+            ]));
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $hit = $deepest->searchHits[0] ?? null;
+
+        return $hit === null ? 0 : max(0, $hit->valueObject->depth - $location->depth);
     }
 
     /**
