@@ -35,17 +35,18 @@ final class ProviderFactory
         $this->assertCredentials($connection);
 
         return match ($connection->provider) {
-            ProviderId::OpenAi => new OpenAI(
-                key: $connection->apiKey,
-                model: $connection->model,
-                parameters: $this->openAiParameters($connection),
-            ),
+            ProviderId::OpenAi => $connection->apiUrl === null
+                // Custom endpoint on the OpenAI protocol (e.g. an OpenAI-compatible gateway).
+                ? new OpenAI(key: $connection->apiKey, model: $connection->model, parameters: $this->openAiParameters($connection))
+                : $this->openAiCompatible($connection),
             ProviderId::Anthropic => new Anthropic(
                 key: $connection->apiKey,
                 model: $connection->model,
                 max_tokens: $connection->maxTokens,
                 parameters: ['temperature' => min(1.0, $connection->temperature)],
             ),
+            // Gemini and Anthropic keep Neuron's endpoints: their base URIs include
+            // API paths that a stored host-only URL would break.
             ProviderId::Gemini => new Gemini(
                 key: $connection->apiKey,
                 model: $connection->model,
@@ -67,13 +68,35 @@ final class ProviderFactory
                 parameters: $this->openAiParameters($connection),
             ),
             ProviderId::Qwen => $this->qwen($connection),
-            ProviderId::Kimi, ProviderId::MiniMax => new OpenAILike(
-                baseUri: $connection->apiUrl ?? $connection->provider->defaultOpenAiCompatibleBaseUri(),
-                key: $connection->apiKey,
-                model: $connection->model,
-                parameters: $this->openAiParameters($connection),
-            ),
+            ProviderId::Kimi, ProviderId::MiniMax, ProviderId::Mimo => $this->openAiCompatible($connection),
         };
+    }
+
+    /**
+     * OpenAI-protocol endpoint at the configured base URI, or the provider's default.
+     */
+    private function openAiCompatible(ProviderConnection $connection): OpenAILike
+    {
+        $baseUri = $connection->apiUrl ?? $connection->provider->defaultOpenAiCompatibleBaseUri()
+            ?? throw new ProviderConfigurationException(sprintf('Provider "%s" needs an endpoint URL.', $connection->provider->label()));
+
+        return new OpenAILike(
+            baseUri: self::normalizeBaseUri($baseUri),
+            key: $connection->apiKey,
+            model: $connection->model,
+            parameters: $this->openAiParameters($connection),
+        );
+    }
+
+    /**
+     * A host-only URL ("https://api.minimax.io") gets the "/v1" version path that OpenAI-protocol APIs use.
+     */
+    public static function normalizeBaseUri(string $url): string
+    {
+        $url = rtrim(trim($url), '/');
+        $path = (string) parse_url($url, PHP_URL_PATH);
+
+        return $path === '' ? $url . '/v1' : $url;
     }
 
     private function qwen(ProviderConnection $connection): DashScopeOpenAI
@@ -84,7 +107,7 @@ final class ProviderFactory
         // unless the admin configured a custom URL.
         return $connection->apiUrl === null
             ? new DashScopeOpenAI(key: $connection->apiKey, model: $connection->model, parameters: $parameters)
-            : new DashScopeOpenAI(key: $connection->apiKey, model: $connection->model, parameters: $parameters, baseUri: $connection->apiUrl);
+            : new DashScopeOpenAI(key: $connection->apiKey, model: $connection->model, parameters: $parameters, baseUri: self::normalizeBaseUri($connection->apiUrl));
     }
 
     /**

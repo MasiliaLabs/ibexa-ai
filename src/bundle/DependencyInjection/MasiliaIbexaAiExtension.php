@@ -7,10 +7,29 @@ namespace Masilia\Bundle\IbexaAi\DependencyInjection;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-final class MasiliaIbexaAiExtension extends Extension
+final class MasiliaIbexaAiExtension extends Extension implements PrependExtensionInterface
 {
+    public function prepend(ContainerBuilder $container): void
+    {
+        // Entities of the bundle are mapped next to the host's App entities.
+        $container->prependExtensionConfig('doctrine', [
+            'orm' => [
+                'mappings' => [
+                    'MasiliaIbexaAi' => [
+                        'type' => 'attribute',
+                        'is_bundle' => false,
+                        'dir' => __DIR__ . '/../Entity',
+                        'prefix' => 'Masilia\Bundle\IbexaAi\Entity',
+                        'alias' => 'MasiliaIbexaAi',
+                    ],
+                ],
+            ],
+        ]);
+    }
+
     public function load(array $configs, ContainerBuilder $container): void
     {
         $config = $this->processConfiguration(new Configuration(), $configs);

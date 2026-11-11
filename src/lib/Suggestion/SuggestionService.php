@@ -53,18 +53,28 @@ final readonly class SuggestionService
     }
 
     /**
-     * Raw chunks as the model produces them. Chunks are not sanitised: the
-     * prompt already forbids wrappers, and the editor applies the full text.
+     * Visible text as the model produces it. Reasoning blocks are removed; other
+     * wrappers are not, because the prompt forbids them and the full text is sanitised by the editor.
      *
      * @return Generator<int, string>
      */
     public function stream(SuggestionRequest $request): Generator
     {
+        $reasoning = new ReasoningFilter();
+
         foreach ($this->generator->stream(
             $this->prompts->systemPrompt($request),
             $this->prompts->userPrompt($request),
         ) as $chunk) {
-            yield $chunk;
+            $visible = $reasoning->feed($chunk);
+            if ($visible !== '') {
+                yield $visible;
+            }
+        }
+
+        $rest = $reasoning->flush();
+        if ($rest !== '') {
+            yield $rest;
         }
     }
 }

@@ -18,6 +18,7 @@ enum ProviderId: string
     case Qwen = 'qwen';
     case Kimi = 'kimi';
     case MiniMax = 'minimax';
+    case Mimo = 'mimo';
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum ProviderId: string
             self::Qwen => 'Qwen (Alibaba DashScope)',
             self::Kimi => 'Kimi (Moonshot)',
             self::MiniMax => 'MiniMax',
+            self::Mimo => 'MiMo (Xiaomi)',
         };
     }
 
@@ -50,6 +52,7 @@ enum ProviderId: string
         return match ($this) {
             self::Kimi => 'https://api.moonshot.ai/v1',
             self::MiniMax => 'https://api.minimax.io/v1',
+            self::Mimo => 'https://api.xiaomimimo.com/v1',
             default => null,
         };
     }

@@ -5,16 +5,34 @@ services:
         public: false
         bind:
             $aiLogger: '@logger'
+            $settings: '%ibexa_ai.connection%'
 
     Masilia\Bundle\IbexaAi\Ibexa\:
         resource: '../../Ibexa/'
         exclude: '../../Ibexa/ContentContext.php'
 
-    Masilia\Bundle\IbexaAi\Llm\ConfiguredTextGeneratorFactory:
-        arguments:
-            $settings: '%ibexa_ai.connection%'
+    Masilia\Bundle\IbexaAi\Repository\:
+        resource: '../../Repository/'
+
+    Masilia\Bundle\IbexaAi\Admin\:
+        resource: '../../Admin/'
+
+    Masilia\IbexaAi\Provider\ProviderFactory: ~
+
+    Masilia\Bundle\IbexaAi\Llm\:
+        resource: '../../Llm/'
+        exclude: '../../Llm/NeuronTextGenerator.php'
+
+    Masilia\Bundle\IbexaAi\Observability\:
+        resource: '../../Observability/'
 
     Masilia\Bundle\IbexaAi\Controller\:
         resource: '../../Controller/'
         public: true
         tags: ['controller.service_arguments']
+
+    Masilia\Bundle\IbexaAi\Observability\RequestLogFlushListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.terminate, method: onTerminate }
+            - { name: kernel.event_listener, event: kernel.exception, method: onTerminate }
+            - { name: kernel.event_listener, event: console.terminate, method: onTerminate }

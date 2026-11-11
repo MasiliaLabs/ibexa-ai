@@ -130,4 +130,47 @@ final class ProviderFactoryTest extends TestCase
 
         return $reflection->getValue($object);
     }
+
+    public function testStoredHostOnlyUrlGetsTheVersionPath(): void
+    {
+        $provider = (new ProviderFactory())->create(new ProviderConnection(
+            provider: ProviderId::MiniMax,
+            model: 'MiniMax-M3',
+            apiKey: 'test-key',
+            apiUrl: 'https://api.minimax.io',
+        ));
+
+        self::assertSame('https://api.minimax.io/v1', $this->readProperty($provider, 'baseUri'));
+    }
+
+    public function testOpenAiWithCustomUrlUsesTheOpenAiProtocolAtThatEndpoint(): void
+    {
+        // The "openai" identifier is also used for Qwen's DashScope gateway in the admin.
+        $provider = (new ProviderFactory())->create(new ProviderConnection(
+            provider: ProviderId::OpenAi,
+            model: 'qwen-max',
+            apiKey: 'test-key',
+            apiUrl: 'https://gateway.example.test/compatible-mode/v1',
+        ));
+
+        self::assertInstanceOf(OpenAILike::class, $provider);
+        self::assertSame('https://gateway.example.test/compatible-mode/v1', $this->readProperty($provider, 'baseUri'));
+    }
+
+    public function testMimoUsesItsOpenAiCompatibleEndpoint(): void
+    {
+        $provider = (new ProviderFactory())->create(new ProviderConnection(
+            provider: ProviderId::Mimo,
+            model: 'mimo-v2.5',
+            apiKey: 'test-key',
+        ));
+
+        self::assertSame('https://api.xiaomimimo.com/v1', $this->readProperty($provider, 'baseUri'));
+    }
+
+    public function testNormalizeKeepsExistingPaths(): void
+    {
+        self::assertSame('https://api.moonshot.ai/v1', ProviderFactory::normalizeBaseUri('https://api.moonshot.ai/v1/'));
+        self::assertSame('https://api.minimax.io/v1', ProviderFactory::normalizeBaseUri('https://api.minimax.io'));
+    }
 }

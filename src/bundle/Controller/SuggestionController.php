@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Controller;
 
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Locale;
 use Masilia\Bundle\IbexaAi\Ibexa\ContentContextReader;
 use Masilia\Bundle\IbexaAi\Ibexa\SuggestionRequestFactory;
-use Masilia\Bundle\IbexaAi\Llm\ConfiguredTextGeneratorFactory;
+use Masilia\Bundle\IbexaAi\Llm\TextGeneratorFactory;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Api\SseEncoder;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
@@ -43,7 +44,8 @@ final readonly class SuggestionController
         private PermissionResolver $permissions,
         private ContentContextReader $contents,
         private SuggestionRequestFactory $requests,
-        private ConfiguredTextGeneratorFactory $generators,
+        private TextGeneratorFactory $generators,
+        private SiteAccessServiceInterface $siteAccess,
         private LoggerInterface $aiLogger,
         private SseEncoder $sse = new SseEncoder(),
     ) {
@@ -96,7 +98,7 @@ final readonly class SuggestionController
         try {
             $payload = SuggestionPayload::fromArray($this->decode($request));
             $suggestionRequest = $this->requests->build($payload);
-            $suggestion = new SuggestionService($this->generators->create())->suggest($suggestionRequest);
+            $suggestion = new SuggestionService($this->generators->create($this->currentSiteaccess()))->suggest($suggestionRequest);
         } catch (Throwable $e) {
             [$error, $status] = $this->errorFor($e);
 
@@ -121,7 +123,7 @@ final readonly class SuggestionController
         try {
             $payload = SuggestionPayload::fromArray($this->decode($request));
             $suggestionRequest = $this->requests->build($payload);
-            $service = new SuggestionService($this->generators->create());
+            $service = new SuggestionService($this->generators->create($this->currentSiteaccess()));
             $format = $suggestionRequest->outputFormat()->value;
         } catch (Throwable $e) {
             [$error, $status] = $this->errorFor($e);
@@ -145,6 +147,11 @@ final readonly class SuggestionController
             }
             flush();
         }, Response::HTTP_OK, $headers);
+    }
+
+    private function currentSiteaccess(): string
+    {
+        return $this->siteAccess->getCurrent()?->name ?? 'default';
     }
 
     /**

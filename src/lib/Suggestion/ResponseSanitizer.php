@@ -15,7 +15,7 @@ final class ResponseSanitizer
 {
     public function clean(string $raw, FieldFormat $format): string
     {
-        $text = $this->stripCodeFence(trim($raw));
+        $text = $this->stripCodeFence(trim(ReasoningFilter::strip($raw)));
 
         return match ($format) {
             FieldFormat::Json => $this->validJsonObject($text),

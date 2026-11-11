@@ -138,4 +138,32 @@ final class SuggestionServiceTest extends TestCase
         self::assertSame('Coal supplied 64% of power.', $result->text);
         self::assertCount(1, $generator->calls);
     }
+
+    public function testReasoningBlocksNeverReachTheField(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(answer: "<think>Check the figures.</think>\n<p>Clear text.</p>"));
+
+        $result = $service->suggest(new SuggestionRequest(
+            field: SupportedField::RichText,
+            action: SuggestionAction::Improve,
+            language: 'en-GB',
+            currentValue: '<p>Clear text.</p>',
+        ));
+
+        self::assertSame('<p>Clear text.</p>', $result->text);
+    }
+
+    public function testReasoningBlocksAreNotStreamed(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(chunks: ['<think>draft', ' notes</think>', 'Final ', 'answer']));
+
+        $text = implode('', iterator_to_array($service->stream(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Summarize,
+            language: 'en-GB',
+            currentValue: 'Some text.',
+        )), false));
+
+        self::assertSame('Final answer', $text);
+    }
 }
