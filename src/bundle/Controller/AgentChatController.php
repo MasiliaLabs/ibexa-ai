@@ -11,6 +11,7 @@ use Masilia\Bundle\IbexaAi\Agent\Stream\NeuronRunEvents;
 use Masilia\IbexaAi\Agent\Stream\AgentEvent;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use NeuronAI\Chat\Messages\UserMessage;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -63,6 +64,14 @@ final readonly class AgentChatController
 
         try {
             $agent = $this->agents->create($this->currentSiteaccess(), $this->threadId());
+            // A suspended run cannot take a new message: the pending change must be decided first.
+            if ($decisions === null && $agent->pendingApprovals() !== []) {
+                return $this->streamError(
+                    ApiError::validation('A change is waiting for your decision. Approve or refuse it first.'),
+                    Response::HTTP_CONFLICT,
+                    $headers,
+                );
+            }
             $run = $decisions !== null
                 ? $agent->submitApprovalDecisions($decisions)->events()
                 : $agent->stream(new UserMessage($message));
@@ -102,7 +111,7 @@ final readonly class AgentChatController
         foreach ($this->agents->messages($threadId)->loadAll($threadId, 200) as $index => $message) {
             $roleValue = $message->getRole();
             $role = is_object($roleValue) && property_exists($roleValue, 'value') ? (string) $roleValue->value : (string) $roleValue;
-            $text = trim((string) $message->getContent());
+            $text = trim(ReasoningFilter::strip((string) $message->getContent()));
             if (!in_array($role, ['user', 'assistant'], true) || $text === '') {
                 continue;
             }

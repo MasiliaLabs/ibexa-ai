@@ -7,6 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Agent\Stream;
 use Generator;
 use Masilia\IbexaAi\Agent\Stream\AgentEvent;
 use Masilia\IbexaAi\Agent\Stream\ToolOutcome;
+use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
@@ -29,10 +30,16 @@ final class NeuronRunEvents
      */
     public function __invoke(Generator $run, callable $pendingApprovals, callable $onError): Generator
     {
+        // Reasoning models emit <think>…</think> inline; it is never shown to the user.
+        $reasoning = new ReasoningFilter();
+
         try {
             foreach ($run as $chunk) {
                 if ($chunk instanceof TextChunk && $chunk->content !== '') {
-                    yield AgentEvent::encode(AgentEvent::TEXT_DELTA, ['text' => $chunk->content]);
+                    $visible = $reasoning->feed($chunk->content);
+                    if ($visible !== '') {
+                        yield AgentEvent::encode(AgentEvent::TEXT_DELTA, ['text' => $visible]);
+                    }
                 } elseif ($chunk instanceof ToolCallChunk) {
                     yield AgentEvent::encode(AgentEvent::TOOL_STARTED, [
                         'id' => $chunk->tool->getCallId(),
@@ -46,6 +53,11 @@ final class NeuronRunEvents
                         'tool' => $chunk->tool->getName(),
                     ] + ToolOutcome::fromRaw(is_string($raw) ? $raw : ''));
                 }
+            }
+
+            $tail = $reasoning->flush();
+            if ($tail !== '') {
+                yield AgentEvent::encode(AgentEvent::TEXT_DELTA, ['text' => $tail]);
             }
 
             $state = $run->getReturn();

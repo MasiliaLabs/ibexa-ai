@@ -7,6 +7,7 @@ import type { AgentController } from './useAgent';
 import { Thread } from './components/Thread';
 import { Composer } from './components/Composer';
 import { iconPath } from './icons';
+import { pendingApprovals } from './state';
 
 /**
  * The floating assistant: a launcher button in the corner of every admin page, and a panel above it.
@@ -99,7 +100,12 @@ function Panel({ agent, onClose }: PanelProps) {
 
             <Thread turns={agent.state.turns} loading={agent.loading} onDecide={agent.decide} busy={agent.state.busy} />
 
-            <Composer busy={agent.state.busy} onSend={agent.send} onStop={agent.stop} />
+            <Composer
+                busy={agent.state.busy}
+                blocked={pendingApprovals(agent.state).length > 0}
+                onSend={agent.send}
+                onStop={agent.stop}
+            />
         </section>
     );
 }
