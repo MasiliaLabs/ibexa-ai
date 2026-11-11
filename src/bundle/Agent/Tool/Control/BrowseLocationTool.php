@@ -52,7 +52,8 @@ final readonly class BrowseLocationTool implements ToolInterface
             'Use it after explore_site to find the content IDs of individual blocks or items. ' .
             'Supports name search, full-text query and content type filter. ' .
             'Each result has content_id, content_type, name and languages (the translations that exist, ' .
-            'e.g. ["eng-GB","fre-FR"]). The result also gives max_depth_below (how many levels the subtree ' .
+            'e.g. ["eng-GB","fre-FR"]) and visible (false when visitors cannot see it: hidden, or under a hidden location). ' .
+            'To list what is not visible on the site, set only_hidden=true. The result also gives max_depth_below (how many levels the subtree ' .
             'goes below the location: use it for depth questions instead of guessing), total (how many contents match) and ' .
             'returned: when returned is lower than total, page with offset instead of repeating the call per type. ' .
             'To answer "which contents have no translation in language X", set missing_language to X: ' .
@@ -85,6 +86,11 @@ final readonly class BrowseLocationTool implements ToolInterface
                 'missing_language' => [
                     'type' => 'string',
                     'description' => 'Language code (e.g. "eng-GB"): keep only the contents that have NO translation in it',
+                ],
+                'only_hidden' => [
+                    'type' => 'boolean',
+                    'description' => 'When true, keep only the contents visitors cannot see (hidden, or under a hidden location)',
+                    'default' => false,
                 ],
                 'limit' => [
                     'type' => 'integer',
@@ -124,11 +130,18 @@ final readonly class BrowseLocationTool implements ToolInterface
             }
         }
 
-        if ($missingLanguage !== '') {
-            $page = $this->contentsMissing($missingLanguage, $filters, $limit, $offset);
-        } else {
-            $page = $this->search($filters, $limit, $offset);
+        $onlyHidden = ($arguments['only_hidden'] ?? false) === true;
+
+        // Server-side filters: the count is exact and does not depend on the model reading every row.
+        $keep = null;
+        if ($missingLanguage !== '' || $onlyHidden) {
+            $keep = static fn (array $item): bool => ($missingLanguage === '' || !in_array($missingLanguage, $item['languages'] ?? [], true))
+                && (!$onlyHidden || ($item['visible'] ?? null) === false);
         }
+
+        $page = $keep !== null
+            ? $this->scan($keep, $filters, $limit, $offset)
+            : $this->search($filters, $limit, $offset);
 
         if ($page instanceof ToolResult) {
             return $page;
@@ -143,6 +156,7 @@ final readonly class BrowseLocationTool implements ToolInterface
                 'name' => $item['name'] ?? null,
                 'remote_id' => $item['remote_id'] ?? null,
                 'languages' => $item['languages'] ?? [],
+                'visible' => $item['visible'] ?? null,
             ];
 
             if ($includeFields && ($item['content_id'] ?? null) !== null) {
@@ -162,15 +176,21 @@ final readonly class BrowseLocationTool implements ToolInterface
             'offset' => $offset,
             'items' => $items,
         ];
+        $conditions = [];
         if ($missingLanguage !== '') {
             $data['missing_language'] = $missingLanguage;
+            $conditions[] = sprintf('have no %s translation', $missingLanguage);
+        }
+        if ($onlyHidden) {
+            $data['only_hidden'] = true;
+            $conditions[] = 'are not visible on the site';
         }
         if ($page['incomplete'] ?? false) {
             $data['incomplete'] = sprintf('Only the first %d contents of the subtree were checked.', self::SCAN_MAX);
         }
 
-        $message = $missingLanguage !== ''
-            ? sprintf('%d contents under location %d have no %s translation (%d returned)', $total, $locationId, $missingLanguage, count($items))
+        $message = $conditions !== []
+            ? sprintf('%d contents under location %d %s (%d returned)', $total, $locationId, implode(' and ', $conditions), count($items))
             : sprintf('Found %d items under location %d (%d returned from offset %d)', $total, $locationId, count($items), $offset);
 
         return ToolResult::ok($message, $data);
@@ -194,13 +214,14 @@ final readonly class BrowseLocationTool implements ToolInterface
     }
 
     /**
-     * Scans the whole subtree and keeps the contents that have no translation in the given language.
+     * Scans the whole subtree and keeps the contents accepted by $keep.
      * The count is exact (up to SCAN_MAX contents); only the requested page of matches is returned.
      *
+     * @param callable(array<string, mixed>): bool $keep
      * @param array<string, mixed> $filters
      * @return array{results: list<array<string, mixed>>, total: int, incomplete: bool}|ToolResult
      */
-    private function contentsMissing(string $language, array $filters, int $limit, int $offset): array|ToolResult
+    private function scan(callable $keep, array $filters, int $limit, int $offset): array|ToolResult
     {
         $matches = [];
         $scanned = 0;
@@ -214,7 +235,7 @@ final readonly class BrowseLocationTool implements ToolInterface
             $total ??= $page['total'];
 
             foreach ($page['results'] as $item) {
-                if (!in_array($language, $item['languages'] ?? [], true)) {
+                if ($keep($item)) {
                     $matches[] = $item;
                 }
             }

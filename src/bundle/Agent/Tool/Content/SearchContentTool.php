@@ -147,6 +147,7 @@ readonly class SearchContentTool implements ToolInterface
                     'name' => $content->contentInfo->name,
                     'remote_id' => $content->contentInfo->remoteId,
                     'languages' => array_values($content->getVersionInfo()->languageCodes),
+                    'visible' => $this->isVisible($content),
                 ];
             }
 
@@ -160,5 +161,29 @@ readonly class SearchContentTool implements ToolInterface
         } catch (\Throwable $e) {
             return AgentErrorHelper::handle($this->aiLogger, $e, 'search content');
         }
+    }
+
+    /**
+     * Whether visitors can see the content: it is not hidden itself, and its main location is neither
+     * hidden nor under a hidden location. Null when that cannot be read (e.g. no location).
+     */
+    private function isVisible(Content $content): ?bool
+    {
+        if ($content->contentInfo->isHidden) {
+            return false;
+        }
+
+        $mainLocationId = $content->contentInfo->mainLocationId;
+        if ($mainLocationId === null) {
+            return null;
+        }
+
+        try {
+            $location = $this->repository->getLocationService()->loadLocation($mainLocationId);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return !$location->hidden && !$location->invisible;
     }
 }
