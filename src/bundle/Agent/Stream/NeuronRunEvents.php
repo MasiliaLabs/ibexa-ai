@@ -9,6 +9,7 @@ use Masilia\IbexaAi\Agent\Stream\AgentEvent;
 use Masilia\IbexaAi\Agent\Stream\ToolOutcome;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use NeuronAI\Exceptions\RunInFlightException;
+use NeuronAI\Exceptions\ToolRunsExceededException;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
@@ -22,7 +23,8 @@ use Throwable;
 final class NeuronRunEvents
 {
     private const ERROR_MESSAGE = 'The AI agent is currently unavailable. Please try again later or contact an administrator.';
-    private const NO_ANSWER_MESSAGE = 'The assistant stopped without answering. Try again, or ask in fewer words.';
+    private const TOO_MANY_STEPS_MESSAGE = 'This request needed too many steps. Ask for a narrower scope, for example one site or one section.';
+    private const NO_ANSWER_MESSAGE ='The assistant stopped without answering. Try again, or ask in fewer words.';
     private const IN_FLIGHT_MESSAGE ='The previous answer in this conversation is still being finished. Try again in a few minutes.';
 
     /**
@@ -100,6 +102,10 @@ final class NeuronRunEvents
             // until it expires. That is a state the user can act on, so it is not reported as an outage.
             $onError($e);
             yield AgentEvent::encode(AgentEvent::RUN_ERROR, ['code' => 'run_in_flight', 'message' => self::IN_FLIGHT_MESSAGE]);
+        } catch (ToolRunsExceededException $e) {
+            // The model kept calling a tool past its budget and past the warning it was given.
+            $onError($e);
+            yield AgentEvent::encode(AgentEvent::RUN_ERROR, ['code' => 'too_many_steps', 'message' => self::TOO_MANY_STEPS_MESSAGE]);
         } catch (Throwable $e) {
             $onError($e);
             yield AgentEvent::encode(AgentEvent::RUN_ERROR, ['code' => 'service_error', 'message' => self::ERROR_MESSAGE]);

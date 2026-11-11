@@ -10,6 +10,7 @@ use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query\Criterion;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query\Criterion\LogicalAnd;
+use Ibexa\Contracts\Core\Repository\Values\Content\Query\SortClause;
 use Ibexa\Core\Repository\Values\Content\Content;
 use Masilia\Bundle\IbexaAi\Agent\Tool\AgentErrorHelper;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
@@ -61,6 +62,11 @@ readonly class SearchContentTool implements ToolInterface
                     'type' => 'integer',
                     'description' => 'Max results (default: 10)',
                     'default' => 10,
+                ],
+                'offset' => [
+                    'type' => 'integer',
+                    'description' => 'Number of results to skip, for paging (default: 0)',
+                    'default' => 0,
                 ],
                 'language' => [
                     'type' => 'string',
@@ -115,9 +121,19 @@ readonly class SearchContentTool implements ToolInterface
             $query = new Query([
                 'query' => !empty($criteria) ? new LogicalAnd($criteria) : null,
                 'limit' => $params['limit'] ?? 10,
+                'offset' => max(0, (int) ($params['offset'] ?? 0)),
+                // A stable order, so that paging with offset never skips or repeats a content.
+                'sortClauses' => [new SortClause\ContentId()],
             ]);
 
-            $searchResult = $searchService->findContent($query);
+            // Search in every language of the repository, not only those of the current siteaccess:
+            // a content that exists only in French must still be found from an English-first siteaccess.
+            $languages = [];
+            foreach ($this->repository->getContentLanguageService()->loadLanguages() as $language) {
+                $languages[] = $language->languageCode;
+            }
+
+            $searchResult = $searchService->findContent($query, ['languages' => $languages, 'useAlwaysAvailable' => true]);
 
 
             $results = [];

@@ -4,27 +4,30 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Agent\Tool\Control;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolName;
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\Content\LoadContentTool;
 use Masilia\Bundle\IbexaAi\Agent\Tool\Content\SearchContentTool;
+use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
 
 /**
- * Search for content under a specific location (deeper than explore_site).
+ * Lists the content under a location (deeper than explore_site).
  *
- * explore_site returns the top-level tree at depth 2 — pages and folders,
- * but NOT the blocks inside each page. This tool lets the LLM search for
- * blocks or items inside a page by name, full-text query, or content type,
- * using the SearchContentTool with a subtree filter. Returns content IDs
- * needed for update_content or trash_content on individual blocks.
+ * explore_site returns the top of a site tree: pages and folders, but not the blocks inside each
+ * page. This tool searches a subtree by name, full text or content type, and returns the content
+ * ids needed to update or trash individual items.
  *
- * When include_fields is true, each result also carries its field values
- * (loaded via LoadContentTool) so the LLM can inspect current content
- * before proposing updates.
+ * The result always says how many contents match in total, so a truncated list is never mistaken
+ * for a complete one. Questions about translations are answered exactly with missing_language,
+ * which filters on the server instead of leaving the model to count rows.
  */
 final readonly class BrowseLocationTool implements ToolInterface
 {
+    private const DEFAULT_LIMIT = 50;
+    private const MAX_LIMIT = 200;
+    /** Page size and ceiling of the server-side scan used by missing_language. */
+    private const SCAN_PAGE = 200;
+    private const SCAN_MAX = 5000;
+
     public function __construct(
         // Concrete tools, not the registry: the registry contains this tool, so depending on it would be circular.
         private SearchContentTool $searchTool,
@@ -39,14 +42,16 @@ final readonly class BrowseLocationTool implements ToolInterface
 
     public function getDescription(): string
     {
-        return 'Search for content under a specific location (e.g. blocks inside a page). ' .
-            'Use this after explore_site when you need to find content IDs of ' .
-            'individual blocks or items inside a page. Supports name search, ' .
-            'full-text query, and content type filter. Returns content_id, ' .
-            'content_type, name and languages (the translations that exist, ' .
-            'e.g. ["eng-GB","fre-FR"]) for each result. Set include_fields=true ' .
-            'to also return the current field values of each content item ' .
-            '(useful before updating a matrix or other fields, or to read the text of a page).';
+        return 'List the content under a location (its whole subtree), e.g. the blocks inside a page. ' .
+            'Use it after explore_site to find the content IDs of individual blocks or items. ' .
+            'Supports name search, full-text query and content type filter. ' .
+            'Each result has content_id, content_type, name and languages (the translations that exist, ' .
+            'e.g. ["eng-GB","fre-FR"]). The result also gives total (how many contents match) and ' .
+            'returned: when returned is lower than total, page with offset instead of repeating the call per type. ' .
+            'To answer "which contents have no translation in language X", set missing_language to X: ' .
+            'the filtering is done for you and total is the exact count. ' .
+            'Set include_fields=true to also get the field values of each item ' .
+            '(to read the text of a page, or before updating a matrix or other fields).';
     }
 
     public function getParameters(): array
@@ -68,16 +73,25 @@ final readonly class BrowseLocationTool implements ToolInterface
                 ],
                 'content_type' => [
                     'type' => 'string',
-                    'description' => 'Filter by content type identifier (e.g. "hero_banner", "text_block")',
+                    'description' => 'Filter by content type identifier (e.g. "hero_banner", "page")',
+                ],
+                'missing_language' => [
+                    'type' => 'string',
+                    'description' => 'Language code (e.g. "eng-GB"): keep only the contents that have NO translation in it',
                 ],
                 'limit' => [
                     'type' => 'integer',
-                    'description' => 'Max results (default: 50)',
-                    'default' => 50,
+                    'description' => sprintf('Max results per call (default: %d, max: %d)', self::DEFAULT_LIMIT, self::MAX_LIMIT),
+                    'default' => self::DEFAULT_LIMIT,
+                ],
+                'offset' => [
+                    'type' => 'integer',
+                    'description' => 'Number of results to skip, to page through a long list (default: 0)',
+                    'default' => 0,
                 ],
                 'include_fields' => [
                     'type' => 'boolean',
-                    'description' => 'When true, each result includes its current field values (default: false). Set this to inspect existing content before updating.',
+                    'description' => 'When true, each result includes its current field values (default: false). Use a small limit with it.',
                     'default' => false,
                 ],
             ],
@@ -92,37 +106,30 @@ final readonly class BrowseLocationTool implements ToolInterface
             return ToolResult::error('browse_location requires a valid location_id');
         }
 
-        $tool = $this->searchTool;
-        if ($tool === null) {
-            return ToolResult::error('search_content tool not available');
+        $limit = max(1, min(self::MAX_LIMIT, (int) ($arguments['limit'] ?? self::DEFAULT_LIMIT)));
+        $offset = max(0, (int) ($arguments['offset'] ?? 0));
+        $missingLanguage = is_string($arguments['missing_language'] ?? null) ? trim($arguments['missing_language']) : '';
+
+        $filters = ['subtree_location_id' => $locationId];
+        foreach (['query', 'name', 'content_type'] as $key) {
+            if (is_string($arguments[$key] ?? null) && $arguments[$key] !== '') {
+                $filters[$key] = $arguments[$key];
+            }
         }
 
-        $params = [
-            'subtree_location_id' => $locationId,
-            'limit' => $arguments['limit'] ?? 50,
-        ];
-
-        if (isset($arguments['query']) && is_string($arguments['query']) && $arguments['query'] !== '') {
-            $params['query'] = $arguments['query'];
-        }
-        if (isset($arguments['name']) && is_string($arguments['name']) && $arguments['name'] !== '') {
-            $params['name'] = $arguments['name'];
-        }
-        if (isset($arguments['content_type']) && is_string($arguments['content_type']) && $arguments['content_type'] !== '') {
-            $params['content_type'] = $arguments['content_type'];
+        if ($missingLanguage !== '') {
+            $page = $this->contentsMissing($missingLanguage, $filters, $limit, $offset);
+        } else {
+            $page = $this->search($filters, $limit, $offset);
         }
 
-        $result = $tool->execute($params);
-
-        if (!$result->success) {
-            return ToolResult::error($result->message);
+        if ($page instanceof ToolResult) {
+            return $page;
         }
 
-        $results = $result->data['results'] ?? [];
         $includeFields = ($arguments['include_fields'] ?? false) === true;
-
         $items = [];
-        foreach ($results as $item) {
+        foreach ($page['results'] as $item) {
             $entry = [
                 'content_id' => $item['content_id'] ?? null,
                 'content_type' => $item['content_type'] ?? null,
@@ -138,29 +145,89 @@ final readonly class BrowseLocationTool implements ToolInterface
             $items[] = $entry;
         }
 
-        return ToolResult::ok(
-            sprintf('Found %d items under location %d', count($items), $locationId),
-            ['location_id' => $locationId, 'items' => $items],
-        );
+        $total = $page['total'];
+        $data = [
+            'location_id' => $locationId,
+            'total' => $total,
+            'returned' => count($items),
+            'offset' => $offset,
+            'items' => $items,
+        ];
+        if ($missingLanguage !== '') {
+            $data['missing_language'] = $missingLanguage;
+        }
+        if ($page['incomplete'] ?? false) {
+            $data['incomplete'] = sprintf('Only the first %d contents of the subtree were checked.', self::SCAN_MAX);
+        }
+
+        $message = $missingLanguage !== ''
+            ? sprintf('%d contents under location %d have no %s translation (%d returned)', $total, $locationId, $missingLanguage, count($items))
+            : sprintf('Found %d items under location %d (%d returned from offset %d)', $total, $locationId, count($items), $offset);
+
+        return ToolResult::ok($message, $data);
     }
 
     /**
-     * Load field values for a single content item via LoadContentTool.
+     * @param array<string, mixed> $filters
+     * @return array{results: list<array<string, mixed>>, total: int}|ToolResult
+     */
+    private function search(array $filters, int $limit, int $offset): array|ToolResult
+    {
+        $result = $this->searchTool->execute($filters + ['limit' => $limit, 'offset' => $offset]);
+        if (!$result->success) {
+            return ToolResult::error($result->message);
+        }
+
+        return [
+            'results' => array_values($result->data['results'] ?? []),
+            'total' => (int) ($result->data['count'] ?? 0),
+        ];
+    }
+
+    /**
+     * Scans the whole subtree and keeps the contents that have no translation in the given language.
+     * The count is exact (up to SCAN_MAX contents); only the requested page of matches is returned.
+     *
+     * @param array<string, mixed> $filters
+     * @return array{results: list<array<string, mixed>>, total: int, incomplete: bool}|ToolResult
+     */
+    private function contentsMissing(string $language, array $filters, int $limit, int $offset): array|ToolResult
+    {
+        $matches = [];
+        $scanned = 0;
+        $total = null;
+
+        do {
+            $page = $this->search($filters, self::SCAN_PAGE, $scanned);
+            if ($page instanceof ToolResult) {
+                return $page;
+            }
+            $total ??= $page['total'];
+
+            foreach ($page['results'] as $item) {
+                if (!in_array($language, $item['languages'] ?? [], true)) {
+                    $matches[] = $item;
+                }
+            }
+            $scanned += count($page['results']);
+        } while ($page['results'] !== [] && $scanned < $total && $scanned < self::SCAN_MAX);
+
+        return [
+            'results' => array_slice($matches, $offset, $limit),
+            'total' => count($matches),
+            'incomplete' => $scanned < $total,
+        ];
+    }
+
+    /**
+     * Field values of one content, read through the load tool.
      *
      * @return array<string, mixed>
      */
     private function loadContentFields(int $contentId): array
     {
-        $loadTool = $this->loadTool;
-        if ($loadTool === null) {
-            return [];
-        }
+        $result = $this->loadTool->execute(['content_id' => $contentId]);
 
-        $result = $loadTool->execute(['content_id' => $contentId]);
-        if (!$result->success) {
-            return [];
-        }
-
-        return $result->data['fields'] ?? [];
+        return $result->success ? ($result->data['fields'] ?? []) : [];
     }
 }
