@@ -41,6 +41,29 @@ function renderBlock(block: Block, key: number): ReactNode {
             );
         case 'rule':
             return <hr key={key} />;
+        case 'table':
+            return (
+                <div key={key} className="masilia-agent__md-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                {block.header.map((cell, index) => (
+                                    <th key={index}>{renderInline(cell)}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {block.rows.map((row, rowIndex) => (
+                                <tr key={rowIndex}>
+                                    {row.map((cell, index) => (
+                                        <td key={index}>{renderInline(cell)}</td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
         default:
             return <p key={key}>{renderInline(block.children)}</p>;
     }

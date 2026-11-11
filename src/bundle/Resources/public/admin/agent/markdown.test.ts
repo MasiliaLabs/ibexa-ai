@@ -43,6 +43,23 @@ test('fenced code is kept verbatim, closed or still streaming', () => {
     assert.deepEqual(parseMarkdown('```\nline one\nline two'), [{ type: 'code', text: 'line one\nline two' }]);
 });
 
+test('a pipe table has a header, a separator and rows', () => {
+    assert.deepEqual(parseMarkdown('| Site | Contenus |\n|---|---:|\n| Fossil Exit | **268** |\n| MATTCCh | 180 |'), [
+        {
+            type: 'table',
+            header: [[{ type: 'text', text: 'Site' }], [{ type: 'text', text: 'Contenus' }]],
+            rows: [
+                [[{ type: 'text', text: 'Fossil Exit' }], [{ type: 'strong', children: [{ type: 'text', text: '268' }] }]],
+                [[{ type: 'text', text: 'MATTCCh' }], [{ type: 'text', text: '180' }]],
+            ],
+        },
+    ]);
+});
+
+test('a line with a pipe but no separator stays a paragraph', () => {
+    assert.deepEqual(parseMarkdown('a | b'), [{ type: 'paragraph', children: [{ type: 'text', text: 'a | b' }] }]);
+});
+
 test('a line of dashes is a rule', () => {
     assert.deepEqual(parseMarkdown('Above\n\n---\n\nBelow')[1], { type: 'rule' });
 });

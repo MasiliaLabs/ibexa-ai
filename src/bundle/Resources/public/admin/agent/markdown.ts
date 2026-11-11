@@ -19,9 +19,11 @@ export type Block =
     | { type: 'heading'; level: number; children: Inline[] }
     | { type: 'list'; ordered: boolean; items: Inline[][] }
     | { type: 'code'; text: string }
+    | { type: 'table'; header: Inline[][]; rows: Inline[][][] }
     | { type: 'rule' };
 
 const FENCE = /^\s*```/;
+const TABLE_SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const BULLET = /^\s*[-*+]\s+(.*)$/;
 const NUMBERED = /^\s*\d+[.)]\s+(.*)$/;
@@ -84,6 +86,19 @@ export function parseMarkdown(source: string): Block[] {
             continue;
         }
 
+        if (line.includes('|') && index + 1 < lines.length && TABLE_SEPARATOR.test(lines[index + 1])) {
+            flushParagraph();
+            const header = splitRow(line);
+            const rows: Inline[][][] = [];
+            index += 2;
+            while (index < lines.length && lines[index].includes('|') && lines[index].trim() !== '') {
+                rows.push(splitRow(lines[index]));
+                index += 1;
+            }
+            blocks.push({ type: 'table', header, rows });
+            continue;
+        }
+
         const ordered = NUMBERED.test(line);
         if (ordered || BULLET.test(line)) {
             flushParagraph();
@@ -108,6 +123,13 @@ export function parseMarkdown(source: string): Block[] {
     flushParagraph();
 
     return blocks;
+}
+
+/** Cells of a table row: the outer pipes are optional, empty cells are kept. */
+function splitRow(line: string): Inline[][] {
+    const trimmed = line.trim().replace(/^\|/, '').replace(/(^|[^\\])\|$/, '$1');
+
+    return trimmed.split(/(?<!\\)\|/).map((cell) => parseInline(cell.trim().replace(/\\\|/g, '|')));
 }
 
 export function parseInline(source: string): Inline[] {
