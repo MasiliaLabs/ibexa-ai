@@ -26,12 +26,20 @@ export interface AssetsValue {
     getIconPath: (name: string) => string;
 }
 
+export interface IconProps {
+    name: string;
+    size?: 'small' | 'medium' | 'large';
+    className?: string;
+}
+
 interface IdsComponents {
     Button: ComponentType<ButtonProps>;
+    Icon: ComponentType<IconProps>;
     AssetsProvider: ComponentType<{ value: AssetsValue; children?: ReactNode }>;
 }
 
 const components = ids as unknown as IdsComponents;
 
 export const Button = components.Button;
+export const Icon = components.Icon;
 export const AssetsProvider = components.AssetsProvider;

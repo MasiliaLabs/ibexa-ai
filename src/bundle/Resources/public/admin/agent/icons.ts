@@ -1,8 +1,15 @@
 /**
- * Icon files of the Ibexa Design System, served by the admin under this path.
+ * Icon references for the Ibexa Design System icon sprite (all-icons.svg).
+ * Ibexa's own helper knows the sprite location; the widget does not hard-code it.
  */
+interface IbexaIconHelper {
+    getIconPath: (name: string) => string;
+}
+
 export function iconPath(name: string): string {
-    return `/bundles/ibexaadminuiassets/vendors/ids-assets/dist/img/icons/${name}.svg`;
+    const helper = (window as unknown as { ibexa?: { helpers?: { icon?: IbexaIconHelper } } }).ibexa?.helpers?.icon;
+
+    return helper !== undefined ? helper.getIconPath(name) : `#${name}`;
 }
 
 /** Icon for each tool state in the timeline. */

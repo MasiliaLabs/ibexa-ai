@@ -1,5 +1,6 @@
 import React from 'react';
-import { TOOL_ICONS, iconPath } from '../icons';
+import { Icon } from '../ids';
+import { TOOL_ICONS } from '../icons';
 import type { ToolStep } from '../state';
 
 const LABELS: Record<string, string> = {
@@ -21,7 +22,7 @@ export function ToolTimeline({ steps }: ToolTimelineProps) {
             {steps.map((step) => (
                 <li key={step.id} className={`masilia-agent__step masilia-agent__step--${step.status}`}>
                     <span className="masilia-agent__step-icon" aria-hidden="true">
-                        <img src={iconPath(TOOL_ICONS[step.status])} alt="" width={16} height={16} />
+                        <Icon name={TOOL_ICONS[step.status]} size="small" />
                     </span>
                     <details className="masilia-agent__step-details">
                         <summary>

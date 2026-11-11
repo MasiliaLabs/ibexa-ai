@@ -2,6 +2,9 @@
 // Colours, sizes and transitions come from the Ibexa design tokens (read from the host install, not copied).
 @use '@ibexa-admin-ui/src/bundle/Resources/public/scss/custom' as ibexa;
 @use '@ibexa-admin-ui/src/bundle/Resources/public/scss/functions/calculate.rem' as *;
+// Design System button and icon rules. Not the whole stylesheet: its root, label and link rules are global.
+@use '@ids-assets/scss/buttons';
+@use '@ids-assets/scss/icons';
 
 $panel-width: min(420px, calc(100vw - 32px));
 
