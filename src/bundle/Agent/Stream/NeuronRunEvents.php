@@ -53,6 +53,9 @@ final class NeuronRunEvents
                         yield AgentEvent::encode(AgentEvent::TEXT_DELTA, ['text' => $visible]);
                     }
                 } elseif ($chunk instanceof ToolCallChunk) {
+                    // A tool call ends the model's message. MiniMax does not close <think> when its message ends
+                    // in a tool call, so reasoning state must not carry over: the next message starts clean.
+                    $reasoning = new ReasoningFilter();
                     $produced = true;
                     yield AgentEvent::encode(AgentEvent::TOOL_STARTED, [
                         'id' => $chunk->tool->getCallId(),
