@@ -29,6 +29,7 @@ final readonly class SuggestionRequest
         public string $subFieldKey = '',
         public array $metaKeys = [],
         public ?MatrixContext $matrix = null,
+        public string $contentText = '',
     ) {
         if ($language === '') {
             throw new InvalidSuggestionRequestException('A target language is required.');
@@ -57,6 +58,23 @@ final readonly class SuggestionRequest
         }
 
         return $this->field->format();
+    }
+
+    /**
+     * Everything the rewrite may draw on: the text itself, the title and the full text of the
+     * content (not the truncated prompt context), so a figure further down the content still counts.
+     */
+    public function groundingText(): string
+    {
+        return implode("\n", [$this->currentValue, $this->sourceValue, $this->contentTitle, $this->contentText]);
+    }
+
+    /**
+     * Free prompts create content and image alt text has no source: neither is checked for grounding.
+     */
+    public function requiresGrounding(): bool
+    {
+        return $this->action !== SuggestionAction::Custom && $this->field !== SupportedField::Image;
     }
 
     public function isWholeBlockSeo(): bool

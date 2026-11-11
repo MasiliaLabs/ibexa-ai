@@ -16,10 +16,12 @@ final class FakeTextGenerator implements TextGenerator
 
     /**
      * @param list<string> $chunks
+     * @param list<string> $answers consumed in order when given; otherwise $answer is always returned
      */
     public function __construct(
         private readonly string $answer = '',
         private readonly array $chunks = [],
+        private array $answers = [],
     ) {
     }
 
@@ -27,7 +29,7 @@ final class FakeTextGenerator implements TextGenerator
     {
         $this->calls[] = ['system' => $systemPrompt, 'user' => $userPrompt];
 
-        return $this->answer;
+        return $this->answers !== [] ? array_shift($this->answers) : $this->answer;
     }
 
     public function stream(string $systemPrompt, string $userPrompt): iterable

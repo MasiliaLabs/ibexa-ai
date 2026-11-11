@@ -63,6 +63,7 @@ final readonly class SuggestionRequestFactory
             subFieldKey: $payload->subFieldKey,
             metaKeys: $payload->metaKeys,
             matrix: $context->matrix,
+            contentText: $context->contentText,
         );
     }
 

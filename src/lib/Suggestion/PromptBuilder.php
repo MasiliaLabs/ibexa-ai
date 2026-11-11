@@ -26,7 +26,7 @@ final class PromptBuilder
 
     public function systemPrompt(SuggestionRequest $request): string
     {
-        $base = self::BASE . $this->contextLine($request) . $this->contentContext($request);
+        $base = self::BASE . $this->contextLine($request) . $this->contentContext($request) . $this->groundingRules($request);
 
         return match (true) {
             $request->field === SupportedField::SeoMetas && $request->isWholeBlockSeo()
@@ -61,6 +61,31 @@ final class PromptBuilder
         $current = PromptText::truncate($request->currentValue, PromptText::MAX_CURRENT_VALUE_CHARS);
 
         return "{$instruction}\n\nCurrent content for context (do not repeat it unless asked):\n\"\"\"{$current}\"\"\"";
+    }
+
+    /**
+     * Rules that keep rewrites grounded in the source text. Free prompts
+     * (content creation) and image alt text have no source to stay faithful to.
+     */
+    private function groundingRules(SuggestionRequest $request): string
+    {
+        if ($request->action === SuggestionAction::Custom || $request->field === SupportedField::Image) {
+            return '';
+        }
+
+        $rules = "\n\nFaithfulness rules:"
+            . "\n- Do NOT add facts, figures, percentages, dates, names, quotes, sources or claims that are not in the text or the content context."
+            . "\n- Do NOT replace the subject or change what the text says; only change how it is written.";
+
+        if ($request->action === SuggestionAction::Lengthen) {
+            $rules .= "\n- You may elaborate on what the text already says (explain, clarify, illustrate in general terms), but never add new facts or figures.";
+        }
+
+        if ($request->action === SuggestionAction::Translate) {
+            $rules .= "\n- Translate exactly what is written: do not add, remove or reorder information.";
+        }
+
+        return $rules;
     }
 
     private function translateText(SuggestionRequest $request): string

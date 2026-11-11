@@ -67,12 +67,15 @@ final readonly class ContentContextReader
         $contentType = $content->getContentType();
         $fieldIdentifier = $this->resolveFieldIdentifier($fieldName, $contentType);
 
+        [$siblings, $fullText] = $this->siblingsAndFullText($content, $contentType, $fieldIdentifier, $language);
+
         return new ContentContext(
             title: $content->getName($language) ?? $content->getName() ?? '',
             contentTypeName: (string) $contentType->getName(),
             fieldIdentifier: $fieldIdentifier,
-            siblingFields: $this->siblings($content, $contentType, $fieldIdentifier, $language),
+            siblingFields: $siblings,
             matrix: $this->matrix($content, $contentType, $fieldIdentifier, $language),
+            contentText: $fullText,
         );
     }
 
@@ -124,11 +127,14 @@ final readonly class ContentContextReader
     }
 
     /**
-     * @return list<SiblingField>
+     * Sibling fields for the prompt (truncated), and the full text of every other field for grounding.
+     *
+     * @return array{0: list<SiblingField>, 1: string}
      */
-    private function siblings(Content $content, ContentType $contentType, string $currentIdentifier, string $language): array
+    private function siblingsAndFullText(Content $content, ContentType $contentType, string $currentIdentifier, string $language): array
     {
         $siblings = [];
+        $fullText = [];
         foreach ($contentType->getFieldDefinitions() as $definition) {
             if ($definition->identifier === $currentIdentifier) {
                 continue;
@@ -144,13 +150,14 @@ final readonly class ContentContextReader
                 continue;
             }
 
+            $fullText[] = $text;
             $siblings[] = new SiblingField(
                 label: (string) ($definition->getName() ?: $definition->identifier),
                 value: PromptText::truncate($text, PromptText::MAX_SIBLING_CHARS),
             );
         }
 
-        return $siblings;
+        return [$siblings, implode("\n", $fullText)];
     }
 
     private function matrix(Content $content, ContentType $contentType, string $identifier, string $language): ?MatrixContext

@@ -74,4 +74,68 @@ final class SuggestionServiceTest extends TestCase
         self::assertSame(['Hel', 'lo', ' world'], $chunks);
         self::assertCount(1, $generator->calls);
     }
+
+    public function testInventedFiguresTriggerOneRetryWithAGroundedAnswer(): void
+    {
+        $generator = new FakeTextGenerator(answers: [
+            'Coal produced 64% of power.',
+            'Coal still powers much of the grid.',
+        ]);
+        $service = new SuggestionService($generator);
+
+        $result = $service->suggest(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Lengthen,
+            language: 'en-GB',
+            currentValue: 'Morocco is moving away from coal.',
+        ));
+
+        self::assertSame('Coal still powers much of the grid.', $result->text);
+        self::assertCount(2, $generator->calls);
+        self::assertStringContainsString('figures that are not in the text: 64%', $generator->calls[1]['user']);
+    }
+
+    public function testFiguresStillInventedAfterTheRetryFail(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(answer: 'Coal produced 64% of power.'));
+
+        $this->expectException(InvalidModelOutputException::class);
+        $service->suggest(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Improve,
+            language: 'en-GB',
+            currentValue: 'Morocco is moving away from coal.',
+        ));
+    }
+
+    public function testFreePromptsAreNotCheckedForFigures(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(answer: 'Created 64% of content.'));
+
+        $result = $service->suggest(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Custom,
+            language: 'en-GB',
+            prompt: 'Write a stat.',
+        ));
+
+        self::assertSame('Created 64% of content.', $result->text);
+    }
+
+    public function testFiguresFromTheFullContentAreGroundedEvenIfNotInThePromptContext(): void
+    {
+        $generator = new FakeTextGenerator(answer: 'Coal supplied 64% of power.');
+        $service = new SuggestionService($generator);
+
+        $result = $service->suggest(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Lengthen,
+            language: 'en-GB',
+            currentValue: 'Morocco is moving away from coal.',
+            contentText: 'Long body text ... coal supplied 64% of power.',
+        ));
+
+        self::assertSame('Coal supplied 64% of power.', $result->text);
+        self::assertCount(1, $generator->calls);
+    }
 }

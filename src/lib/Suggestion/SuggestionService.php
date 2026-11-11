@@ -21,18 +21,35 @@ final readonly class SuggestionService
     }
 
     /**
-     * @throws InvalidModelOutputException when a JSON field gets a non-object answer
+     * @throws InvalidModelOutputException when a JSON field gets a non-object answer,
+     *                                     or a rewrite keeps adding figures absent from the source
      */
     public function suggest(SuggestionRequest $request): Suggestion
     {
         $format = $request->outputFormat();
+        $system = $this->prompts->systemPrompt($request);
+        $user = $this->prompts->userPrompt($request);
 
-        $raw = $this->generator->generate(
-            $this->prompts->systemPrompt($request),
-            $this->prompts->userPrompt($request),
-        );
+        $text = $this->sanitizer->clean($this->generator->generate($system, $user), $format);
 
-        return new Suggestion($this->sanitizer->clean($raw, $format), $format);
+        if ($request->requiresGrounding()) {
+            $invented = GroundingCheck::ungroundedNumbers($text, $request->groundingText());
+
+            if ($invented !== []) {
+                $retry = $user . sprintf(
+                    "\n\nYour previous answer added figures that are not in the text: %s. "
+                    . "Rewrite it using only figures that appear in the text above.",
+                    implode(', ', $invented),
+                );
+                $text = $this->sanitizer->clean($this->generator->generate($system, $retry), $format);
+
+                if (GroundingCheck::ungroundedNumbers($text, $request->groundingText()) !== []) {
+                    throw new InvalidModelOutputException('The model added figures that are not in the text.');
+                }
+            }
+        }
+
+        return new Suggestion($text, $format);
     }
 
     /**

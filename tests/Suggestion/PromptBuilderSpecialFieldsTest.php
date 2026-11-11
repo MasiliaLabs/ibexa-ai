@@ -85,4 +85,45 @@ final class PromptBuilderSpecialFieldsTest extends TestCase
         self::assertStringContainsString('Keep it under 160 characters.', $system);
         self::assertStringContainsString('NO JSON', $system);
     }
+
+    public function testRewritesForbidInventedFacts(): void
+    {
+        $request = new SuggestionRequest(SupportedField::Text, SuggestionAction::Improve, 'en-GB');
+
+        $system = (new PromptBuilder())->systemPrompt($request);
+
+        self::assertStringContainsString('Do NOT add facts, figures, percentages, dates', $system);
+    }
+
+    public function testLengthenAllowsElaborationButNotNewFacts(): void
+    {
+        $request = new SuggestionRequest(SupportedField::RichText, SuggestionAction::Lengthen, 'en-GB');
+
+        $system = (new PromptBuilder())->systemPrompt($request);
+
+        self::assertStringContainsString('You may elaborate on what the text already says', $system);
+        self::assertStringContainsString('Do NOT add facts, figures', $system);
+    }
+
+    public function testTranslationKeepsTheSameInformation(): void
+    {
+        $request = new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Translate,
+            language: 'fre-FR',
+            sourceLanguage: 'eng-GB',
+            sourceValue: 'Hello',
+        );
+
+        self::assertStringContainsString('do not add, remove or reorder information', (new PromptBuilder())->systemPrompt($request));
+    }
+
+    public function testFreePromptsAndImagesAreNotConstrainedByTheFaithfulnessRules(): void
+    {
+        $custom = new SuggestionRequest(SupportedField::Text, SuggestionAction::Custom, 'en-GB', prompt: 'Write a poem.');
+        $image = new SuggestionRequest(SupportedField::Image, SuggestionAction::Improve, 'en-GB');
+
+        self::assertStringNotContainsString('Faithfulness rules', (new PromptBuilder())->systemPrompt($custom));
+        self::assertStringNotContainsString('Faithfulness rules', (new PromptBuilder())->systemPrompt($image));
+    }
 }

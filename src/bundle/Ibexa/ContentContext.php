@@ -21,6 +21,7 @@ final readonly class ContentContext
         public string $fieldIdentifier,
         public array $siblingFields,
         public ?MatrixContext $matrix,
+        public string $contentText = '',
     ) {
     }
 }
