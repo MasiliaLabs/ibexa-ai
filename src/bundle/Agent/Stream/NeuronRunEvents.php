@@ -22,7 +22,8 @@ use Throwable;
 final class NeuronRunEvents
 {
     private const ERROR_MESSAGE = 'The AI agent is currently unavailable. Please try again later or contact an administrator.';
-    private const IN_FLIGHT_MESSAGE = 'The previous answer in this conversation is still being finished. Try again in a few minutes.';
+    private const NO_ANSWER_MESSAGE = 'The assistant stopped without answering. Try again, or ask in fewer words.';
+    private const IN_FLIGHT_MESSAGE ='The previous answer in this conversation is still being finished. Try again in a few minutes.';
 
     /**
      * @param Generator<int, object, mixed, WorkflowState> $run
@@ -35,6 +36,9 @@ final class NeuronRunEvents
         // Reasoning models emit <think>…</think> inline; it is never shown to the user.
         $reasoning = new ReasoningFilter();
 
+        // Whether the model produced anything the user can see or act on (text or a tool call).
+        $produced = false;
+
         try {
             foreach ($run as $chunk) {
                 // A reasoning model can think for a long time before any visible text: keep the connection
@@ -43,9 +47,11 @@ final class NeuronRunEvents
                 if ($chunk instanceof TextChunk && $chunk->content !== '') {
                     $visible = $reasoning->feed($chunk->content);
                     if ($visible !== '') {
+                        $produced = true;
                         yield AgentEvent::encode(AgentEvent::TEXT_DELTA, ['text' => $visible]);
                     }
                 } elseif ($chunk instanceof ToolCallChunk) {
+                    $produced = true;
                     yield AgentEvent::encode(AgentEvent::TOOL_STARTED, [
                         'id' => $chunk->tool->getCallId(),
                         'tool' => $chunk->tool->getName(),
@@ -62,11 +68,20 @@ final class NeuronRunEvents
 
             $tail = $reasoning->flush();
             if ($tail !== '') {
+                $produced = true;
                 yield AgentEvent::encode(AgentEvent::TEXT_DELTA, ['text' => $tail]);
             }
 
             $state = $run->getReturn();
             $interrupted = $state->isInterrupted();
+
+            // The model ended its turn with reasoning only (no answer, no tool call): say so, rather than
+            // showing an empty reply. The user can rephrase.
+            if (!$produced && !$interrupted) {
+                yield AgentEvent::encode(AgentEvent::RUN_ERROR, ['code' => 'no_answer', 'message' => self::NO_ANSWER_MESSAGE]);
+
+                return;
+            }
 
             if ($interrupted) {
                 foreach ($pendingApprovals() as $action) {
