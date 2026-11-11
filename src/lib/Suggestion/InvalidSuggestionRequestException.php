@@ -6,6 +6,6 @@ namespace Masilia\IbexaAi\Suggestion;
 
 use InvalidArgumentException;
 
-final class InvalidSuggestionRequestException extends InvalidArgumentException
+class InvalidSuggestionRequestException extends InvalidArgumentException
 {
 }

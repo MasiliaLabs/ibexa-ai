@@ -33,4 +33,11 @@ final class PromptText
     {
         return str_replace(['"', "\n", "\r"], ['\\"', ' ', ''], $value);
     }
+
+    public static function isEnglish(string $languageCode): bool
+    {
+        $primary = strtolower(preg_split('/[-_]/', $languageCode)[0] ?? '');
+
+        return in_array($primary, ['en', 'eng'], true);
+    }
 }

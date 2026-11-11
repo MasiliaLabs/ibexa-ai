@@ -54,7 +54,7 @@ final class NeuronTextGeneratorTest extends TestCase
             currentValue: '<p>Plain</p>',
         ));
 
-        self::assertSame('<p>Better</p>', $result);
+        self::assertSame('<p>Better</p>', $result->text);
         $provider->assertCallCount(1);
         $provider->assertSent(static fn ($record): bool => str_contains($record->systemPrompt?->getContent() ?? '', 'Do NOT use <h1>'));
     }

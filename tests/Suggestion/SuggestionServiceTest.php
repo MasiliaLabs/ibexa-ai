@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Suggestion;
 
+use Masilia\IbexaAi\Suggestion\FieldFormat;
+use Masilia\IbexaAi\Suggestion\InvalidModelOutputException;
 use Masilia\IbexaAi\Suggestion\SuggestionAction;
 use Masilia\IbexaAi\Suggestion\SuggestionRequest;
 use Masilia\IbexaAi\Suggestion\SuggestionService;
@@ -26,8 +28,8 @@ final class SuggestionServiceTest extends TestCase
             currentValue: '<p>Old</p>',
         ));
 
-        self::assertSame('<p>Improved</p>', $result);
-        self::assertCount(1, $generator->calls);
+        self::assertSame('<p>Improved</p>', $result->text);
+        self::assertSame(FieldFormat::Html, $result->format);
         self::assertStringContainsString('Do NOT use <h1>', $generator->calls[0]['system']);
         self::assertStringContainsString('<p>Old</p>', $generator->calls[0]['user']);
     }
@@ -40,13 +42,21 @@ final class SuggestionServiceTest extends TestCase
         $result = $service->suggest(new SuggestionRequest(
             field: SupportedField::String,
             action: SuggestionAction::Translate,
-            language: 'fr-FR',
-            sourceLanguage: 'en-GB',
+            language: 'fre-FR',
+            sourceLanguage: 'eng-GB',
             sourceValue: 'Hello',
         ));
 
-        self::assertSame('Bonjour', $result);
-        self::assertStringContainsString('Translate the following en-GB content to fr-FR.', $generator->calls[0]['user']);
+        self::assertSame('Bonjour', $result->text);
+        self::assertStringContainsString('Translate the following eng-GB content to fre-FR.', $generator->calls[0]['user']);
+    }
+
+    public function testWholeBlockSeoAnswerMustBeAnObject(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(answer: 'Sorry, I cannot do that.'));
+
+        $this->expectException(InvalidModelOutputException::class);
+        $service->suggest(new SuggestionRequest(SupportedField::SeoMetas, SuggestionAction::Improve, 'en-GB'));
     }
 
     public function testStreamYieldsChunksInOrder(): void

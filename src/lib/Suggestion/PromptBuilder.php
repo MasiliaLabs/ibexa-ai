@@ -13,32 +13,46 @@ final class PromptBuilder
 {
     private const BASE = 'You are a professional content writing assistant for a CMS.';
 
+    private readonly SeoMetaSchema $seoSchema;
+    private readonly SeoPromptRules $seoRules;
+
+    public function __construct(
+        ?SeoMetaSchema $seoSchema = null,
+        ?SeoPromptRules $seoRules = null,
+    ) {
+        $this->seoSchema = $seoSchema ?? SeoMetaSchema::fallback();
+        $this->seoRules = $seoRules ?? new SeoPromptRules();
+    }
+
     public function systemPrompt(SuggestionRequest $request): string
     {
-        $prompt = self::BASE . $this->contextLine($request) . $this->contentContext($request);
+        $base = self::BASE . $this->contextLine($request) . $this->contentContext($request);
 
-        if ($request->field === SupportedField::Image) {
-            return $prompt . $this->altTextRules();
-        }
-
-        return $prompt . $request->field->format()->rules();
+        return match (true) {
+            $request->field === SupportedField::SeoMetas && $request->isWholeBlockSeo()
+                => $this->seoRules->wholeBlock($base, $this->seoSchema->restrictTo($request->metaKeys)),
+            $request->field === SupportedField::SeoMetas
+                => $this->seoRules->subField($base, $request->subFieldKey),
+            $request->field === SupportedField::Matrix
+                => $base . $this->matrixRules($request->matrix ?? new MatrixContext([], 0)),
+            $request->field === SupportedField::Image
+                => $base . $this->altTextRules(),
+            default
+                => $base . $request->field->format()->rules(),
+        };
     }
 
     public function userPrompt(SuggestionRequest $request): string
     {
         if ($request->action === SuggestionAction::Translate) {
-            return sprintf(
-                "Translate the following %s content to %s. Only output the translated text, "
-                . "nothing else. Preserve the tone and style of the original.\n\n%s",
-                $request->sourceLanguage,
-                $request->language,
-                $request->sourceValue,
-            );
+            return $request->field === SupportedField::Matrix
+                ? $this->translateMatrix($request)
+                : $this->translateText($request);
         }
 
         $instruction = $request->action === SuggestionAction::Custom
             ? trim($request->prompt)
-            : $request->action->instruction();
+            : (string) $request->action->instruction();
 
         if ($request->currentValue === '') {
             return $instruction;
@@ -47,6 +61,29 @@ final class PromptBuilder
         $current = PromptText::truncate($request->currentValue, PromptText::MAX_CURRENT_VALUE_CHARS);
 
         return "{$instruction}\n\nCurrent content for context (do not repeat it unless asked):\n\"\"\"{$current}\"\"\"";
+    }
+
+    private function translateText(SuggestionRequest $request): string
+    {
+        return sprintf(
+            "Translate the following %s content to %s. Only output the translated text, "
+            . "nothing else. Preserve the tone and style of the original.\n\n%s",
+            $request->sourceLanguage,
+            $request->language,
+            $request->sourceValue,
+        );
+    }
+
+    private function translateMatrix(SuggestionRequest $request): string
+    {
+        return sprintf(
+            "Translate each cell of the following matrix from %s to %s. "
+            . "Output ONLY a JSON object with shape {\"rows\": [{\"cells\": {<col_id>: \"<translated_value>\"}}, ...]}. "
+            . "Preserve the original row order. Plain text only in each cell.\n\n%s",
+            $request->sourceLanguage,
+            $request->language,
+            $request->sourceValue,
+        );
     }
 
     private function contextLine(SuggestionRequest $request): string
@@ -59,7 +96,7 @@ final class PromptBuilder
         if ($request->fieldName !== '') {
             $context .= sprintf(' You are writing for the field "%s".', $request->fieldName);
         }
-        if (!self::isEnglish($request->language)) {
+        if (!PromptText::isEnglish($request->language)) {
             $context .= sprintf(' Write in language code: %s.', $request->language);
         }
 
@@ -89,6 +126,30 @@ final class PromptBuilder
         return $lines === '' ? '' : "\n\nContent context:" . $lines;
     }
 
+    private function matrixRules(MatrixContext $matrix): string
+    {
+        $columns = '';
+        foreach ($matrix->headers as $columnId => $columnName) {
+            $columns .= sprintf(
+                "\n  - key: \"%s\" (human label: %s)",
+                PromptText::scrub((string) $columnId),
+                PromptText::scrub((string) $columnName),
+            );
+        }
+        if ($columns === '') {
+            $columns = "\n  - (no columns defined; use a single \"value\" key)";
+        }
+
+        return "\n\nMatrix generation rules:"
+            . "\n- The output is a JSON object with shape: {\"rows\": [{\"cells\": {<col_id>: \"<value>\"}}, ...]}."
+            . "\n- Use the EXACT lowercase identifier (the value of the 'key' field below) inside each row's \"cells\" object. Do NOT use the human label, do NOT change case:"
+            . $columns
+            . sprintf("\n- The output must contain %d row(s) (match the existing row count).", max(1, $matrix->rowCount))
+            . "\n- Preserve the original row order."
+            . "\n- Each cell value is plain text only. No HTML."
+            . "\n- Output ONLY the raw JSON, no markdown code fences, no commentary.";
+    }
+
     private function altTextRules(): string
     {
         return "\n\nAlt text generation rules:"
@@ -99,10 +160,5 @@ final class PromptBuilder
             . "\n- Focus on what the image shows, not its style."
             . "\n- Output ONLY the alt text, no quotes, no commentary."
             . "\n- Plain text only. No HTML.";
-    }
-
-    private static function isEnglish(string $language): bool
-    {
-        return str_starts_with(strtolower($language), 'en');
     }
 }

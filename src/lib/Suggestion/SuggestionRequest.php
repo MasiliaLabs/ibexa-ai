@@ -6,12 +6,13 @@ namespace Masilia\IbexaAi\Suggestion;
 
 /**
  * Everything the prompt builder needs, already extracted from Ibexa by the
- * bundle layer. Language values are normalised codes (e.g. "fr-FR", "en-GB").
+ * bundle layer. Language values are the codes used by the content (e.g. "fre-FR").
  */
 final readonly class SuggestionRequest
 {
     /**
      * @param list<SiblingField> $siblingFields
+     * @param list<string> $metaKeys editable SEO meta keys on the form (novaseometas only)
      */
     public function __construct(
         public SupportedField $field,
@@ -25,6 +26,9 @@ final readonly class SuggestionRequest
         public string $sourceLanguage = '',
         public string $sourceValue = '',
         public array $siblingFields = [],
+        public string $subFieldKey = '',
+        public array $metaKeys = [],
+        public ?MatrixContext $matrix = null,
     ) {
         if ($language === '') {
             throw new InvalidSuggestionRequestException('A target language is required.');
@@ -40,5 +44,23 @@ final readonly class SuggestionRequest
                 throw new InvalidSuggestionRequestException('siblingFields must only contain SiblingField objects.');
             }
         }
+    }
+
+    /**
+     * Whole-block SEO output is a JSON object of meta values; sub-field and
+     * other fields keep their default format.
+     */
+    public function outputFormat(): FieldFormat
+    {
+        if ($this->isWholeBlockSeo()) {
+            return FieldFormat::Json;
+        }
+
+        return $this->field->format();
+    }
+
+    public function isWholeBlockSeo(): bool
+    {
+        return $this->field === SupportedField::SeoMetas && $this->subFieldKey === '';
     }
 }

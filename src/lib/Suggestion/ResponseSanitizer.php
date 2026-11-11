@@ -8,27 +8,39 @@ namespace Masilia\IbexaAi\Suggestion;
  * Cleans a model answer before it is handed back to the editor.
  *
  * Models often wrap output in code fences or quotes despite instructions.
- * This removes those wrappers without touching the content itself.
+ * This removes those wrappers without touching the content. JSON output is
+ * validated: a non-object answer is an error, not a value to apply.
  */
 final class ResponseSanitizer
 {
     public function clean(string $raw, FieldFormat $format): string
     {
-        $text = trim($raw);
-        $text = $this->stripCodeFence($text);
+        $text = $this->stripCodeFence(trim($raw));
 
-        if ($format === FieldFormat::PlainText) {
-            $text = trim(preg_replace('/\s*[\r\n]+\s*/', ' ', $text) ?? $text);
-            $text = $this->stripMatchingQuotes($text);
-        }
-
-        return $text;
+        return match ($format) {
+            FieldFormat::Json => $this->validJsonObject($text),
+            FieldFormat::PlainText => $this->stripMatchingQuotes(
+                trim(preg_replace('/\s*[\r\n]+\s*/', ' ', $text) ?? $text),
+            ),
+            FieldFormat::TextBlock, FieldFormat::Html => $text,
+        };
     }
 
     private function stripCodeFence(string $text): string
     {
         if (preg_match('/^```[a-zA-Z0-9_-]*\s*\n?(.*?)\n?```$/s', $text, $matches) === 1) {
             return trim($matches[1]);
+        }
+
+        return $text;
+    }
+
+    private function validJsonObject(string $text): string
+    {
+        $decoded = json_decode($text, true);
+
+        if (!is_array($decoded) || (array_is_list($decoded) && $decoded !== [])) {
+            throw new InvalidModelOutputException('The model did not return a JSON object.');
         }
 
         return $text;

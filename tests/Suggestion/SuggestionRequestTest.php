@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Suggestion;
 
+use Masilia\IbexaAi\Suggestion\FieldFormat;
 use Masilia\IbexaAi\Suggestion\InvalidSuggestionRequestException;
+use Masilia\IbexaAi\Suggestion\MatrixContext;
 use Masilia\IbexaAi\Suggestion\SuggestionAction;
 use Masilia\IbexaAi\Suggestion\SuggestionRequest;
 use Masilia\IbexaAi\Suggestion\SupportedField;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SuggestionRequest::class)]
-#[CoversClass(SupportedField::class)]
+#[CoversClass(MatrixContext::class)]
 final class SuggestionRequestTest extends TestCase
 {
     public function testTargetLanguageIsRequired(): void
@@ -31,27 +32,33 @@ final class SuggestionRequestTest extends TestCase
     public function testTranslationNeedsSourceLanguageAndValue(): void
     {
         $this->expectException(InvalidSuggestionRequestException::class);
-        new SuggestionRequest(SupportedField::Text, SuggestionAction::Translate, 'fr-FR', sourceLanguage: 'en-GB');
+        new SuggestionRequest(SupportedField::Text, SuggestionAction::Translate, 'fre-FR', sourceLanguage: 'eng-GB');
     }
 
-    #[DataProvider('unsupportedIdentifiers')]
-    public function testUnsupportedFieldTypesAreRejected(string $identifier): void
+    public function testWholeBlockSeoOutputsJsonAndSubFieldOutputsText(): void
+    {
+        $whole = new SuggestionRequest(SupportedField::SeoMetas, SuggestionAction::Improve, 'en-GB');
+        $sub = new SuggestionRequest(SupportedField::SeoMetas, SuggestionAction::Improve, 'en-GB', subFieldKey: 'title');
+
+        self::assertSame(FieldFormat::Json, $whole->outputFormat());
+        self::assertSame(FieldFormat::PlainText, $sub->outputFormat());
+    }
+
+    public function testMatrixOutputsJson(): void
+    {
+        $request = new SuggestionRequest(
+            SupportedField::Matrix,
+            SuggestionAction::Improve,
+            'en-GB',
+            matrix: new MatrixContext(['text' => 'Text'], 2),
+        );
+
+        self::assertSame(FieldFormat::Json, $request->outputFormat());
+    }
+
+    public function testNegativeMatrixRowCountIsRejected(): void
     {
         $this->expectException(InvalidSuggestionRequestException::class);
-        SupportedField::fromIdentifier($identifier);
-    }
-
-    public static function unsupportedIdentifiers(): iterable
-    {
-        yield 'matrix (not yet supported)' => ['ibexa_matrix'];
-        yield 'seo metas (not yet supported)' => ['novaseometas'];
-        yield 'legacy ezstring identifier' => ['ezstring'];
-    }
-
-    public function testSupportedFieldMapsToItsOutputFormat(): void
-    {
-        self::assertSame('ibexa_richtext', SupportedField::fromIdentifier('ibexa_richtext')->value);
-        self::assertSame('html', SupportedField::RichText->format()->value);
-        self::assertSame('plain_text', SupportedField::Image->format()->value);
+        new MatrixContext([], -1);
     }
 }

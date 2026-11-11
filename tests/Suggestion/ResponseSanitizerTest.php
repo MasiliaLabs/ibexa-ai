@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Tests\Suggestion;
 
 use Masilia\IbexaAi\Suggestion\FieldFormat;
+use Masilia\IbexaAi\Suggestion\InvalidModelOutputException;
 use Masilia\IbexaAi\Suggestion\ResponseSanitizer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -15,9 +16,7 @@ final class ResponseSanitizerTest extends TestCase
 {
     public function testStripsHtmlCodeFence(): void
     {
-        $raw = "```html\n<p>Hello</p>\n```";
-
-        self::assertSame('<p>Hello</p>', (new ResponseSanitizer())->clean($raw, FieldFormat::Html));
+        self::assertSame('<p>Hello</p>', (new ResponseSanitizer())->clean("```html\n<p>Hello</p>\n```", FieldFormat::Html));
     }
 
     public function testKeepsHtmlWithoutFenceUntouched(): void
@@ -29,9 +28,10 @@ final class ResponseSanitizerTest extends TestCase
 
     public function testPlainTextIsCollapsedToOneLineAndUnquoted(): void
     {
-        $raw = "\"A title\nspanning lines\"";
-
-        self::assertSame('A title spanning lines', (new ResponseSanitizer())->clean($raw, FieldFormat::PlainText));
+        self::assertSame(
+            'A title spanning lines',
+            (new ResponseSanitizer())->clean("\"A title\nspanning lines\"", FieldFormat::PlainText),
+        );
     }
 
     public function testTextBlockKeepsParagraphBreaks(): void
@@ -58,8 +58,24 @@ final class ResponseSanitizerTest extends TestCase
         yield 'curly' => ['“', '”'];
     }
 
-    public function testUnmatchedQuotesAreKept(): void
+    public function testJsonFenceIsStrippedAndObjectAccepted(): void
     {
-        self::assertSame('"half', (new ResponseSanitizer())->clean('"half', FieldFormat::PlainText));
+        $result = (new ResponseSanitizer())->clean("```json\n{\"rows\": []}\n```", FieldFormat::Json);
+
+        self::assertSame('{"rows": []}', $result);
+    }
+
+    #[DataProvider('invalidJson')]
+    public function testNonObjectJsonIsRejected(string $raw): void
+    {
+        $this->expectException(InvalidModelOutputException::class);
+        (new ResponseSanitizer())->clean($raw, FieldFormat::Json);
+    }
+
+    public static function invalidJson(): iterable
+    {
+        yield 'prose' => ['Here is your answer: nothing useful'];
+        yield 'truncated object' => ['{"rows": ['];
+        yield 'list' => ['[1, 2, 3]'];
     }
 }

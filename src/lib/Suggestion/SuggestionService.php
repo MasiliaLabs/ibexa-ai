@@ -21,22 +21,23 @@ final readonly class SuggestionService
     }
 
     /**
-     * Full answer, cleaned for the field format.
+     * @throws InvalidModelOutputException when a JSON field gets a non-object answer
      */
-    public function suggest(SuggestionRequest $request): string
+    public function suggest(SuggestionRequest $request): Suggestion
     {
+        $format = $request->outputFormat();
+
         $raw = $this->generator->generate(
             $this->prompts->systemPrompt($request),
             $this->prompts->userPrompt($request),
         );
 
-        return $this->sanitizer->clean($raw, $request->field->format());
+        return new Suggestion($this->sanitizer->clean($raw, $format), $format);
     }
 
     /**
-     * Raw chunks as the model produces them. The model is instructed to avoid
-     * wrappers, so chunks are not sanitised; the editor applies the final
-     * result from the concatenated text when the stream ends.
+     * Raw chunks as the model produces them. Chunks are not sanitised: the
+     * prompt already forbids wrappers, and the editor applies the full text.
      *
      * @return Generator<int, string>
      */

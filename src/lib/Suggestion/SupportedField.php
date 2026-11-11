@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Suggestion;
 
 /**
- * Field types that accept AI suggestions in this version.
+ * Field types that accept AI suggestions.
  *
- * Identifiers are the Ibexa 5 field type identifiers (underscored form).
- * ezmatrix and novaseometas are not supported yet: they need their own
- * prompt context (row/column schema, SEO meta keys).
+ * Canonical values are the Ibexa 5 field type identifiers (checked against the
+ * Ibexa 5 vendor; `novaseometas` is the Novactive SEO field type). The legacy
+ * `ez*` identifiers used by masilia/ai-assistant are accepted as aliases so the
+ * current admin front keeps working during the migration.
  */
 enum SupportedField: string
 {
@@ -17,22 +18,39 @@ enum SupportedField: string
     case Text = 'ibexa_text';
     case RichText = 'ibexa_richtext';
     case Image = 'ibexa_image';
+    case Matrix = 'ibexa_matrix';
+    case SeoMetas = 'novaseometas';
+
+    private const LEGACY_IDENTIFIERS = [
+        'ezstring' => 'ibexa_string',
+        'eztext' => 'ibexa_text',
+        'ezrichtext' => 'ibexa_richtext',
+        'ezimage' => 'ibexa_image',
+        'ezmatrix' => 'ibexa_matrix',
+    ];
 
     public static function fromIdentifier(string $identifier): self
     {
-        return self::tryFrom($identifier)
-            ?? throw new InvalidSuggestionRequestException(sprintf(
-                'Field type "%s" does not support AI suggestions yet.',
+        $canonical = self::LEGACY_IDENTIFIERS[$identifier] ?? $identifier;
+
+        return self::tryFrom($canonical)
+            ?? throw new UnsupportedFieldException(sprintf(
+                'Unsupported field type: %s',
                 $identifier,
             ));
     }
 
+    /**
+     * Default output format. Whole-block SEO output is overridden by
+     * {@see SuggestionRequest::outputFormat()}.
+     */
     public function format(): FieldFormat
     {
         return match ($this) {
-            self::String, self::Image => FieldFormat::PlainText,
+            self::String, self::Image, self::SeoMetas => FieldFormat::PlainText,
             self::Text => FieldFormat::TextBlock,
             self::RichText => FieldFormat::Html,
+            self::Matrix => FieldFormat::Json,
         };
     }
 }
