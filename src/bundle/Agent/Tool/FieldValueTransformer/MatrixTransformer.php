@@ -40,7 +40,7 @@ readonly class MatrixTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezmatrix';
+        return 'ibexa_matrix';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

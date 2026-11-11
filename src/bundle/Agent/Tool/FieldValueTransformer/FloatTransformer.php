@@ -18,7 +18,7 @@ readonly class FloatTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezfloat';
+        return 'ibexa_float';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

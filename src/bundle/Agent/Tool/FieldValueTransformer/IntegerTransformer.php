@@ -18,7 +18,7 @@ readonly class IntegerTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezinteger';
+        return 'ibexa_integer';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

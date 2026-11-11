@@ -9,11 +9,15 @@ use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
+use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
+use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
 use NeuronAI\Chat\Messages\UserMessage;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Throwable;
 
@@ -36,55 +40,92 @@ final readonly class AgentChatController
     }
 
     #[Route('/admin/api/ai/agent/chat', name: 'masilia.ibexa_ai.agent.chat', methods: ['POST'])]
-    public function chat(Request $request): JsonResponse
+    public function chat(Request $request): Response
     {
-        if ($denied = $this->denyUnlessAdministrator()) {
-            return $denied;
+        $headers = ['Content-Type' => 'text/event-stream', 'Cache-Control' => 'no-cache', 'X-Accel-Buffering' => 'no'];
+
+        if ($this->permissions->hasAccess('setup', 'administrate') === false) {
+            return $this->streamError(ApiError::accessDenied(), Response::HTTP_FORBIDDEN, $headers);
         }
 
         $payload = $this->json($request);
         if ($payload === null) {
-            return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
+            return $this->streamError(ApiError::validation('Invalid JSON payload'), Response::HTTP_BAD_REQUEST, $headers);
         }
 
-        $message = trim((string) ($payload['message'] ?? ''));
-        $decisions = is_array($payload['decisions'] ?? null) ? $payload['decisions'] : null;
+        [$message, $decisions] = $this->interpret($payload);
         if ($message === '' && $decisions === null) {
-            return $this->error('Missing required field: message or decisions', Response::HTTP_BAD_REQUEST);
+            return $this->streamError(ApiError::validation('Missing required field: message or decisions'), Response::HTTP_BAD_REQUEST, $headers);
         }
 
         try {
             $agent = $this->agents->create($this->currentSiteaccess(), $this->threadId());
-            $state = $decisions !== null
-                ? $agent->submitApprovalDecisions($this->normalizeDecisions($decisions))->run()
-                : $agent->chat(new UserMessage($message));
+            $run = $decisions !== null
+                ? $agent->submitApprovalDecisions($decisions)->events()
+                : $agent->stream(new UserMessage($message));
         } catch (ProviderConfigurationException $e) {
-            return $this->error($e->getMessage(), Response::HTTP_SERVICE_UNAVAILABLE);
+            return $this->streamError(ApiError::serviceUnavailable($e->getMessage()), Response::HTTP_SERVICE_UNAVAILABLE, $headers);
         } catch (Throwable $e) {
             $this->aiLogger->error('[AI Agent] Chat failed: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
 
-            return new JsonResponse(ApiError::serviceUnavailable(self::GENERIC_ERROR)->toArray(), Response::HTTP_SERVICE_UNAVAILABLE);
+            return $this->streamError(ApiError::serviceUnavailable(self::GENERIC_ERROR), Response::HTTP_SERVICE_UNAVAILABLE, $headers);
         }
 
-        if ($state->isInterrupted()) {
-            return new JsonResponse([
-                'status' => 'awaiting_approval',
-                'approvals' => array_map(
-                    static fn ($action): array => [
-                        'id' => $action->id,
-                        'tool' => $action->name,
-                        'inputs' => $action->inputs,
-                        'reason' => $action->reason ?? $action->description,
-                    ],
-                    $agent->pendingApprovals(),
-                ),
-            ]);
-        }
+        return new StreamedResponse(function () use ($agent, $run): void {
+            $text = '';
+            try {
+                foreach ($run as $chunk) {
+                    if ($chunk instanceof TextChunk) {
+                        $text .= $chunk->content;
+                    } elseif ($chunk instanceof ToolCallChunk) {
+                        $this->emit([
+                            'type' => 'step_start',
+                            'tool' => $chunk->tool->getName(),
+                            'call_id' => $chunk->tool->getCallId(),
+                        ]);
+                    } elseif ($chunk instanceof ToolResultChunk) {
+                        $this->emit([
+                            'type' => 'step_result',
+                            'tool' => $chunk->tool->getName(),
+                            'call_id' => $chunk->tool->getCallId(),
+                            'result' => $this->toolResult($chunk->tool->getResult()),
+                        ]);
+                    }
+                }
 
-        return new JsonResponse([
-            'status' => 'completed',
-            'message' => $state->getMessage()?->getContent() ?? '',
-        ]);
+                $state = $run->getReturn();
+            } catch (Throwable $e) {
+                $this->aiLogger->error('[AI Agent] Run failed: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
+                $this->emit(['type' => 'error', 'error_type' => 'service_error', 'message' => self::GENERIC_ERROR]);
+                echo "data: [DONE]\n\n";
+                flush();
+
+                return;
+            }
+
+            if ($state->isInterrupted()) {
+                // Each pending approval is offered as two options; the front sends the chosen value back.
+                $pending = $agent->pendingApprovals();
+                foreach ($pending as $action) {
+                    $this->emit([
+                        'type' => 'options',
+                        'message' => $this->approvalText($action->name, (string) ($action->reason ?? $action->description ?? '')),
+                        'options' => [
+                            ['label' => 'Approve', 'value' => 'approve:' . $action->id],
+                            ['label' => 'Reject', 'value' => 'reject:' . $action->id],
+                        ],
+                    ]);
+                }
+                if ($pending === []) {
+                    $this->emit(['type' => 'message', 'message' => 'The change is waiting for your decision.']);
+                }
+            } else {
+                $this->emit(['type' => 'message', 'message' => $text !== '' ? $text : (string) $state->getMessage()?->getContent()]);
+            }
+
+            echo "data: [DONE]\n\n";
+            flush();
+        }, Response::HTTP_OK, $headers);
     }
 
     #[Route('/admin/api/ai/agent/history', name: 'masilia.ibexa_ai.agent.history', methods: ['GET'])]
@@ -96,9 +137,14 @@ final readonly class AgentChatController
 
         $messages = [];
         foreach ($this->agents->messages($this->threadId())->loadAll($this->threadId(), 200) as $message) {
+            $role = $message->getRole()->value;
+            if (!in_array($role, ['user', 'assistant'], true) || trim((string) $message->getContent()) === '') {
+                continue;
+            }
             $messages[] = [
-                'role' => $message->getRole()->value,
-                'content' => $message->getContent() ?? '',
+                'role' => $role === 'assistant' ? 'agent' : 'user',
+                'content' => (string) $message->getContent(),
+                'timestamp' => '',
             ];
         }
 
@@ -115,6 +161,68 @@ final readonly class AgentChatController
         $this->agents->messages($this->threadId())->clear($this->threadId());
 
         return new JsonResponse(['success' => true]);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{0: string, 1: array<string, mixed>|null}
+     */
+    private function interpret(array $payload): array
+    {
+        $message = trim((string) ($payload['message'] ?? ''));
+        $selected = (string) ($payload['selected_option'] ?? '');
+
+        // An option the widget sent back: "approve:<id>" or "reject:<id>".
+        if (preg_match('/^(approve|reject):(.+)$/', $selected, $m) === 1) {
+            return ['', [$m[2] => $m[1]]];
+        }
+
+        $decisions = is_array($payload['decisions'] ?? null) ? $this->normalizeDecisions($payload['decisions']) : null;
+
+        return [$message, $decisions];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function toolResult(string|\NeuronAI\Tools\ToolOutput $result): array
+    {
+        $text = is_string($result) ? $result : '';
+        $decoded = json_decode($text, true);
+
+        // Neuron answers a rejected or skipped call with its own text, not with the tool's JSON.
+        if (str_starts_with($text, 'TOOL NOT EXECUTED')) {
+            return ['success' => false, 'message' => 'Not executed: the change was rejected.', 'data' => []];
+        }
+
+        return is_array($decoded)
+            ? ['success' => (bool) ($decoded['success'] ?? false), 'message' => (string) ($decoded['message'] ?? ''), 'data' => $decoded['data'] ?? []]
+            : ['success' => true, 'message' => $text, 'data' => []];
+    }
+
+    private function approvalText(string $tool, string $reason): string
+    {
+        return $reason !== '' ? $reason : sprintf('The assistant wants to run "%s". Approve it?', $tool);
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     */
+    private function emit(array $event): void
+    {
+        echo 'data: ' . json_encode($event, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE) . "\n\n";
+        flush();
+    }
+
+    /**
+     * @param array<string, mixed> $headers
+     */
+    private function streamError(ApiError $error, int $status, array $headers): StreamedResponse
+    {
+        return new StreamedResponse(function () use ($error): void {
+            echo 'data: ' . json_encode($error->toArray(), JSON_THROW_ON_ERROR) . "\n\n";
+            flush();
+        }, $status, $headers);
     }
 
     /**

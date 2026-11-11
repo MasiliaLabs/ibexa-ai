@@ -30,7 +30,7 @@ readonly class RichTextTransformer implements FieldValueTransformerInterface
 
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezrichtext';
+        return 'ibexa_richtext';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

@@ -23,6 +23,14 @@ final class ToolRegistry
     ) {
     }
 
+    /**
+     * A registry that also holds $tool, replacing any tool with the same name. The receiver is unchanged.
+     */
+    public function register(ToolInterface $tool): self
+    {
+        return new self([...array_values($this->index()), $tool]);
+    }
+
     public function get(string $name): ?ToolInterface
     {
         return $this->index()[$name] ?? null;

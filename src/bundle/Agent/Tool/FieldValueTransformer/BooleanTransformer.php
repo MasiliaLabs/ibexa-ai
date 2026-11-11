@@ -18,7 +18,7 @@ readonly class BooleanTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezboolean';
+        return 'ibexa_boolean';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

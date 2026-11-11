@@ -48,7 +48,7 @@ readonly class ImageTransformer implements FieldValueTransformerInterface
 
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezimage';
+        return 'ibexa_image';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

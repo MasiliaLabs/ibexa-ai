@@ -18,7 +18,7 @@ readonly class UrlTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezurl';
+        return 'ibexa_url';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

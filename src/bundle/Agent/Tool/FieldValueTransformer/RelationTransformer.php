@@ -17,7 +17,7 @@ readonly class RelationTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezobjectrelation';
+        return 'ibexa_object_relation';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

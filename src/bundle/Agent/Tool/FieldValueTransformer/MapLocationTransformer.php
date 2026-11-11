@@ -17,7 +17,7 @@ readonly class MapLocationTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezgmaplocation';
+        return 'ibexa_gmap_location';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

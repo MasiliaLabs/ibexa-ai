@@ -17,7 +17,7 @@ readonly class KeywordTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezkeyword';
+        return 'ibexa_keyword';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed

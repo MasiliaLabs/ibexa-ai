@@ -19,7 +19,7 @@ readonly class DateTransformer implements FieldValueTransformerInterface
 {
     public function getFieldTypeIdentifier(): string
     {
-        return 'ezdate';
+        return 'ibexa_date';
     }
 
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed
