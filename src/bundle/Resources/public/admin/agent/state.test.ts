@@ -23,6 +23,16 @@ test('a turn collects text, tool steps and their outcomes', () => {
     assert.equal(state.busy, false);
 });
 
+test('text written after a tool call is separated from the text before it', () => {
+    let state = started('Explain');
+    state = reducer(state, { type: 'event', event: { type: 'text.delta', text: 'Fossil Exit.' } });
+    state = reducer(state, { type: 'event', event: { type: 'tool.started', id: 'c3', tool: 'explore_site', inputs: {} } });
+    state = reducer(state, { type: 'event', event: { type: 'tool.finished', id: 'c3', tool: 'explore_site', ok: true, message: '', data: {} } });
+    state = reducer(state, { type: 'event', event: { type: 'text.delta', text: 'Fossil Exit has three siteaccesses.' } });
+
+    assert.equal(state.turns[0].text, 'Fossil Exit.\n\nFossil Exit has three siteaccesses.');
+});
+
 test('a failed tool is shown as failed, not as done', () => {
     let state = started('Create it');
     state = reducer(state, { type: 'event', event: { type: 'tool.started', id: 'c2', tool: 'propose_plan', inputs: {} } });

@@ -146,8 +146,10 @@ function applyEvent(state: AgentState, event: AgentEvent): AgentState {
             return updateLastTurn(state, (turn) => ({ ...turn, text: turn.text + event.text }));
 
         case 'tool.started':
+            // Text written before and after a tool call is one block: separate the parts so they do not run together.
             return updateLastTurn(state, (turn) => ({
                 ...turn,
+                text: turn.text !== '' && !turn.text.endsWith('\n\n') ? `${turn.text}\n\n` : turn.text,
                 tools: [...turn.tools, { id: event.id, tool: event.tool, inputs: event.inputs, status: 'running', message: '' }],
             }));
 
