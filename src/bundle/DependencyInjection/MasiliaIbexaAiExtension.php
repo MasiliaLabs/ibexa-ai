@@ -28,6 +28,12 @@ final class MasiliaIbexaAiExtension extends Extension implements PrependExtensio
                 ],
             ],
         ]);
+
+        $container->prependExtensionConfig('doctrine_migrations', [
+            'migrations_paths' => [
+                'Masilia\\Bundle\\IbexaAi\\Migrations' => __DIR__ . '/../Migrations',
+            ],
+        ]);
     }
 
     public function load(array $configs, ContainerBuilder $container): void

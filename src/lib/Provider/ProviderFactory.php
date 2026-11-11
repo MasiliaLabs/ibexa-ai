@@ -75,12 +75,12 @@ final class ProviderFactory
     /**
      * OpenAI-protocol endpoint at the configured base URI, or the provider's default.
      */
-    private function openAiCompatible(ProviderConnection $connection): OpenAILike
+    private function openAiCompatible(ProviderConnection $connection): CompatibleOpenAi
     {
         $baseUri = $connection->apiUrl ?? $connection->provider->defaultOpenAiCompatibleBaseUri()
             ?? throw new ProviderConfigurationException(sprintf('Provider "%s" needs an endpoint URL.', $connection->provider->label()));
 
-        return new OpenAILike(
+        return new CompatibleOpenAi(
             baseUri: self::normalizeBaseUri($baseUri),
             key: $connection->apiKey,
             model: $connection->model,
@@ -99,15 +99,15 @@ final class ProviderFactory
         return $path === '' ? $url . '/v1' : $url;
     }
 
-    private function qwen(ProviderConnection $connection): DashScopeOpenAI
+    private function qwen(ProviderConnection $connection): CompatibleDashScope
     {
         $parameters = $this->openAiParameters($connection);
 
         // Keep Neuron's DashScope default (international compatible-mode endpoint)
         // unless the admin configured a custom URL.
         return $connection->apiUrl === null
-            ? new DashScopeOpenAI(key: $connection->apiKey, model: $connection->model, parameters: $parameters)
-            : new DashScopeOpenAI(key: $connection->apiKey, model: $connection->model, parameters: $parameters, baseUri: self::normalizeBaseUri($connection->apiUrl));
+            ? new CompatibleDashScope(key: $connection->apiKey, model: $connection->model, parameters: $parameters)
+            : new CompatibleDashScope(key: $connection->apiKey, model: $connection->model, parameters: $parameters, baseUri: self::normalizeBaseUri($connection->apiUrl));
     }
 
     /**

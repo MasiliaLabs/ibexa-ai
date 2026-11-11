@@ -1,4 +1,12 @@
 services:
+    _instanceof:
+        Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface:
+            tags: ['masilia.ibexa_ai.tool']
+        Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerInterface:
+            tags: ['masilia.ibexa_ai.field_value_transformer']
+        Masilia\Bundle\IbexaAi\Field\FieldValueStringifierInterface:
+            tags: ['masilia.ibexa_ai.stringifier']
+
     _defaults:
         autowire: true
         autoconfigure: true
@@ -6,6 +14,8 @@ services:
         bind:
             $aiLogger: '@logger'
             $settings: '%ibexa_ai.connection%'
+            $cachePool: '@cache.app'
+            $cache: '@cache.app'
 
     Masilia\Bundle\IbexaAi\Ibexa\:
         resource: '../../Ibexa/'
@@ -13,6 +23,12 @@ services:
 
     Masilia\Bundle\IbexaAi\Repository\:
         resource: '../../Repository/'
+
+    Masilia\Bundle\IbexaAi\Image\:
+        resource: '../../Image/'
+
+    Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface:
+        alias: Masilia\Bundle\IbexaAi\Image\ImageGenerator
 
     Masilia\Bundle\IbexaAi\Admin\:
         resource: '../../Admin/'
@@ -36,3 +52,43 @@ services:
             - { name: kernel.event_listener, event: kernel.terminate, method: onTerminate }
             - { name: kernel.event_listener, event: kernel.exception, method: onTerminate }
             - { name: kernel.event_listener, event: console.terminate, method: onTerminate }
+
+    Masilia\Bundle\IbexaAi\Agent\Tool\ToolRegistry:
+        arguments:
+            $sources: !tagged_iterator masilia.ibexa_ai.tool
+
+    Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerRegistry:
+        arguments:
+            $transformers: !tagged_iterator masilia.ibexa_ai.field_value_transformer
+
+    Masilia\Bundle\IbexaAi\Field\FieldValueStringifierRegistry:
+        arguments:
+            $stringifiers: !tagged_iterator masilia.ibexa_ai.stringifier
+
+    Masilia\Bundle\IbexaAi\Agent\:
+        resource: '../../Agent/'
+        exclude:
+            - '../../Agent/AiAssistantAgent.php'
+            - '../../Agent/AgentFactory.php'
+            - '../../Agent/AgentSystemPrompt.php'
+            - '../../Agent/Neuron/'
+            - '../../Agent/DTO/'
+            - '../../Agent/Worker/Plan.php'
+            - '../../Agent/Worker/ExecutionResult.php'
+            - '../../Agent/Worker/ExplorationResult.php'
+            - '../../Agent/Tool/ToolResult.php'
+            - '../../Agent/Tool/ToolRegistry.php'
+            - '../../Agent/Tool/FieldValueTransformerRegistry.php'
+
+    Masilia\Bundle\IbexaAi\Field\:
+        resource: '../../Field/'
+        exclude:
+            - '../../Field/FieldStringValue.php'
+            - '../../Field/FieldValueStringifierRegistry.php'
+            - '../../Field/Stringifier/'
+
+    Masilia\Bundle\IbexaAi\Field\Stringifier\:
+        resource: '../../Field/Stringifier/'
+
+    Masilia\Bundle\IbexaAi\Agent\AgentFactory:
+        public: true

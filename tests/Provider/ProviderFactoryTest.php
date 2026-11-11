@@ -173,4 +173,19 @@ final class ProviderFactoryTest extends TestCase
         self::assertSame('https://api.moonshot.ai/v1', ProviderFactory::normalizeBaseUri('https://api.moonshot.ai/v1/'));
         self::assertSame('https://api.minimax.io/v1', ProviderFactory::normalizeBaseUri('https://api.minimax.io'));
     }
+
+    public function testAToolCallTurnWithoutContentIsAnEmptyAssistantMessage(): void
+    {
+        $provider = (new ProviderFactory())->create(new ProviderConnection(
+            provider: ProviderId::MiniMax,
+            model: 'MiniMax-M3',
+            apiKey: 'test-key',
+        ));
+
+        $method = new \ReflectionMethod($provider, 'createAssistantMessage');
+        $message = $method->invoke($provider, ['role' => 'assistant', 'tool_calls' => []]);
+
+        self::assertInstanceOf(\NeuronAI\Chat\Messages\AssistantMessage::class, $message);
+        self::assertNull($message->getContent(), 'no text block, so no content');
+    }
 }
