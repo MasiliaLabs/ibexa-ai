@@ -43,9 +43,10 @@ final readonly class BrowseLocationTool implements ToolInterface
             'Use this after explore_site when you need to find content IDs of ' .
             'individual blocks or items inside a page. Supports name search, ' .
             'full-text query, and content type filter. Returns content_id, ' .
-            'content_type, and name for each result. Set include_fields=true ' .
+            'content_type, name and languages (the translations that exist, ' .
+            'e.g. ["eng-GB","fre-FR"]) for each result. Set include_fields=true ' .
             'to also return the current field values of each content item ' .
-            '(useful before updating ezmatrix or other fields).';
+            '(useful before updating a matrix or other fields, or to read the text of a page).';
     }
 
     public function getParameters(): array
@@ -127,6 +128,7 @@ final readonly class BrowseLocationTool implements ToolInterface
                 'content_type' => $item['content_type'] ?? null,
                 'name' => $item['name'] ?? null,
                 'remote_id' => $item['remote_id'] ?? null,
+                'languages' => $item['languages'] ?? [],
             ];
 
             if ($includeFields && ($item['content_id'] ?? null) !== null) {

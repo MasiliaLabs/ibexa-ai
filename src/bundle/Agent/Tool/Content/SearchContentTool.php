@@ -130,6 +130,7 @@ readonly class SearchContentTool implements ToolInterface
                     'content_type' => $content->getContentType()->identifier,
                     'name' => $content->contentInfo->name,
                     'remote_id' => $content->contentInfo->remoteId,
+                    'languages' => array_values($content->getVersionInfo()->languageCodes),
                 ];
             }
 

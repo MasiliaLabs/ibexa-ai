@@ -95,7 +95,7 @@ readonly class LoadContentTool implements ToolInterface
             $fields = [];
             foreach ($content->getFieldsByLanguage($languageCode) as $field) {
                 $fieldDef = $content->getContentType()->getFieldDefinition($field->fieldDefIdentifier);
-                $fields[$field->identifier] = $this->stringifierRegistry->toString($field, $fieldDef);
+                $fields[$field->fieldDefIdentifier] = $this->stringifierRegistry->toString($field, $fieldDef);
             }
 
             return ToolResult::ok(
@@ -106,6 +106,9 @@ readonly class LoadContentTool implements ToolInterface
                     'name' => $content->contentInfo->name,
                     'remote_id' => $content->contentInfo->remoteId,
                     'main_location_id' => $content->contentInfo->mainLocationId,
+                    // Which translations exist, and which one the fields below are in.
+                    'languages' => array_values($content->getVersionInfo()->languageCodes),
+                    'language' => $languageCode,
                     'fields' => $fields,
                 ],
             );
