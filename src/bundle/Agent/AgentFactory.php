@@ -58,12 +58,12 @@ final readonly class AgentFactory
      */
     public function forgetWorkflow(string $threadId): void
     {
-        $pattern = '%' . addcslashes($threadId, '%_\\') . '%';
-
+        // Neuron's DatabasePersistence stores the partition (the workflow id, here the thread id) hex-encoded.
+        // Exact match only: one thread id can be the prefix of another ("…-admin" and "…-admin_fossil_exit").
         $statement = $this->pdo()->prepare(
-            'DELETE FROM ' . AiAssistantAgent::WORKFLOW_TABLE . ' WHERE `partition` LIKE ?',
+            'DELETE FROM ' . AiAssistantAgent::WORKFLOW_TABLE . ' WHERE `partition` = ?',
         );
-        $statement->execute([$pattern]);
+        $statement->execute([bin2hex($threadId)]);
     }
 
     public function pdo(): PDO

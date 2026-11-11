@@ -37,6 +37,8 @@ export interface Turn {
     approvals: Approval[];
     status: TurnStatus;
     error: string | null;
+    /** Where the text written after the user's decision starts, so it can be shown below the approval. */
+    resumeAt: number | null;
 }
 
 export interface AgentState {
@@ -90,7 +92,7 @@ export function reducer(state: AgentState, action: Action): AgentState {
 
         case 'decisions.sent':
             return {
-                turns: updateLastTurnStatus(state.turns, 'streaming'),
+                turns: resumeLastTurn(state.turns),
                 busy: true,
             };
 
@@ -187,7 +189,7 @@ function applyEvent(state: AgentState, event: AgentEvent): AgentState {
 }
 
 function newTurn(id: string, user: string | null, status: TurnStatus): Turn {
-    return { id, user, text: '', tools: [], approvals: [], status, error: null };
+    return { id, user, text: '', tools: [], approvals: [], status, error: null, resumeAt: null };
 }
 
 function updateLastTurn(state: AgentState, update: (turn: Turn) => Turn): AgentState {
@@ -201,13 +203,15 @@ function updateLastTurn(state: AgentState, update: (turn: Turn) => Turn): AgentS
     return { ...state, turns };
 }
 
-function updateLastTurnStatus(turns: Turn[], status: TurnStatus): Turn[] {
+/** The run resumes after the user's decisions: what the assistant writes from here on comes after the approval. */
+function resumeLastTurn(turns: Turn[]): Turn[] {
     if (turns.length === 0) {
         return turns;
     }
 
     const copy = [...turns];
-    copy[copy.length - 1] = { ...copy[copy.length - 1], status, error: null };
+    const last = copy[copy.length - 1];
+    copy[copy.length - 1] = { ...last, status: 'streaming', error: null, resumeAt: last.text.length };
 
     return copy;
 }
@@ -243,7 +247,11 @@ export function restoreTurns(messages: StoredMessage[], pending: StoredApproval[
         }
     }
 
-    if (pending.length > 0 && turns.length > 0) {
+    if (pending.length > 0) {
+        // A change can be pending without any stored message: it still has to be shown and decided.
+        if (turns.length === 0) {
+            turns.push(newTurn('restored-0', null, 'done'));
+        }
         const last = turns[turns.length - 1];
         turns[turns.length - 1] = {
             ...last,

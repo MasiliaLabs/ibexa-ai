@@ -10,12 +10,17 @@ interface TurnViewProps {
 }
 
 /**
- * One exchange: the user's message, then what the assistant did and said.
+ * One exchange, in reading order: the user's message, what the assistant did, what it said,
+ * the changes to review, then what it said after the user's decision.
  * Text is rendered as text (never as HTML) and keeps its line breaks.
  */
 export function TurnView({ turn, active, onDecide }: TurnViewProps) {
     const streaming = turn.status === 'streaming' && active;
-    const waitingForText = streaming && turn.text === '' && turn.tools.length === 0;
+    const cut = turn.resumeAt ?? turn.text.length;
+    const before = turn.text.slice(0, cut).trim();
+    const after = turn.text.slice(cut).trim();
+    const waitingForText =
+        streaming && (turn.resumeAt !== null ? after === '' : before === '' && turn.tools.length === 0);
 
     return (
         <article className="masilia-agent__turn">
@@ -28,12 +33,13 @@ export function TurnView({ turn, active, onDecide }: TurnViewProps) {
 
             {turn.tools.length > 0 ? <ToolTimeline steps={turn.tools} /> : null}
 
-            {turn.text !== '' ? (
-                <p className="masilia-agent__message masilia-agent__message--assistant">
-                    <span className="visually-hidden">Assistant: </span>
-                    {turn.text}
-                </p>
-            ) : null}
+            {before !== '' ? <AssistantMessage text={before} /> : null}
+
+            {turn.approvals.map((approval) => (
+                <ApprovalCard key={approval.id} approval={approval} onDecide={onDecide} />
+            ))}
+
+            {after !== '' ? <AssistantMessage text={after} /> : null}
 
             {waitingForText ? (
                 <p className="masilia-agent__typing" aria-label="The assistant is working">
@@ -43,15 +49,20 @@ export function TurnView({ turn, active, onDecide }: TurnViewProps) {
                 </p>
             ) : null}
 
-            {turn.approvals.map((approval) => (
-                <ApprovalCard key={approval.id} approval={approval} onDecide={onDecide} />
-            ))}
-
             {turn.status === 'failed' ? (
                 <p className="masilia-agent__error" role="alert">
                     {turn.error ?? 'The assistant could not answer.'}
                 </p>
             ) : null}
         </article>
+    );
+}
+
+function AssistantMessage({ text }: { text: string }) {
+    return (
+        <p className="masilia-agent__message masilia-agent__message--assistant">
+            <span className="visually-hidden">Assistant: </span>
+            {text}
+        </p>
     );
 }

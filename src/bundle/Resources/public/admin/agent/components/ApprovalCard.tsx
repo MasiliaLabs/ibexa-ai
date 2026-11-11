@@ -32,7 +32,7 @@ export function ApprovalCard({ approval, onDecide }: ApprovalCardProps) {
 
             {decided ? (
                 <p className="masilia-agent__approval-state" role="status">
-                    {approval.decision?.kind === 'approve' ? 'Approved. It will run.' : 'Refused. Nothing was changed.'}
+                    {approval.decision?.kind === 'approve' ? 'Approved.' : 'Refused. Nothing was changed.'}
                 </p>
             ) : refusing ? (
                 <div className="masilia-agent__refuse">

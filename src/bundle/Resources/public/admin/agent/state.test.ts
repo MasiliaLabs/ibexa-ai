@@ -56,6 +56,21 @@ test('an approval request waits the turn and is cleared by a decision', () => {
     assert.deepEqual(decisionsPayload(state), { a1: ['reject', 'Not now'] });
 });
 
+test('text written after the decision is marked as coming after the approval', () => {
+    let state = started('Create a folder');
+    state = reducer(state, { type: 'event', event: { type: 'text.delta', text: 'Here is the plan.' } });
+    state = reducer(state, { type: 'event', event: { type: 'approval.requested', id: 'a1', tool: 'propose_plan', reason: 'Plan', inputs: {} } });
+    state = reducer(state, { type: 'event', event: { type: 'run.completed', interrupted: true } });
+    state = reducer(state, { type: 'decision.recorded', approvalId: 'a1', decision: { kind: 'approve' } });
+    state = reducer(state, { type: 'decisions.sent' });
+    state = reducer(state, { type: 'event', event: { type: 'text.delta', text: 'Done.' } });
+
+    const [turn] = state.turns;
+    assert.equal(turn.status, 'streaming');
+    assert.equal(turn.text.slice(0, turn.resumeAt ?? 0), 'Here is the plan.');
+    assert.equal(turn.text.slice(turn.resumeAt ?? 0), 'Done.');
+});
+
 test('decisions are sent for every pending change, approvals and rejections alike', () => {
     let state = started('Two changes');
     state = reducer(state, { type: 'event', event: { type: 'approval.requested', id: 'a1', tool: 'propose_plan', reason: 'One', inputs: {} } });
@@ -104,6 +119,15 @@ test('a restored conversation rebuilds turns and attaches pending changes to the
     assert.equal(turns[1].status, 'awaiting');
     assert.equal(turns[1].approvals[0].id, 'a9');
     assert.equal(turns[0].approvals.length, 0);
+});
+
+test('a pending change is restored even when no message is stored', () => {
+    const turns = restoreTurns([], [{ id: 'a1', tool: 'propose_plan', reason: 'Plan', inputs: {} }]);
+
+    assert.equal(turns.length, 1);
+    assert.equal(turns[0].user, null);
+    assert.equal(turns[0].status, 'awaiting');
+    assert.equal(turns[0].approvals[0].id, 'a1');
 });
 
 test('clearing returns to the initial state', () => {
