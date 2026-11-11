@@ -31,4 +31,12 @@ final class AgentEvent
 
         return "event: {$event}\ndata: {$payload}\n\n";
     }
+
+    /**
+     * An SSE comment: it carries no event, so clients ignore it, but it keeps the connection busy.
+     */
+    public static function keepAlive(): string
+    {
+        return ": keep-alive\n\n";
+    }
 }

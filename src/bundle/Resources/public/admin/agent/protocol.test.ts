@@ -90,3 +90,25 @@ test('readAgentEvents keeps multi-byte characters split across chunks', async ()
 
     assert.deepEqual(events, [{ type: 'text.delta', text: 'é' }]);
 });
+
+test('keep-alive comments are ignored by the client', async () => {
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(encoder.encode(': keep-alive\n\n'));
+            controller.enqueue(encoder.encode('event: text.delta\ndata: {"v":1,"text":"ok"}\n\n: keep-alive\n\n'));
+            controller.enqueue(encoder.encode('event: run.completed\ndata: {"v":1,"interrupted":false}\n\n'));
+            controller.close();
+        },
+    });
+
+    const events = [];
+    for await (const event of readAgentEvents(body)) {
+        events.push(event);
+    }
+
+    assert.deepEqual(events, [
+        { type: 'text.delta', text: 'ok' },
+        { type: 'run.completed', interrupted: false },
+    ]);
+});

@@ -8,6 +8,7 @@ use Generator;
 use Masilia\IbexaAi\Agent\Stream\AgentEvent;
 use Masilia\IbexaAi\Agent\Stream\ToolOutcome;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
+use NeuronAI\Exceptions\RunInFlightException;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
@@ -21,6 +22,7 @@ use Throwable;
 final class NeuronRunEvents
 {
     private const ERROR_MESSAGE = 'The AI agent is currently unavailable. Please try again later or contact an administrator.';
+    private const IN_FLIGHT_MESSAGE = 'The previous answer in this conversation is still being finished. Try again in a few minutes.';
 
     /**
      * @param Generator<int, object, mixed, WorkflowState> $run
@@ -35,6 +37,9 @@ final class NeuronRunEvents
 
         try {
             foreach ($run as $chunk) {
+                // A reasoning model can think for a long time before any visible text: keep the connection
+                // active (an SSE comment, ignored by the client) so no proxy closes the stream meanwhile.
+                yield AgentEvent::keepAlive();
                 if ($chunk instanceof TextChunk && $chunk->content !== '') {
                     $visible = $reasoning->feed($chunk->content);
                     if ($visible !== '') {
@@ -75,6 +80,11 @@ final class NeuronRunEvents
             }
 
             yield AgentEvent::encode(AgentEvent::RUN_COMPLETED, ['interrupted' => $interrupted]);
+        } catch (RunInFlightException $e) {
+            // An earlier run of this conversation has not finished (its connection dropped): it keeps its lease
+            // until it expires. That is a state the user can act on, so it is not reported as an outage.
+            $onError($e);
+            yield AgentEvent::encode(AgentEvent::RUN_ERROR, ['code' => 'run_in_flight', 'message' => self::IN_FLIGHT_MESSAGE]);
         } catch (Throwable $e) {
             $onError($e);
             yield AgentEvent::encode(AgentEvent::RUN_ERROR, ['code' => 'service_error', 'message' => self::ERROR_MESSAGE]);
