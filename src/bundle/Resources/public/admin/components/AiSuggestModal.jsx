@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import ReactDOM from 'react-dom';
 import { SUGGEST_MODE, applyQuickAction, notify, cleanErrorMessage } from './ai-settings/constants.js';
 import { AI_ROUTES } from './ai-settings/api-routes.js';
 import { useAiStream } from './AiSuggestModal/useAiStream.js';
@@ -515,10 +514,9 @@ function mountAiSuggestModal() {
         container.id = 'ai-suggest-modal-root';
         document.body.appendChild(container);
     }
-    if (ReactDOM.createRoot) {
-        ReactDOM.createRoot(container).render(<AiSuggestModal />);
-    } else {
-        ReactDOM.render(<AiSuggestModal />, container);
+    // React 19: the root API comes from Ibexa's global ReactDOMClient (react-dom-load), not from react-dom.
+    if (window.ReactDOMClient) {
+        window.ReactDOMClient.createRoot(container).render(<AiSuggestModal />);
     }
 }
 

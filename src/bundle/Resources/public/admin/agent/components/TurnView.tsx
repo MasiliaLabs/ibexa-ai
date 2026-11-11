@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Decision, Turn } from '../state';
 import { ApprovalCard } from './ApprovalCard';
 import { ToolTimeline } from './ToolTimeline';

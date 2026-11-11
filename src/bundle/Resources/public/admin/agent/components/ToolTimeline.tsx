@@ -1,3 +1,4 @@
+import React from 'react';
 import { TOOL_ICONS, iconPath } from '../icons';
 import type { ToolStep } from '../state';
 

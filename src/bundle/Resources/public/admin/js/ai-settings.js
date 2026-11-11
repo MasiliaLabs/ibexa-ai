@@ -1,15 +1,12 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import AiSettingsDashboard from '../components/ai-settings/AiSettingsDashboard.jsx';
 import '../scss/_ai-settings-dashboard.scss';
+
 function mountAiSettings() {
     const container = document.getElementById('ai-settings-react-root');
-    if (container) {
-        if (typeof ReactDOM.createRoot === 'function') {
-            ReactDOM.createRoot(container).render(<AiSettingsDashboard />);
-        } else {
-            ReactDOM.render(<AiSettingsDashboard />, container);
-        }
+    // React 19: the root API comes from Ibexa's global ReactDOMClient (react-dom-load), not from react-dom.
+    if (container && window.ReactDOMClient) {
+        window.ReactDOMClient.createRoot(container).render(<AiSettingsDashboard />);
     }
 }
 
