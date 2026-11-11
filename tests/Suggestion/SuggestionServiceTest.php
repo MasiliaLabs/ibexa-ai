@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Masilia\IbexaAi\Tests\Suggestion;
+
+use Masilia\IbexaAi\Suggestion\SuggestionAction;
+use Masilia\IbexaAi\Suggestion\SuggestionRequest;
+use Masilia\IbexaAi\Suggestion\SuggestionService;
+use Masilia\IbexaAi\Suggestion\SupportedField;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(SuggestionService::class)]
+final class SuggestionServiceTest extends TestCase
+{
+    public function testSuggestSendsBothPromptsAndSanitisesTheAnswer(): void
+    {
+        $generator = new FakeTextGenerator(answer: "```html\n<p>Improved</p>\n```");
+        $service = new SuggestionService($generator);
+
+        $result = $service->suggest(new SuggestionRequest(
+            field: SupportedField::RichText,
+            action: SuggestionAction::Improve,
+            language: 'en-GB',
+            currentValue: '<p>Old</p>',
+        ));
+
+        self::assertSame('<p>Improved</p>', $result);
+        self::assertCount(1, $generator->calls);
+        self::assertStringContainsString('Do NOT use <h1>', $generator->calls[0]['system']);
+        self::assertStringContainsString('<p>Old</p>', $generator->calls[0]['user']);
+    }
+
+    public function testTranslationGoesThroughTheSameServiceWithSourceText(): void
+    {
+        $generator = new FakeTextGenerator(answer: 'Bonjour');
+        $service = new SuggestionService($generator);
+
+        $result = $service->suggest(new SuggestionRequest(
+            field: SupportedField::String,
+            action: SuggestionAction::Translate,
+            language: 'fr-FR',
+            sourceLanguage: 'en-GB',
+            sourceValue: 'Hello',
+        ));
+
+        self::assertSame('Bonjour', $result);
+        self::assertStringContainsString('Translate the following en-GB content to fr-FR.', $generator->calls[0]['user']);
+    }
+
+    public function testStreamYieldsChunksInOrder(): void
+    {
+        $generator = new FakeTextGenerator(chunks: ['Hel', 'lo', ' world']);
+        $service = new SuggestionService($generator);
+
+        $chunks = iterator_to_array($service->stream(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Summarize,
+            language: 'en-GB',
+            currentValue: 'Some text.',
+        )), false);
+
+        self::assertSame(['Hel', 'lo', ' world'], $chunks);
+        self::assertCount(1, $generator->calls);
+    }
+}
