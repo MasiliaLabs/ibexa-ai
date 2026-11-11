@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Decision, Turn } from '../state';
 import { ApprovalCard } from './ApprovalCard';
+import { Markdown } from './Markdown';
 import { ToolTimeline } from './ToolTimeline';
 
 interface TurnViewProps {
@@ -12,7 +13,7 @@ interface TurnViewProps {
 /**
  * One exchange, in reading order: the user's message, what the assistant did, what it said,
  * the changes to review, then what it said after the user's decision.
- * Text is rendered as text (never as HTML) and keeps its line breaks.
+ * The user's text is shown as written; the assistant's is read as Markdown (see Markdown.tsx), never as HTML.
  */
 export function TurnView({ turn, active, onDecide }: TurnViewProps) {
     const streaming = turn.status === 'streaming' && active;
@@ -60,9 +61,9 @@ export function TurnView({ turn, active, onDecide }: TurnViewProps) {
 
 function AssistantMessage({ text }: { text: string }) {
     return (
-        <p className="masilia-agent__message masilia-agent__message--assistant">
+        <div className="masilia-agent__message masilia-agent__message--assistant">
             <span className="visually-hidden">Assistant: </span>
-            {text}
-        </p>
+            <Markdown text={text} />
+        </div>
     );
 }

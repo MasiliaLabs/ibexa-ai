@@ -20,13 +20,26 @@ const FOLLOW_THRESHOLD = 48;
 export function Thread({ turns, loading, busy, onDecide }: ThreadProps) {
     const logRef = useRef<HTMLDivElement>(null);
     const following = useRef(true);
+    const turnCount = useRef(turns.length);
 
     useEffect(() => {
+        // A message the user just sent starts a new turn: follow it, wherever they had scrolled.
+        if (turns.length > turnCount.current) {
+            following.current = true;
+        }
+        turnCount.current = turns.length;
+
         const log = logRef.current;
         if (log !== null && following.current) {
             log.scrollTop = log.scrollHeight;
         }
     }, [turns]);
+
+    // A decision resumes the run: follow its outcome too.
+    const decide = (approvalId: string, decision: Decision) => {
+        following.current = true;
+        onDecide(approvalId, decision);
+    };
 
     const onScroll = () => {
         const log = logRef.current;
@@ -67,7 +80,7 @@ export function Thread({ turns, loading, busy, onDecide }: ThreadProps) {
                     key={turn.id}
                     turn={turn}
                     active={index === turns.length - 1 && busy}
-                    onDecide={onDecide}
+                    onDecide={decide}
                 />
             ))}
         </div>

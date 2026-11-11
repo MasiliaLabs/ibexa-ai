@@ -116,6 +116,74 @@ $panel-width: min(420px, calc(100vw - 32px));
         &--assistant {
             align-self: flex-start;
             background: ibexa.$ibexa-color-light-300;
+            // Its content is Markdown blocks: each block decides its own line breaks.
+            white-space: normal;
+        }
+    }
+
+    // Assistant message content (Markdown). Sizes are set here so the admin's global heading and list rules do not apply.
+    &__md {
+        > :first-child {
+            margin-top: 0;
+        }
+
+        > :last-child {
+            margin-bottom: 0;
+        }
+
+        p {
+            margin: 0 0 calculateRem(8px);
+            white-space: pre-wrap;
+        }
+
+        ul,
+        ol {
+            margin: 0 0 calculateRem(8px);
+            padding-left: calculateRem(20px);
+        }
+
+        li {
+            margin: calculateRem(2px) 0;
+        }
+
+        code {
+            padding: calculateRem(1px) calculateRem(4px);
+            border-radius: calculateRem(4px);
+            background: ibexa.$ibexa-color-light-500;
+            color: ibexa.$ibexa-color-dark;
+            font-size: ibexa.$ibexa-text-font-size-small;
+        }
+
+        pre {
+            margin: 0 0 calculateRem(8px);
+            background: ibexa.$ibexa-color-white;
+
+            code {
+                padding: 0;
+                background: none;
+            }
+        }
+
+        a {
+            color: ibexa.$ibexa-color-primary;
+            text-decoration: underline;
+        }
+
+        hr {
+            margin: calculateRem(8px) 0;
+            border: 0;
+            border-top: 1px solid ibexa.$ibexa-color-light;
+        }
+    }
+
+    &__md-heading {
+        margin: calculateRem(12px) 0 calculateRem(4px);
+        font-size: ibexa.$ibexa-text-font-size;
+        font-weight: ibexa.$ibexa-font-weight-bold;
+        line-height: 1.4;
+
+        &--minor {
+            font-size: ibexa.$ibexa-text-font-size-small;
         }
     }
 
