@@ -82,6 +82,10 @@ final readonly class ProposePlanTool implements ToolInterface, GatedToolInterfac
                         ],
                     ],
                 ],
+                'language' => [
+                    'type' => 'string',
+                    'description' => 'Language code of the translation to write, e.g. "fre-FR" (update_content only). If the content has no translation in that language it is created; the other languages are left untouched. Without it the default language is used.',
+                ],
                 'link_field' => [
                     'type' => 'string',
                     'description' => 'Relation list field on the parent content to link created items to (e.g. "blocks" for pages, "items" for blocks with child items). Used with create_items intent.',
@@ -138,6 +142,13 @@ final readonly class ProposePlanTool implements ToolInterface, GatedToolInterfac
         }
         if ($plan->contentId !== null) {
             $parts[] = sprintf('Content ID: %d', $plan->contentId);
+        }
+        if ($plan->language !== null) {
+            $parts[] = sprintf('Language: %s (a translation: other languages are not changed)', $plan->language);
+        }
+        // What will actually change, so the user does not approve a field list they cannot see.
+        if (in_array($plan->intent, [Plan::INTENT_CREATE_CONTENT, Plan::INTENT_UPDATE_CONTENT], true) && $plan->fields !== []) {
+            $parts[] = sprintf('Fields: %s', implode(', ', array_slice(array_keys($plan->fields), 0, 14)));
         }
         if ($plan->blocks !== []) {
             $parts[] = sprintf('Blocks: %d', count($plan->blocks));

@@ -44,6 +44,21 @@ final class ProposePlanToolTest extends TestCase
         self::assertNull($tool->approvalReason(['intent' => 'create_folder']));
     }
 
+    public function testTheSummaryNamesTheLanguageAndTheFieldsThatChange(): void
+    {
+        $reason = $this->tool()->approvalReason([
+            'intent' => 'update_content',
+            'content_id' => 1342,
+            'language' => 'fre-FR',
+            'fields' => ['title' => 'Titre', 'body' => '<p>Texte</p>'],
+        ]);
+
+        self::assertNotNull($reason);
+        self::assertStringContainsString('Language: fre-FR', $reason);
+        self::assertStringContainsString('other languages are not changed', $reason);
+        self::assertStringContainsString('Fields: title, body', $reason);
+    }
+
     public function testItIsAGatedToolAndAlsoAToolInterface(): void
     {
         $tool = $this->tool();

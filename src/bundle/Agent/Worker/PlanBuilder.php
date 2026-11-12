@@ -84,6 +84,17 @@ final readonly class PlanBuilder
             return null;
         }
 
+        if ($plan->language !== null) {
+            if ($plan->intent !== Plan::INTENT_UPDATE_CONTENT) {
+                return 'A language can only be set on an update_content plan (to write a translation). Other plans use the default language.';
+            }
+            try {
+                $this->repository->getContentLanguageService()->loadLanguage($plan->language);
+            } catch (NotFoundException) {
+                return sprintf('Language "%s" does not exist. Use a language code such as "eng-GB" or "fre-FR".', $plan->language);
+            }
+        }
+
         if ($plan->intent === Plan::INTENT_CREATE_CONTENT && $plan->contentType !== null && $plan->contentType !== '') {
             try {
                 $this->repository->getContentTypeService()->loadContentTypeByIdentifier($plan->contentType);

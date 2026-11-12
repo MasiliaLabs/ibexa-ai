@@ -44,6 +44,8 @@ final readonly class Plan
         public ?string $description = null,
         public array  $items = [],
         public ?string $linkField = null,
+        /** Language code of the translation to write (update_content only); null means the default language. */
+        public ?string $language = null,
     ) {
     }
 
@@ -146,6 +148,7 @@ final readonly class Plan
             'description' => $this->description,
             'items' => $this->items,
             'link_field' => $this->linkField,
+            'language' => $this->language,
         ];
     }
 
@@ -166,6 +169,7 @@ final readonly class Plan
             description: $data['description'] ?? null,
             items: $data['items'] ?? [],
             linkField: $data['link_field'] ?? null,
+            language: isset($data['language']) && $data['language'] !== '' ? (string) $data['language'] : null,
         );
     }
 }

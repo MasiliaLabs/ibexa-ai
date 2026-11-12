@@ -373,10 +373,12 @@ final readonly class PlanExecutor
         if ($tool === null) {
             return ExecutionResult::fail('update_content tool not available', 'TOOL_UNAVAILABLE');
         }
-        $result = $tool->execute([
+        $result = $tool->execute(array_filter([
             'content_id' => $plan->contentId,
             'attributes' => $plan->fields,
-        ]);
+            // Absent: the tool falls back to the default language.
+            'language' => $plan->language,
+        ], static fn (mixed $value): bool => $value !== null));
 
         return $this->toExecutionResult($result, 'content');
     }

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Agent\Worker;
 
+use Ibexa\Contracts\Core\Repository\LanguageService;
 use Ibexa\Contracts\Core\Repository\ContentTypeService;
 use Ibexa\Contracts\Core\Repository\LocationService;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentType;
 use Ibexa\Core\Base\Exceptions\NotFoundException;
+use Ibexa\Contracts\Core\Repository\Values\Content\Language;
 use Ibexa\Core\Repository\Values\Content\Location;
 use InvalidArgumentException;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
@@ -66,6 +68,39 @@ final class PlanBuilderTargetsTest extends TestCase
         $plan = $this->builder()->build($this->plan(['parent_location_id' => 43]));
 
         self::assertSame(43, $plan->parentLocationId);
+    }
+
+    public function testALanguageIsAcceptedOnAnUpdate(): void
+    {
+        $plan = $this->builder()->build([
+            'intent' => 'update_content',
+            'content_id' => 1342,
+            'language' => 'fre-FR',
+            'fields' => ['title' => 'Titre'],
+        ]);
+
+        self::assertSame('fre-FR', $plan->language);
+    }
+
+    public function testAnUnknownLanguageIsRefused(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Language "xx-XX" does not exist');
+
+        $this->builder()->build([
+            'intent' => 'update_content',
+            'content_id' => 1342,
+            'language' => 'xx-XX',
+            'fields' => ['title' => 'Titre'],
+        ]);
+    }
+
+    public function testALanguageOnAnotherIntentIsRefusedInsteadOfBeingIgnored(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A language can only be set on an update_content plan');
+
+        $this->builder()->build($this->plan(['language' => 'fre-FR']));
     }
 
     public function testAFolderPlanChecksItsParentToo(): void
@@ -128,9 +163,21 @@ final class PlanBuilderTargetsTest extends TestCase
             },
         );
 
+        $languages = $this->createMock(LanguageService::class);
+        $languages->method('loadLanguage')->willReturnCallback(
+            function (string $code): Language {
+                if (!in_array($code, ['eng-GB', 'fre-FR'], true)) {
+                    throw new NotFoundException('language', $code);
+                }
+
+                return new Language(['languageCode' => $code]);
+            },
+        );
+
         $repository = $this->createMock(Repository::class);
         $repository->method('getLocationService')->willReturn($locations);
         $repository->method('getContentTypeService')->willReturn($types);
+        $repository->method('getContentLanguageService')->willReturn($languages);
 
         $resolver = $this->createMock(SiteaccessLocationResolver::class);
         $resolver->method('resolve')->willReturn(1018);
