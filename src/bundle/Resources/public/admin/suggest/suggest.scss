@@ -7,6 +7,7 @@
 @use '@ids-assets/scss/icons';
 @use '@ids-assets/scss/label';
 @use '@ids-assets/scss/helper-text';
+@use '@ids-assets/scss/inputs-list';
 @use '@ids-assets/scss/inputs/alt-radio';
 
 $width: min(680px, calc(100vw - 32px));

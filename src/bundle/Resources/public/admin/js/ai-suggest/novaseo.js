@@ -1,4 +1,4 @@
-import { APPLY_MODE } from '../../components/ai-settings/constants.js';
+import { APPLY_MODE } from './constants.js';
 import { SELECTORS, NOVASEO, SKIP_META_KEYS } from './selectors.js';
 import { readNovaseoRow } from './apply.js';
 

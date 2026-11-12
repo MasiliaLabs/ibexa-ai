@@ -10,6 +10,7 @@ use Masilia\Bundle\IbexaAi\Entity\AiProvider;
 use Masilia\Bundle\IbexaAi\Entity\AiProviderSiteaccess;
 use Masilia\Bundle\IbexaAi\Repository\AiModelRepository;
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
+use Masilia\IbexaAi\Provider\ProviderId;
 
 /**
  * Create, update and delete providers and models, and choose the active ones.
@@ -47,7 +48,27 @@ final readonly class ProviderCatalog
         return [
             'providers' => array_map($this->providerArray(...), $providers),
             'models' => $models,
+            'providerTypes' => self::providerTypes(),
         ];
+    }
+
+    /**
+     * The providers an administrator can set up, straight from ProviderId so the form cannot drift from what the
+     * server supports.
+     *
+     * @return list<array{value: string, label: string, requiresApiKey: bool, defaultApiUrl: ?string}>
+     */
+    public static function providerTypes(): array
+    {
+        return array_map(
+            static fn (ProviderId $id): array => [
+                'value' => $id->value,
+                'label' => $id->label(),
+                'requiresApiKey' => $id->requiresApiKey(),
+                'defaultApiUrl' => $id->defaultOpenAiCompatibleBaseUri(),
+            ],
+            ProviderId::cases(),
+        );
     }
 
     /**

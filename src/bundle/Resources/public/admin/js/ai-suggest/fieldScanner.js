@@ -2,7 +2,7 @@ import { SELECTORS, MATRIX, EZIMAGE } from './selectors.js';
 import { getFieldType, getFieldLabel, getCurrentValue, getContentTypeName, getContentTitle, getSiblingFields, getFieldIdentifier, getContentId } from './fieldInfo.js';
 import { collectNovaseoMetaKeys, injectNovaseoMetaButtons, createAiButton, createTranslateButton, createImageGenButton, injectTranslateButtonsForSiblings } from './novaseo.js';
 import { applyToField, restoreSnapshot } from './apply.js';
-import { APPLY_MODE, SUGGEST_MODE } from '../../components/ai-settings/constants.js';
+import { APPLY_MODE, SUGGEST_MODE } from './constants.js';
 
 /**
  * Open the AI suggestion modal for a specific field. Builds the detail

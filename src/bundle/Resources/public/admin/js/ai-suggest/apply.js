@@ -1,4 +1,4 @@
-import { APPLY_MODE, SUGGEST_MODE } from '../../components/ai-settings/constants.js';
+import { APPLY_MODE, SUGGEST_MODE } from './constants.js';
 import { getEditor } from './ckeditor.js';
 import { NOVASEO, MATRIX } from './selectors.js';
 
