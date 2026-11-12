@@ -51,6 +51,15 @@ export function useAgent(): AgentController {
         return () => controller.abort();
     }, [setLoading]);
 
+    const reloadConversation = useCallback(async () => {
+        try {
+            const conversation = await loadConversation();
+            dispatch({ type: 'restored', messages: conversation.messages, pending: conversation.pendingApprovals });
+        } catch {
+            // The error message of the run is already shown; the conversation stays as it is.
+        }
+    }, []);
+
     const consume = useCallback(async (request: RunRequest) => {
         controllerRef.current?.abort();
         const controller = new AbortController();
@@ -70,6 +79,10 @@ export function useAgent(): AgentController {
                 if (event.type === 'run.completed' || event.type === 'run.error') {
                     sawEnd = true;
                 }
+                if (event.type === 'run.error' && event.code === 'ALREADY_DECIDED') {
+                    // Another window decided this change: the server knows the real state, show it.
+                    await reloadConversation();
+                }
             }
 
             if (!sawEnd) {
@@ -86,7 +99,7 @@ export function useAgent(): AgentController {
                 controllerRef.current = null;
             }
         }
-    }, []);
+    }, [reloadConversation]);
 
     const send = useCallback(
         (text: string) => {

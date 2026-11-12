@@ -13,6 +13,7 @@ use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use NeuronAI\Chat\Messages\UserMessage;
+use NeuronAI\Exceptions\InputTranslationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -77,6 +78,14 @@ final readonly class AgentChatController
                 : $agent->stream(new UserMessage($message));
         } catch (ProviderConfigurationException $e) {
             return $this->streamError(ApiError::serviceUnavailable($e->getMessage()), Response::HTTP_SERVICE_UNAVAILABLE, $headers);
+        } catch (InputTranslationException $e) {
+            // Decisions for a run that is no longer waiting: the change was decided already, typically in another
+            // window or tab. The widget reloads the conversation to show the real state.
+            return $this->streamError(
+                new ApiError('ALREADY_DECIDED', 'This change was already decided, probably in another window. The conversation was refreshed.'),
+                Response::HTTP_CONFLICT,
+                $headers,
+            );
         } catch (Throwable $e) {
             $this->aiLogger->error('[AI Agent] Run could not start: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
 
