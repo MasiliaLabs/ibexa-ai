@@ -48,22 +48,28 @@ final readonly class ExploreSiteTool implements ToolInterface
             'properties' => [
                 'siteaccess' => [
                     'type' => 'string',
-                    'description' => 'Front-office siteaccess name (e.g. "fossilexit", "mattcch"). ' .
-                        'Fuzzy match is supported: "fossil exit" matches "fossilexit".',
+                    'description' => 'Front-office siteaccess the user named. Fuzzy match is supported ' .
+                        '(a name with spaces or different casing still matches). Never guess a siteaccess: ' .
+                        'if the user did not name a site, leave this empty to get the list of siteaccesses, ' .
+                        'then ask the user which one they mean.',
                 ],
             ],
-            'required' => ['siteaccess'],
         ];
     }
 
     public function execute(array $arguments): ToolResult
     {
-        $siteaccess = (string) ($arguments['siteaccess'] ?? '');
-        if ($siteaccess === '') {
-            return ToolResult::error('explore_site requires siteaccess');
-        }
+        $siteaccess = trim((string) ($arguments['siteaccess'] ?? ''));
 
         $result = $this->explorer->explore($siteaccess);
+
+        if ($siteaccess === '' && !$result->hasError()) {
+            return ToolResult::ok(
+                'No siteaccess was given. Available siteaccesses: ' . implode(', ', $result->siteaccesses) .
+                '. Ask the user which one they mean; do not pick one yourself.',
+                $result->toArray(),
+            );
+        }
 
         if ($result->hasError()) {
             return ToolResult::error($result->errorMessage ?? 'Exploration failed');
