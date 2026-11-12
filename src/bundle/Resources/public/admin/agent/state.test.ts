@@ -71,6 +71,24 @@ test('text written after the decision is marked as coming after the approval', (
     assert.equal(turn.text.slice(turn.resumeAt ?? 0), 'Done.');
 });
 
+test('a second change in the same turn sends only its own decision', () => {
+    let state = started('Create a page with blocks');
+    state = reducer(state, { type: 'event', event: { type: 'approval.requested', id: 'page', tool: 'propose_plan', reason: 'Page', inputs: {} } });
+    state = reducer(state, { type: 'event', event: { type: 'run.completed', interrupted: true } });
+    state = reducer(state, { type: 'decision.recorded', approvalId: 'page', decision: { kind: 'approve' } });
+    assert.deepEqual(decisionsPayload(state), { page: 'approve' });
+    state = reducer(state, { type: 'decisions.sent' });
+
+    // The run resumes and asks for a second change in the same turn.
+    state = reducer(state, { type: 'event', event: { type: 'approval.requested', id: 'blocks', tool: 'propose_plan', reason: 'Blocks', inputs: {} } });
+    state = reducer(state, { type: 'event', event: { type: 'run.completed', interrupted: true } });
+
+    assert.equal(decisionsPayload(state), null, 'the new change has no decision yet');
+    state = reducer(state, { type: 'decision.recorded', approvalId: 'blocks', decision: { kind: 'approve' } });
+
+    assert.deepEqual(decisionsPayload(state), { blocks: 'approve' }, 'the first, already sent, must not be sent again');
+});
+
 test('decisions are sent for every pending change, approvals and rejections alike', () => {
     let state = started('Two changes');
     state = reducer(state, { type: 'event', event: { type: 'approval.requested', id: 'a1', tool: 'propose_plan', reason: 'One', inputs: {} } });

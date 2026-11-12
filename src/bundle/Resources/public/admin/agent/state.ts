@@ -25,6 +25,8 @@ export interface Approval {
     reason: string;
     inputs: Inputs;
     decision: Decision | null;
+    /** True once the decision was sent to the server: it is then history, and is never sent again. */
+    sent: boolean;
 }
 
 export type TurnStatus = 'streaming' | 'awaiting' | 'done' | 'failed';
@@ -92,7 +94,7 @@ export function reducer(state: AgentState, action: Action): AgentState {
 
         case 'decisions.sent':
             return {
-                turns: resumeLastTurn(state.turns),
+                turns: markDecisionsSent(resumeLastTurn(state.turns)),
                 busy: true,
             };
 
@@ -131,8 +133,15 @@ export function decisionsPayload(state: AgentState): Record<string, 'approve' | 
         return null;
     }
 
+    // Only the changes the server is still waiting on: a turn can hold several in a row (a page, then its
+    // blocks), and the ones already decided are unknown to the server now.
+    const waiting = last.approvals.filter((approval) => !approval.sent);
+    if (waiting.length === 0) {
+        return null;
+    }
+
     const payload: Record<string, 'approve' | ['reject', string]> = {};
-    for (const approval of last.approvals) {
+    for (const approval of waiting) {
         if (approval.decision === null) {
             return null;
         }
@@ -170,7 +179,7 @@ function applyEvent(state: AgentState, event: AgentEvent): AgentState {
                 ...turn,
                 approvals: [
                     ...turn.approvals.filter((approval) => approval.id !== event.id),
-                    { id: event.id, tool: event.tool, reason: event.reason, inputs: event.inputs, decision: null },
+                    { id: event.id, tool: event.tool, reason: event.reason, inputs: event.inputs, decision: null, sent: false },
                 ],
             }));
 
@@ -201,6 +210,22 @@ function updateLastTurn(state: AgentState, update: (turn: Turn) => Turn): AgentS
     turns[turns.length - 1] = update(turns[turns.length - 1]);
 
     return { ...state, turns };
+}
+
+/** Marks every decided approval of the last turn as sent. */
+function markDecisionsSent(turns: Turn[]): Turn[] {
+    if (turns.length === 0) {
+        return turns;
+    }
+
+    const copy = [...turns];
+    const last = copy[copy.length - 1];
+    copy[copy.length - 1] = {
+        ...last,
+        approvals: last.approvals.map((approval) => (approval.decision !== null ? { ...approval, sent: true } : approval)),
+    };
+
+    return copy;
 }
 
 /** The run resumes after the user's decisions: what the assistant writes from here on comes after the approval. */
@@ -256,7 +281,7 @@ export function restoreTurns(messages: StoredMessage[], pending: StoredApproval[
         turns[turns.length - 1] = {
             ...last,
             status: 'awaiting',
-            approvals: pending.map((approval) => ({ ...approval, decision: null })),
+            approvals: pending.map((approval) => ({ ...approval, decision: null, sent: false })),
         };
     }
 
