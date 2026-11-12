@@ -74,7 +74,7 @@ readonly class ImageTransformer implements FieldValueTransformerInterface
         if (!$this->imageClient->isConfigured()) {
             $this->aiLogger->warning(sprintf(
                 '[ImageTransformer] No image provider configured; passing description through for field "%s".',
-                $fieldDef->identifier,
+                $fieldDef->getIdentifier(),
             ));
 
             return $value;
@@ -86,7 +86,7 @@ readonly class ImageTransformer implements FieldValueTransformerInterface
         } catch (Throwable $e) {
             $this->aiLogger->warning(sprintf(
                 '[ImageTransformer] Generation failed for field "%s": %s',
-                $fieldDef->identifier,
+                $fieldDef->getIdentifier(),
                 $e->getMessage(),
             ));
 
@@ -100,7 +100,7 @@ readonly class ImageTransformer implements FieldValueTransformerInterface
         } catch (Throwable $e) {
             $this->aiLogger->warning(sprintf(
                 '[ImageTransformer] fromString() failed for field "%s": %s',
-                $fieldDef->identifier,
+                $fieldDef->getIdentifier(),
                 $e->getMessage(),
             ));
 

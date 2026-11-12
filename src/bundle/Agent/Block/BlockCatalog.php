@@ -60,8 +60,8 @@ final class BlockCatalog
 
         $blocks = [];
         foreach ($this->loadBlockTypes() as $type) {
-            $blocks[$type->identifier] = [
-                'identifier' => $type->identifier,
+            $blocks[$type->getIdentifier()] = [
+                'identifier' => $type->getIdentifier(),
                 'name' => $type->getName(),
                 'fields' => $this->buildFieldSchemas($type),
             ];

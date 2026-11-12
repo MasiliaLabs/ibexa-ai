@@ -71,10 +71,10 @@ readonly class CreateFolderTool implements ToolInterface
             );
 
             return ToolResult::ok(
-                sprintf('Created folder "%s" (ID: %d)', $params['name'], $result['content']->id),
+                sprintf('Created folder "%s" (ID: %d)', $params['name'], $result['content']->getId()),
                 [
-                    'content_id' => $result['content']->id,
-                    'location_id' => $result['location']->id,
+                    'content_id' => $result['content']->getId(),
+                    'location_id' => $result['location']->getId(),
                 ],
             );
         } catch (\Throwable $e) {

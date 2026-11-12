@@ -66,7 +66,7 @@ final readonly class ContentCreator implements ContentFactoryInterface
 
         try {
             $draft = $contentService->createContent($createStruct, $locStructs);
-            $published = $contentService->publishVersion($draft->versionInfo);
+            $published = $contentService->publishVersion($draft->getVersionInfo());
         } catch (BadStateException|ContentFieldValidationException|ContentValidationException|InvalidArgumentException|UnauthorizedException $e) {
             throw new RuntimeException(
                 sprintf('Failed to create content of type "%s": %s', $contentTypeIdentifier, $e->getMessage()),
@@ -76,7 +76,7 @@ final readonly class ContentCreator implements ContentFactoryInterface
 
         return [
             'content' => $published,
-            'location' => $published->contentInfo->getMainLocation(),
+            'location' => $published->getContentInfo()->getMainLocation(),
         ];
     }
 
@@ -92,18 +92,18 @@ final readonly class ContentCreator implements ContentFactoryInterface
         ?string $skipFieldId = null,
     ): void {
         foreach ($contentType->getFieldDefinitions() as $fieldDef) {
-            if ($fieldDef->identifier === $skipFieldId) {
+            if ($fieldDef->getIdentifier() === $skipFieldId) {
                 continue;
             }
-            if (!array_key_exists($fieldDef->identifier, $fields)) {
+            if (!array_key_exists($fieldDef->getIdentifier(), $fields)) {
                 continue;
             }
 
             $transformedValue = $this->transformerRegistry->transform(
                 $fieldDef,
-                $fields[$fieldDef->identifier],
+                $fields[$fieldDef->getIdentifier()],
             );
-            $createStruct->setField($fieldDef->identifier, $transformedValue, $languageCode);
+            $createStruct->setField($fieldDef->getIdentifier(), $transformedValue, $languageCode);
         }
     }
 }

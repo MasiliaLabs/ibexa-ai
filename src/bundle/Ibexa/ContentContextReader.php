@@ -51,7 +51,7 @@ final readonly class ContentContextReader
      */
     public function languageCodes(Content $content): array
     {
-        return $content->versionInfo->languageCodes;
+        return $content->getVersionInfo()->getLanguageCodes();
     }
 
     /**
@@ -112,14 +112,14 @@ final readonly class ContentContextReader
         $wanted = mb_strtolower(trim($fieldName));
         foreach ($contentType->getFieldDefinitions() as $definition) {
             if (mb_strtolower(trim((string) $definition->getName())) === $wanted) {
-                return $definition->identifier;
+                return $definition->getIdentifier();
             }
         }
 
         $slug = strtolower(str_replace(' ', '_', $fieldName));
         foreach ($contentType->getFieldDefinitions() as $definition) {
-            if ($definition->identifier === $slug) {
-                return $definition->identifier;
+            if ($definition->getIdentifier() === $slug) {
+                return $definition->getIdentifier();
             }
         }
 
@@ -136,11 +136,11 @@ final readonly class ContentContextReader
         $siblings = [];
         $fullText = [];
         foreach ($contentType->getFieldDefinitions() as $definition) {
-            if ($definition->identifier === $currentIdentifier) {
+            if ($definition->getIdentifier() === $currentIdentifier) {
                 continue;
             }
 
-            $field = $content->getField($definition->identifier, $language) ?? $content->getField($definition->identifier);
+            $field = $content->getField($definition->getIdentifier(), $language) ?? $content->getField($definition->getIdentifier());
             if ($field === null) {
                 continue;
             }
@@ -152,7 +152,7 @@ final readonly class ContentContextReader
 
             $fullText[] = $text;
             $siblings[] = new SiblingField(
-                label: (string) ($definition->getName() ?: $definition->identifier),
+                label: (string) ($definition->getName() ?: $definition->getIdentifier()),
                 value: PromptText::truncate($text, PromptText::MAX_SIBLING_CHARS),
             );
         }
@@ -163,7 +163,7 @@ final readonly class ContentContextReader
     private function matrix(Content $content, ContentType $contentType, string $identifier, string $language): ?MatrixContext
     {
         $definition = $contentType->getFieldDefinition($identifier);
-        if ($definition === null || $definition->fieldTypeIdentifier !== 'ibexa_matrix') {
+        if ($definition === null || $definition->getFieldTypeIdentifier() !== 'ibexa_matrix') {
             return null;
         }
 

@@ -19,7 +19,7 @@ final class RichTextStringifier implements FieldValueStringifierInterface
 
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
-        $value = $field->value;
+        $value = $field->getValue();
 
         if ($value === null || !property_exists($value, 'xml') || !$value->xml instanceof DOMDocument) {
             return '';

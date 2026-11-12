@@ -93,7 +93,7 @@ readonly class SearchContentTool implements ToolInterface
             if (!empty($params['subtree_location_id'])) {
                 try {
                     $location = $locationService->loadLocation((int) $params['subtree_location_id']);
-                    $criteria[] = new Criterion\Subtree($location->pathString);
+                    $criteria[] = new Criterion\Subtree($location->getPathString());
                 } catch (NotFoundException) {
                     return ToolResult::error(
                         sprintf('Location %d not found', (int) $params['subtree_location_id']),
@@ -130,7 +130,7 @@ readonly class SearchContentTool implements ToolInterface
             // a content that exists only in French must still be found from an English-first siteaccess.
             $languages = [];
             foreach ($this->repository->getContentLanguageService()->loadLanguages() as $language) {
-                $languages[] = $language->languageCode;
+                $languages[] = $language->getLanguageCode();
             }
 
             $searchResult = $searchService->findContent($query, ['languages' => $languages, 'useAlwaysAvailable' => true]);
@@ -142,11 +142,11 @@ readonly class SearchContentTool implements ToolInterface
                 $content = $hit->valueObject;
 
                 $results[] = [
-                    'content_id' => $content->id,
-                    'content_type' => $content->getContentType()->identifier,
-                    'name' => $content->contentInfo->name,
-                    'remote_id' => $content->contentInfo->remoteId,
-                    'languages' => array_values($content->getVersionInfo()->languageCodes),
+                    'content_id' => $content->getId(),
+                    'content_type' => $content->getContentType()->getIdentifier(),
+                    'name' => $content->getContentInfo()->getName(),
+                    'remote_id' => $content->getContentInfo()->remoteId,
+                    'languages' => array_values($content->getVersionInfo()->getLanguageCodes()),
                     'visible' => $this->isVisible($content),
                 ];
             }
@@ -169,11 +169,11 @@ readonly class SearchContentTool implements ToolInterface
      */
     private function isVisible(Content $content): ?bool
     {
-        if ($content->contentInfo->isHidden) {
+        if ($content->getContentInfo()->isHidden()) {
             return false;
         }
 
-        $mainLocationId = $content->contentInfo->mainLocationId;
+        $mainLocationId = $content->getContentInfo()->getMainLocationId();
         if ($mainLocationId === null) {
             return null;
         }
@@ -184,6 +184,6 @@ readonly class SearchContentTool implements ToolInterface
             return null;
         }
 
-        return !$location->hidden && !$location->invisible;
+        return !$location->isHidden() && !$location->isInvisible();
     }
 }

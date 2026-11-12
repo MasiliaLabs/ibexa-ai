@@ -18,11 +18,11 @@ final class MapLocationStringifier implements FieldValueStringifierInterface
 
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
-        if ($field->value === null) {
+        if ($field->getValue() === null) {
             return '';
         }
 
-        $value = $field->value;
+        $value = $field->getValue();
 
         $parts = array_filter([
             $value->address ?? null,

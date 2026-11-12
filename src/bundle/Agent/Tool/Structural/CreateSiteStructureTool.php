@@ -121,21 +121,21 @@ readonly class CreateSiteStructureTool implements ToolInterface
             // 6. Create pages under home page
             $createdPages = $this->createPagesRecursive(
                 $params['pages'] ?? [],
-                $homeLocation->id,
+                $homeLocation->getId(),
                 $languageCode,
             );
 
             // 5. Pre-generate site images (after commit — updates content)
-            $tempFiles = $this->preGenerateSiteImages($siteName, $sitePublished->id, $languageCode);
+            $tempFiles = $this->preGenerateSiteImages($siteName, $sitePublished->getId(), $languageCode);
 
             return ToolResult::ok(
                 sprintf('Created site "%s" with %d pages', $siteName, count($createdPages)),
                 [
-                    'site_id' => $sitePublished->id,
-                    'site_location_id' => $siteLocation->id,
-                    'home_page_id' => $homePublished->id,
-                    'home_page_location_id' => $homeLocation->id,
-                    'layout_id' => $layoutPublished->id,
+                    'site_id' => $sitePublished->getId(),
+                    'site_location_id' => $siteLocation->getId(),
+                    'home_page_id' => $homePublished->getId(),
+                    'home_page_location_id' => $homeLocation->getId(),
+                    'layout_id' => $layoutPublished->getId(),
                     'media_folder_id' => $mediaFolder['content_id'],
                     'pages' => $createdPages,
                 ],
@@ -213,7 +213,7 @@ readonly class CreateSiteStructureTool implements ToolInterface
 
         $layoutResult = $this->contentCreator->createAndPublish(
             $layoutTypeId,
-            [$siteLocation->id],
+            [$siteLocation->getId()],
             [FieldId::BO_TITLE => sprintf('%s Layout Configuration', $siteName)],
             $languageCode,
         );
@@ -221,7 +221,7 @@ readonly class CreateSiteStructureTool implements ToolInterface
 
         $homeResult = $this->contentCreator->createAndPublish(
             $homePageTypeId,
-            [$siteLocation->id],
+            [$siteLocation->getId()],
             [
                 FieldId::TITLE => 'Home',
                 FieldId::BLOCKS => [],
@@ -252,16 +252,21 @@ readonly class CreateSiteStructureTool implements ToolInterface
         int $parentLocationId,
         string $name,
     ): array {
-        [$content, $location] = $this->contentCreator->createAndPublish(
+        $created = $this->contentCreator->createAndPublish(
             $folderTypeId,
             [$parentLocationId],
             [FieldId::NAME => $name],
             $languageCode,
         );
 
+        // createAndPublish() answers with the keys `content` and `location`, or an empty array when the content type is unknown.
+        if (!isset($created['content'], $created['location'])) {
+            throw new \RuntimeException(sprintf('The folder "%s" could not be created: content type "%s" was not found.', $name, $folderTypeId));
+        }
+
         return [
-            'content_id' => $content->id,
-            'location_id' => $location->id,
+            'content_id' => $created['content']->getId(),
+            'location_id' => $created['location']->getId(),
         ];
     }
 
@@ -291,8 +296,8 @@ readonly class CreateSiteStructureTool implements ToolInterface
             $published = $result['content'];
 
             $pageEntry = [
-                'content_id' => $published->id,
-                'location_id' => $result['location']->id,
+                'content_id' => $published->getId(),
+                'location_id' => $result['location']->getId(),
                 'title' => $title,
             ];
 
@@ -300,7 +305,7 @@ readonly class CreateSiteStructureTool implements ToolInterface
             if (!empty($pageData['children'])) {
                 $pageEntry['children'] = $this->createPagesRecursive(
                     $pageData['children'],
-                    $result['location']->id,
+                    $result['location']->getId(),
                     $languageCode,
                 );
             }

@@ -68,8 +68,8 @@ readonly class UpdateContentTool implements ToolInterface
             return ToolResult::ok(
                 sprintf('Updated content %d', $contentId),
                 [
-                    'content_id' => $published->id,
-                    'version_no' => $published->versionInfo->versionNo,
+                    'content_id' => $published->getId(),
+                    'version_no' => $published->getVersionInfo()->getVersionNo(),
                 ],
             );
         } catch (\Throwable $e) {

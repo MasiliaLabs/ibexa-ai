@@ -28,9 +28,9 @@ trait ContentTypeSchemaHelper
     private function describeField(FieldDefinition $fieldDef): array
     {
         $info = [
-            'type' => $fieldDef->fieldTypeIdentifier,
+            'type' => $fieldDef->getFieldTypeIdentifier(),
             'required' => $this->isFieldRequired($fieldDef),
-            'translatable' => (bool) $fieldDef->isTranslatable,
+            'translatable' => (bool) $fieldDef->isTranslatable(),
         ];
 
         $description = trim((string) $fieldDef->getDescription());
@@ -38,7 +38,7 @@ trait ContentTypeSchemaHelper
             $info['description'] = $description;
         }
 
-        switch ($fieldDef->fieldTypeIdentifier) {
+        switch ($fieldDef->getFieldTypeIdentifier()) {
             case FieldType::EZMATRIX:
                 $columns = [];
                 foreach ((array) ($fieldDef->getFieldSettings()['columns'] ?? []) as $column) {
@@ -92,7 +92,7 @@ trait ContentTypeSchemaHelper
             return true;
         }
 
-        if ($fieldDef->fieldTypeIdentifier === FieldType::EZIMAGE) {
+        if ($fieldDef->getFieldTypeIdentifier() === FieldType::EZIMAGE) {
             return true;
         }
 
@@ -124,8 +124,8 @@ trait ContentTypeSchemaHelper
     private function buildFieldSchemas(ContentType $contentType): array
     {
         $fields = [];
-        foreach ($contentType->fieldDefinitions as $fieldDef) {
-            $fields[$fieldDef->identifier] = $this->describeField($fieldDef);
+        foreach ($contentType->getFieldDefinitions() as $fieldDef) {
+            $fields[$fieldDef->getIdentifier()] = $this->describeField($fieldDef);
         }
 
         return $fields;

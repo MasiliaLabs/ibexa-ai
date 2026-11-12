@@ -20,7 +20,7 @@ final class FileStringifier implements FieldValueStringifierInterface
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
         /** @var \Ibexa\Core\FieldType\Image\Value $value */
-        $value = $field->value;
+        $value = $field->getValue();
 
         if ($value === null || !property_exists($value, 'fileName') || !$value->fileName) {
             return '';

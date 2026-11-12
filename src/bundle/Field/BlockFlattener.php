@@ -12,6 +12,7 @@ use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Content;
 use Masilia\Bundle\IbexaAi\Support\AiConstants;
 use Masilia\Bundle\IbexaAi\Support\FieldId;
+use Masilia\Bundle\IbexaAi\Support\FieldType;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 
@@ -63,7 +64,7 @@ final class BlockFlattener
         string $languageCode = AiConstants::DEFAULT_LANGUAGE_CODE,
         string $blocksFieldIdentifier = self::BLOCKS_FIELD,
     ): string {
-        $cacheKey = self::CACHE_PREFIX . $content->id . '-' . $languageCode;
+        $cacheKey = self::CACHE_PREFIX . $content->getId() . '-' . $languageCode;
         $cacheItem = $this->cachePool->getItem($cacheKey);
 
         if ($cacheItem->isHit()) {
@@ -113,12 +114,12 @@ final class BlockFlattener
      */
     private function getSitePath(Content $content): string
     {
-        $location = $content->contentInfo->getMainLocation();
+        $location = $content->getContentInfo()->getMainLocation();
         if ($location === null) {
             return '';
         }
 
-        $pathIds = $location->path;
+        $pathIds = $location->getPath();
 
         if (count($pathIds) <= 1) {
             return '/';
@@ -131,7 +132,7 @@ final class BlockFlattener
         foreach ($pathIds as $pathId) {
             $loc = $locations[$pathId] ?? null;
             if ($loc !== null) {
-                $pathParts[] = $loc->contentInfo->getName() ?? (string)$pathId;
+                $pathParts[] = $loc->getContentInfo()->getName() ?? (string)$pathId;
             }
         }
 
@@ -151,13 +152,13 @@ final class BlockFlattener
         $output = '';
         foreach ($contentType->getFieldDefinitions() as $fieldDef) {
             // Skip blocks field (handled separately) and novaseometas (generating it)
-            if ($fieldDef->identifier === $blocksFieldIdentifier
-                || $fieldDef->fieldTypeIdentifier === FieldType::NOVASEOMETAS) {
+            if ($fieldDef->getIdentifier() === $blocksFieldIdentifier
+                || $fieldDef->getFieldTypeIdentifier() === FieldType::NOVASEOMETAS) {
                 continue;
             }
 
-            $field = ContentFieldAccessor::getWithFallback($content, $fieldDef->identifier, $languageCode);
-            if ($field === null || $field->value === null) {
+            $field = ContentFieldAccessor::getWithFallback($content, $fieldDef->getIdentifier(), $languageCode);
+            if ($field === null || $field->getValue() === null) {
                 continue;
             }
 
@@ -169,7 +170,7 @@ final class BlockFlattener
             // Truncate long values
             $stringValue = AiConstants::truncate($stringValue, self::MAX_FLATTEN_CHARS);
 
-            $label = $fieldDef->getName() ?: $fieldDef->identifier;
+            $label = $fieldDef->getName() ?: $fieldDef->getIdentifier();
             $output .= sprintf("%s: %s\n", $label, AiConstants::scrubForPrompt($stringValue));
         }
 
@@ -186,11 +187,11 @@ final class BlockFlattener
         string $blocksFieldIdentifier,
     ): string {
         $blocksField = $content->getField($blocksFieldIdentifier);
-        if ($blocksField === null || $blocksField->value === null) {
+        if ($blocksField === null || $blocksField->getValue() === null) {
             return '';
         }
 
-        $blockIds = $blocksField->value->destinationContentIds ?? [];
+        $blockIds = $blocksField->getValue()->destinationContentIds ?? [];
         if ($blockIds === []) {
             return '';
         }
@@ -213,7 +214,7 @@ final class BlockFlattener
         // Load content types for names (batch)
         $contentTypeIds = [];
         foreach ($blockContents as $block) {
-            $contentTypeIds[] = $block->contentInfo->contentTypeId;
+            $contentTypeIds[] = $block->getContentInfo()->contentTypeId;
         }
         $uniqueTypeIds = array_unique($contentTypeIds);
         $contentTypes = [];
@@ -225,7 +226,7 @@ final class BlockFlattener
         $output = "Page blocks:\n";
         $index = 1;
         foreach ($blockContents as $block) {
-            $blockType = $contentTypes[$block->contentInfo->contentTypeId];
+            $blockType = $contentTypes[$block->getContentInfo()->contentTypeId];
             $blockTypeName = $blockType->getName() ?? 'Block';
 
             $output .= sprintf("\n- %s (Block %d):\n", $blockTypeName, $index);
@@ -279,7 +280,7 @@ final class BlockFlattener
             if (!$language->isEnabled()) {
                 continue;
             }
-            $cacheKey = self::CACHE_PREFIX . $contentId . '-' . $language->languageCode;
+            $cacheKey = self::CACHE_PREFIX . $contentId . '-' . $language->getLanguageCode();
             $this->cachePool->deleteItem($cacheKey);
         }
     }

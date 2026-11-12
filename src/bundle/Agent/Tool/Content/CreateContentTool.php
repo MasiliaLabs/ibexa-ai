@@ -100,11 +100,11 @@ readonly class CreateContentTool implements ToolInterface
             );
 
             return ToolResult::ok(
-                sprintf('Created %s (ID: %d)', $contentTypeIdentifier, $result['content']->id),
+                sprintf('Created %s (ID: %d)', $contentTypeIdentifier, $result['content']->getId()),
                 [
-                    'content_id' => $result['content']->id,
-                    'location_id' => $result['location']->id,
-                    'remote_id' => $result['content']->contentInfo->remoteId,
+                    'content_id' => $result['content']->getId(),
+                    'location_id' => $result['location']->getId(),
+                    'remote_id' => $result['content']->getContentInfo()->remoteId,
                 ],
             );
         } catch (\Throwable $e) {

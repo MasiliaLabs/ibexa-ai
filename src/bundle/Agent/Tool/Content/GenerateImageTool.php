@@ -100,8 +100,8 @@ readonly class GenerateImageTool implements ToolInterface
                 );
 
                 $result = [
-                    'content_id' => $published->id,
-                    'version_no' => $published->versionInfo->versionNo,
+                    'content_id' => $published->getId(),
+                    'version_no' => $published->getVersionInfo()->getVersionNo(),
                 ];
             } finally {
                 // Clean up temp file

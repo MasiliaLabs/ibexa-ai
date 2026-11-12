@@ -63,7 +63,7 @@ readonly class TrashContentTool implements ToolInterface
 
             $locationId = isset($params['location_id'])
                 ? (int) $params['location_id']
-                : $content->contentInfo->mainLocationId;
+                : $content->getContentInfo()->getMainLocationId();
 
             $location = $locationService->loadLocation($locationId);
 
@@ -117,7 +117,7 @@ readonly class TrashContentTool implements ToolInterface
             if ($relation->type !== Relation::FIELD) {
                 continue;
             }
-            $sourceId = $relation->getSourceContentInfo()->id;
+            $sourceId = $relation->getSourceContentInfo()->getId();
             $fieldId = $relation->sourceFieldDefinitionIdentifier;
             $updates[$sourceId][$fieldId][] = $contentId;
         }
@@ -151,7 +151,7 @@ readonly class TrashContentTool implements ToolInterface
 
                 if (!empty($attributes)) {
                     $this->contentUpdater->update($sourceContentId, $attributes, $languageCode);
-                    $updated[] = sprintf('%d:%s', $sourceContentId, $sourceContent->contentInfo->name ?? 'unnamed');
+                    $updated[] = sprintf('%d:%s', $sourceContentId, $sourceContent->getContentInfo()->getName() ?? 'unnamed');
                 }
             } catch (Throwable $e) {
                 $this->aiLogger->warning('[TrashContentTool] Failed to unlink reverse relation from content {sourceId}: {message}', [

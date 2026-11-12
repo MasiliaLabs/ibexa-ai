@@ -107,10 +107,8 @@ final class LoadContentToolTest extends TestCase
         $content->method('getFieldsByLanguage')->willReturn($fieldObjects);
         $content->method('getContentType')->willReturn($contentType);
         $content->method('getVersionInfo')->willReturn(new VersionInfo(['languageCodes' => $languages]));
-        $content->method('__get')->willReturnMap([
-            ['contentInfo', $contentInfo],
-            ['id', 1295],
-        ]);
+        $content->method('getContentInfo')->willReturn($contentInfo);
+        $content->method('getId')->willReturn(1295);
 
         return $content;
     }

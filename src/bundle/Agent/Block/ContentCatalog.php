@@ -73,8 +73,8 @@ final class ContentCatalog
 
         $types = [];
         foreach ($this->loadContentTypes() as $type) {
-            $types[$type->identifier] = [
-                'identifier' => $type->identifier,
+            $types[$type->getIdentifier()] = [
+                'identifier' => $type->getIdentifier(),
                 'name' => $type->getName(),
                 'fields' => $this->buildFieldSchemas($type),
             ];

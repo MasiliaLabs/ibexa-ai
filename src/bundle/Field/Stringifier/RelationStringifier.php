@@ -26,7 +26,7 @@ final readonly class RelationStringifier implements FieldValueStringifierInterfa
 
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
-        $relId = $field->value->destinationContentId ?? null;
+        $relId = $field->getValue()->destinationContentId ?? null;
 
         if (!$relId) {
             return '';

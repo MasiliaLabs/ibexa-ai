@@ -192,6 +192,7 @@ final class PlanExecutorTest extends TestCase
             ['name', 'Info Cards'],
             ['mainLocation', $parentLocation],
         ]);
+        $contentInfo->method('getName')->willReturn('Info Cards');
         $contentInfo->method('getMainLocation')->willReturn($parentLocation);
         $contentService->method('loadContentInfo')->with(200)->willReturn($contentInfo);
 
@@ -199,6 +200,8 @@ final class PlanExecutorTest extends TestCase
             ['id', 105],
             ['contentInfo', $contentInfo],
         ]);
+        $parentLocation->method('getId')->willReturn(105);
+        $parentLocation->method('getContentInfo')->willReturn($contentInfo);
         $locationService->method('loadLocation')->with(105)->willReturn($parentLocation);
 
         // Make loadContent throw to force the catch branch
@@ -221,6 +224,7 @@ final class PlanExecutorTest extends TestCase
         $folderContentInfo = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo::class);
         $folderLocation = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Location::class);
         $folderLocation->method('__get')->willReturnMap([['id', 300]]);
+        $folderLocation->method('getId')->willReturn(300);
         $folderContentInfo->method('getMainLocation')->willReturn($folderLocation);
 
         $contentService->method('newContentCreateStruct')->willReturn($createStruct);
@@ -229,13 +233,17 @@ final class PlanExecutorTest extends TestCase
         $draft->method('__get')->willReturnCallback(function (string $name) use ($versionInfo) {
             return $name === 'versionInfo' ? $versionInfo : null;
         });
+        $draft->method('getVersionInfo')->willReturn($versionInfo);
         $contentService->method('publishVersion')->willReturn($published);
         $published->method('__get')->willReturnMap([['contentInfo', $folderContentInfo]]);
+        $published->method('getContentInfo')->willReturn($folderContentInfo);
 
         $itemContent1 = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Content::class);
         $itemContent1->method('__get')->willReturnCallback(fn (string $name) => $name === 'id' ? 400 : null);
+        $itemContent1->method('getId')->willReturn(400);
         $itemContent2 = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Content::class);
         $itemContent2->method('__get')->willReturnCallback(fn (string $name) => $name === 'id' ? 401 : null);
+        $itemContent2->method('getId')->willReturn(401);
 
         $callCount = 0;
         $contentFactory = new class($callCount, $itemContent1, $itemContent2) implements ContentFactoryInterface {
@@ -364,9 +372,11 @@ final class PlanExecutorTest extends TestCase
         });
         $contentInfo->method('getMainLocation')->willReturn($parentLocation);
         $contentInfo->method('getContentType')->willReturn($pageType);
+        $contentInfo->method('getName')->willReturn('Page');
         $contentService->method('loadContentInfo')->with(200)->willReturn($contentInfo);
 
         $parentLocation->method('__get')->willReturnMap([['id', 105]]);
+        $parentLocation->method('getId')->willReturn(105);
 
         $blocksFieldDef = new FakeFieldDefinition('blocks', 'ibexa_object_relation_list', ['selectionContentTypes' => ['hero_banner', 'text_block']]);
         $fieldDefCollection = new \Ibexa\Core\Repository\Values\ContentType\FieldDefinitionCollection([$blocksFieldDef]);
@@ -435,11 +445,13 @@ final class PlanExecutorTest extends TestCase
         });
         $contentInfo->method('getMainLocation')->willReturn($parentLocation);
         $contentInfo->method('getContentType')->willReturn($pageType);
+        $contentInfo->method('getName')->willReturn('Page');
         $contentService->method('loadContentInfo')->willReturnMap([
             [200, $contentInfo],
         ]);
 
         $parentLocation->method('__get')->willReturnMap([['id', 105]]);
+        $parentLocation->method('getId')->willReturn(105);
         $locationService->method('loadLocation')->with(105)->willReturn($parentLocation);
 
         $blocksFieldDef = new FakeFieldDefinition('blocks', 'ibexa_object_relation_list', ['selectionContentTypes' => ['hero_banner', 'text_block', 'info_cards']]);
@@ -466,6 +478,7 @@ final class PlanExecutorTest extends TestCase
         $folderContentInfo = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo::class);
         $folderLocation = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Location::class);
         $folderLocation->method('__get')->willReturnMap([['id', 300]]);
+        $folderLocation->method('getId')->willReturn(300);
         $folderContentInfo->method('getMainLocation')->willReturn($folderLocation);
 
         $contentService->method('newContentCreateStruct')->willReturn($createStruct);
@@ -474,8 +487,10 @@ final class PlanExecutorTest extends TestCase
         $draft->method('__get')->willReturnCallback(function (string $name) use ($versionInfo) {
             return $name === 'versionInfo' ? $versionInfo : null;
         });
+        $draft->method('getVersionInfo')->willReturn($versionInfo);
         $contentService->method('publishVersion')->willReturn($published);
         $published->method('__get')->willReturnMap([['contentInfo', $folderContentInfo]]);
+        $published->method('getContentInfo')->willReturn($folderContentInfo);
 
         $contentService->method('createContentDraft')->willReturn($draft);
         $updateStruct = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\ContentUpdateStruct::class);
@@ -484,6 +499,7 @@ final class PlanExecutorTest extends TestCase
 
         $itemContent = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Content::class);
         $itemContent->method('__get')->willReturnCallback(fn (string $name) => $name === 'id' ? 500 : null);
+        $itemContent->method('getId')->willReturn(500);
 
         $contentFactory = new class($itemContent) implements ContentFactoryInterface {
             public function __construct(private $itemContent) {}

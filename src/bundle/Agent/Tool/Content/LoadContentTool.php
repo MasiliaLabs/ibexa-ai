@@ -35,7 +35,7 @@ readonly class LoadContentTool implements ToolInterface
     public function getParameters(): array
     {
         $availableLanguages = array_map(
-            static fn($lang) => $lang->languageCode,
+            static fn($lang) => $lang->getLanguageCode(),
             $this->repository->getContentLanguageService()->loadLanguages(),
         );
 
@@ -85,29 +85,29 @@ readonly class LoadContentTool implements ToolInterface
             } elseif (isset($params['location_id'])) {
                 $locationService = $this->repository->getLocationService();
                 $location = $locationService->loadLocation((int) $params['location_id']);
-                $content = $contentService->loadContent($location->contentId, $languages);
+                $content = $contentService->loadContent($location->getContentId(), $languages);
             } else {
                 throw new \InvalidArgumentException('Must provide content_id, remote_id, or location_id');
             }
 
-            $languageCode = $requestedLanguage ?? $content->contentInfo->mainLanguageCode;
+            $languageCode = $requestedLanguage ?? $content->getContentInfo()->getMainLanguageCode();
 
             $fields = [];
             foreach ($content->getFieldsByLanguage($languageCode) as $field) {
-                $fieldDef = $content->getContentType()->getFieldDefinition($field->fieldDefIdentifier);
-                $fields[$field->fieldDefIdentifier] = $this->stringifierRegistry->toString($field, $fieldDef);
+                $fieldDef = $content->getContentType()->getFieldDefinition($field->getFieldDefinitionIdentifier());
+                $fields[$field->getFieldDefinitionIdentifier()] = $this->stringifierRegistry->toString($field, $fieldDef);
             }
 
             return ToolResult::ok(
-                sprintf('Loaded content: %s (ID: %d)', $content->contentInfo->name ?? 'unnamed', $content->id),
+                sprintf('Loaded content: %s (ID: %d)', $content->getContentInfo()->getName() ?? 'unnamed', $content->getId()),
                 [
-                    'content_id' => $content->id,
-                    'content_type' => $content->contentInfo->contentTypeId,
-                    'name' => $content->contentInfo->name,
-                    'remote_id' => $content->contentInfo->remoteId,
-                    'main_location_id' => $content->contentInfo->mainLocationId,
+                    'content_id' => $content->getId(),
+                    'content_type' => $content->getContentInfo()->contentTypeId,
+                    'name' => $content->getContentInfo()->getName(),
+                    'remote_id' => $content->getContentInfo()->remoteId,
+                    'main_location_id' => $content->getContentInfo()->getMainLocationId(),
                     // Which translations exist, and which one the fields below are in.
-                    'languages' => array_values($content->getVersionInfo()->languageCodes),
+                    'languages' => array_values($content->getVersionInfo()->getLanguageCodes()),
                     'language' => $languageCode,
                     'fields' => $fields,
                 ],

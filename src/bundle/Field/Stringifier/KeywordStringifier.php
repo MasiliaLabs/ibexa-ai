@@ -18,10 +18,10 @@ final class KeywordStringifier implements FieldValueStringifierInterface
 
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
-        if ($field->value === null) {
+        if ($field->getValue() === null) {
             return '';
         }
 
-        return implode(', ', $field->value->values ?? []);
+        return implode(', ', $field->getValue()->values ?? []);
     }
 }

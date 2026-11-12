@@ -41,7 +41,7 @@ final class MatrixStringifier implements FieldValueStringifierInterface
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
         /** @var Value $value */
-        $value = $field->value;
+        $value = $field->getValue();
         if (!($value instanceof Value)) {
             return '';
         }

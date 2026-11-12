@@ -112,10 +112,10 @@ readonly class BrowseSiteStructureTool implements ToolInterface
                 $location = $content->getContentInfo()->getMainLocation();
 
                 $items[] = [
-                    'location_id' => $location->id,
+                    'location_id' => $location->getId(),
                     'parent_location_id' => $location->parentLocationId,
-                    'content_id' => $content->id,
-                    'content_type' => $content->getContentType()->identifier,
+                    'content_id' => $content->getId(),
+                    'content_type' => $content->getContentType()->getIdentifier(),
                     'name' => $content->getName(),
                 ];
             }

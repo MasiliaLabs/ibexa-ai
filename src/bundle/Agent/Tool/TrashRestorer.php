@@ -39,7 +39,7 @@ final class TrashRestorer
         $restored = [];
         foreach ($this->findTrashed($contentIds) as $trashed) {
             $trashService->recover($trashed);
-            $restored[] = $trashed->contentId;
+            $restored[] = $trashed->getContentId();
         }
 
         return $restored;
@@ -63,9 +63,9 @@ final class TrashRestorer
             $page = $trashService->findTrashItems(new Query(['limit' => self::PAGE_SIZE, 'offset' => $offset]));
 
             foreach ($page->items as $item) {
-                if (isset($wanted[$item->contentId])) {
+                if (isset($wanted[$item->getContentId()])) {
                     $found[] = $item;
-                    unset($wanted[$item->contentId]);
+                    unset($wanted[$item->getContentId()]);
                 }
             }
 

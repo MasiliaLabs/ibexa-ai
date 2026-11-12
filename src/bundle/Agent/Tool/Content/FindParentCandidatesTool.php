@@ -118,9 +118,9 @@ final readonly class FindParentCandidatesTool implements ToolInterface
             $mainLocation = $content->getContentInfo()->getMainLocation();
 
             $candidates[] = [
-                'location_id' => $mainLocation->id,
+                'location_id' => $mainLocation->getId(),
                 'name' => $content->getName(),
-                'content_type' => $content->getContentType()->identifier,
+                'content_type' => $content->getContentType()->getIdentifier(),
                 'siteaccess' => $siteaccess ?: 'current',
             ];
         }

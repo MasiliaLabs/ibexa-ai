@@ -118,7 +118,7 @@ final readonly class PlanBuilder
             return sprintf('You are not allowed to create content under location %d.', $plan->parentLocationId);
         }
 
-        return $this->validateSameSite($plan, $parent->pathString);
+        return $this->validateSameSite($plan, $parent->getPathString());
     }
 
     /**
@@ -137,7 +137,7 @@ final readonly class PlanBuilder
         }
 
         try {
-            $rootPath = $this->repository?->getLocationService()->loadLocation($root)->pathString;
+            $rootPath = $this->repository?->getLocationService()->loadLocation($root)->getPathString();
         } catch (\Throwable) {
             return null;
         }

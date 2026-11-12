@@ -39,22 +39,22 @@ final readonly class ContentUpdater
         $content = $contentService->loadContent($contentId);
         $contentType = $content->getContentType();
 
-        $draft = $contentService->createContentDraft($content->contentInfo);
+        $draft = $contentService->createContentDraft($content->getContentInfo());
 
         $updateStruct = $contentService->newContentUpdateStruct();
         $updateStruct->initialLanguageCode = $languageCode;
 
         $fieldsUpdated = 0;
         foreach ($contentType->getFieldDefinitions() as $fieldDef) {
-            if (!array_key_exists($fieldDef->identifier, $attributes)) {
+            if (!array_key_exists($fieldDef->getIdentifier(), $attributes)) {
                 continue;
             }
 
             $transformedValue = $this->transformerRegistry->transform(
                 $fieldDef,
-                $attributes[$fieldDef->identifier],
+                $attributes[$fieldDef->getIdentifier()],
             );
-            $updateStruct->setField($fieldDef->identifier, $transformedValue, $languageCode);
+            $updateStruct->setField($fieldDef->getIdentifier(), $transformedValue, $languageCode);
             $fieldsUpdated++;
         }
 
@@ -63,14 +63,14 @@ final readonly class ContentUpdater
                 'No fields matched the provided attributes for content %d. Available fields: %s',
                 $contentId,
                 implode(', ', array_map(
-                    static fn ($f) => $f->identifier,
+                    static fn ($f) => $f->getIdentifier(),
                     iterator_to_array($contentType->getFieldDefinitions()),
                 )),
             ));
         }
 
-        $contentService->updateContent($draft->versionInfo, $updateStruct);
+        $contentService->updateContent($draft->getVersionInfo(), $updateStruct);
 
-        return $contentService->publishVersion($draft->versionInfo);
+        return $contentService->publishVersion($draft->getVersionInfo());
     }
 }

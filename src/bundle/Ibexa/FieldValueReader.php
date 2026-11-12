@@ -23,10 +23,10 @@ final class FieldValueReader
 
     public function read(Field $field, FieldDefinition $definition): string
     {
-        return match ($definition->fieldTypeIdentifier) {
-            'ibexa_string', 'ibexa_text' => $this->text($field->value),
-            'ibexa_richtext' => $this->richText($field->value),
-            'ibexa_matrix' => $this->matrix($field->value, $definition),
+        return match ($definition->getFieldTypeIdentifier()) {
+            'ibexa_string', 'ibexa_text' => $this->text($field->getValue()),
+            'ibexa_richtext' => $this->richText($field->getValue()),
+            'ibexa_matrix' => $this->matrix($field->getValue(), $definition),
             default => '',
         };
     }
@@ -49,7 +49,7 @@ final class FieldValueReader
 
     public function matrixContext(Field $field, FieldDefinition $definition): MatrixContext
     {
-        $rowCount = $field->value instanceof MatrixValue ? $field->value->getRows()->count() : 0;
+        $rowCount = $field->getValue() instanceof MatrixValue ? $field->getValue()->getRows()->count() : 0;
 
         return new MatrixContext($this->matrixHeaders($definition), $rowCount);
     }

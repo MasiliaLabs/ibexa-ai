@@ -103,12 +103,12 @@ readonly class NovaSeoMetasTransformer implements FieldValueTransformerInterface
                 $field = new Field([
                     'value' => $imageField,
                     'fieldDefIdentifier' => 'image',
-                    'languageCode' => $imageContent->mainLanguageCode,
+                    'languageCode' => $imageContent->getContentInfo()->getMainLanguageCode(),
                 ]);
 
                 $variation = $this->variationHandler->getVariation(
                     $field,
-                    $imageContent->versionInfo,
+                    $imageContent->getVersionInfo(),
                     'social_network_image',
                 );
 

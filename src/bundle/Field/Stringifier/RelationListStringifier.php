@@ -29,7 +29,7 @@ final readonly class RelationListStringifier implements FieldValueStringifierInt
 
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
-        $allIds = $field->value->destinationContentIds ?? [];
+        $allIds = $field->getValue()->destinationContentIds ?? [];
 
         if ($allIds === []) {
             return '';

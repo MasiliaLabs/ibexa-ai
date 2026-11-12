@@ -26,14 +26,14 @@ final class FieldIdentifierResolver
         foreach ($contentType->getFieldDefinitions() as $fieldDef) {
             $defName = mb_strtolower(trim($fieldDef->getName() ?? ''));
             if ($defName === $normalised) {
-                return $fieldDef->identifier;
+                return $fieldDef->getIdentifier();
             }
         }
 
         $asIdentifier = strtolower(str_replace(' ', '_', $fieldName));
         foreach ($contentType->getFieldDefinitions() as $fieldDef) {
-            if ($fieldDef->identifier === $asIdentifier) {
-                return $fieldDef->identifier;
+            if ($fieldDef->getIdentifier() === $asIdentifier) {
+                return $fieldDef->getIdentifier();
             }
         }
 

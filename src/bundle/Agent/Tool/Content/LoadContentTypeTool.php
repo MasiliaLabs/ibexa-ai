@@ -50,22 +50,22 @@ readonly class LoadContentTypeTool implements ToolInterface
                 ->loadContentTypeByIdentifier($params['identifier']);
 
             $fields = [];
-            foreach ($contentType->fieldDefinitions as $fieldDef) {
-                $fields[$fieldDef->identifier] = [
-                    'type' => $fieldDef->fieldTypeIdentifier,
-                    'name' => $fieldDef->name,
-                    'required' => $fieldDef->isRequired,
-                    'identifier' => $fieldDef->identifier,
+            foreach ($contentType->getFieldDefinitions() as $fieldDef) {
+                $fields[$fieldDef->getIdentifier()] = [
+                    'type' => $fieldDef->getFieldTypeIdentifier(),
+                    'name' => $fieldDef->getName(),
+                    'required' => $fieldDef->isRequired(),
+                    'identifier' => $fieldDef->getIdentifier(),
                 ];
             }
 
             return ToolResult::ok(
-                sprintf('Loaded content type: %s', $contentType->identifier),
+                sprintf('Loaded content type: %s', $contentType->getIdentifier()),
                 [
-                    'identifier' => $contentType->identifier,
+                    'identifier' => $contentType->getIdentifier(),
                     'name' => $contentType->getName(),
-                    'group' => $contentType->contentTypeGroups[0]->identifier ?? 'unknown',
-                    'is_container' => $contentType->isContainer,
+                    'group' => $contentType->getContentTypeGroups()[0]->identifier ?? 'unknown',
+                    'is_container' => $contentType->isContainer(),
                     'fields' => $fields,
                 ],
             );

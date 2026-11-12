@@ -257,7 +257,7 @@ final readonly class BrowseLocationTool implements ToolInterface
         try {
             $location = $this->repository->getLocationService()->loadLocation($locationId);
             $deepest = $this->repository->getSearchService()->findLocations(new LocationQuery([
-                'filter' => new Criterion\Subtree($location->pathString),
+                'filter' => new Criterion\Subtree($location->getPathString()),
                 'sortClauses' => [new SortClause\Location\Depth(Query::SORT_DESC)],
                 'limit' => 1,
             ]));
@@ -267,7 +267,7 @@ final readonly class BrowseLocationTool implements ToolInterface
 
         $hit = $deepest->searchHits[0] ?? null;
 
-        return $hit === null ? 0 : max(0, $hit->valueObject->depth - $location->depth);
+        return $hit === null ? 0 : max(0, $hit->valueObject->getDepth() - $location->getDepth());
     }
 
     /**

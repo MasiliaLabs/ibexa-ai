@@ -123,9 +123,9 @@ final readonly class PlanExecutor
             }
         }
 
-        $folderName = trim(($contentInfo->name ?? 'items') . ' items') ?: 'items';
+        $folderName = trim(($contentInfo->getName() ?? 'items') . ' items') ?: 'items';
         $folderLocationId = $this->findOrCreateFolder(
-            $parentLocation->id,
+            $parentLocation->getId(),
             $folderName
         );
 
@@ -176,7 +176,7 @@ final readonly class PlanExecutor
                     ]);
                     continue;
                 }
-                $itemIds[] = (int)$result['content']->id;
+                $itemIds[] = (int)$result['content']->getId();
             } catch (Throwable $e) {
                 $this->aiLogger->warning('[PlanExecutor] Failed to create item {type}: {msg}', [
                     'type' => $itemType,
@@ -210,7 +210,7 @@ final readonly class PlanExecutor
 
         $fieldDef = null;
         foreach ($contentType->getFieldDefinitions() as $def) {
-            if ($def->identifier === $linkField) {
+            if ($def->getIdentifier() === $linkField) {
                 $fieldDef = $def;
                 break;
             }
@@ -237,7 +237,7 @@ final readonly class PlanExecutor
             return sprintf(
                 'Link field "%s" on content type "%s" allows: [%s]. Got invalid types: [%s]',
                 $linkField,
-                $contentType->identifier,
+                $contentType->getIdentifier(),
                 implode(', ', $allowedTypes),
                 implode(', ', $invalidTypes),
             );
@@ -256,12 +256,12 @@ final readonly class PlanExecutor
             $children = $locationService->loadLocationChildren($parentLocation, 0, 100);
 
             foreach ($children as $child) {
-                if ($child->contentInfo->getContentType()->identifier !== ContentTypeId::FOLDER) {
+                if ($child->getContentInfo()->getContentType()->getIdentifier() !== ContentTypeId::FOLDER) {
                     continue;
                 }
                 $childContent = $child->getContent();
                 if (strcasecmp($childContent->getName(), $name) === 0) {
-                    return $child->id;
+                    return $child->getId();
                 }
             }
         } catch (Throwable $e) {
@@ -281,9 +281,9 @@ final readonly class PlanExecutor
 
             $locStruct = $locationService->newLocationCreateStruct($parentLocationId);
             $draft = $contentService->createContent($createStruct, [$locStruct]);
-            $published = $contentService->publishVersion($draft->versionInfo);
+            $published = $contentService->publishVersion($draft->getVersionInfo());
 
-            return $published->contentInfo->getMainLocation()->id;
+            return $published->getContentInfo()->getMainLocation()->getId();
         } catch (Throwable $e) {
             $this->aiLogger->warning('[PlanExecutor] Failed to create folder {name}: {msg}', [
                 'name' => $name,
@@ -314,7 +314,7 @@ final readonly class PlanExecutor
 
         $fieldDef = null;
         foreach ($contentType->getFieldDefinitions() as $def) {
-            if ($def->identifier === $linkField) {
+            if ($def->getIdentifier() === $linkField) {
                 $fieldDef = $def;
                 break;
             }
@@ -323,7 +323,7 @@ final readonly class PlanExecutor
         if ($fieldDef === null) {
             $this->aiLogger->warning('[PlanExecutor] Link field "{field}" not found on content type "{type}"', [
                 'field' => $linkField,
-                'type' => $contentType->identifier,
+                'type' => $contentType->getIdentifier(),
             ]);
 
             return;
@@ -342,7 +342,7 @@ final readonly class PlanExecutor
         $updateStruct->setField($linkField, $itemIds, $languageCode);
 
         try {
-            $contentService->updateContent($draft->versionInfo, $updateStruct);
+            $contentService->updateContent($draft->getVersionInfo(), $updateStruct);
         } catch (BadStateException|ContentFieldValidationException|ContentValidationException|InvalidArgumentException|UnauthorizedException $e) {
             $this->aiLogger->warning('[PlanExecutor] Failed to update content {content_id} via "{field}": {msg}', [
                 'content_id' => $contentId,
@@ -351,7 +351,7 @@ final readonly class PlanExecutor
             ]);
         }
         try {
-            $contentService->publishVersion($draft->versionInfo);
+            $contentService->publishVersion($draft->getVersionInfo());
         } catch (BadStateException|UnauthorizedException $e) {
             $this->aiLogger->warning('[PlanExecutor] Failed to publish content {content_id} via "{field}": {msg}', [
                 'content_id' => $contentId,

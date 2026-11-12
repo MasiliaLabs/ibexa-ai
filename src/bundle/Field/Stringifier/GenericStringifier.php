@@ -32,14 +32,14 @@ final readonly class GenericStringifier implements FieldValueStringifierInterfac
 
     public function toString(Field $field, FieldDefinition $fieldDefinition): string
     {
-        $value = $field->value;
+        $value = $field->getValue();
 
         if ($value === null) {
             return '';
         }
 
         try {
-            $fieldType = $this->fieldTypeService->getFieldType($fieldDefinition->fieldTypeIdentifier);
+            $fieldType = $this->fieldTypeService->getFieldType($fieldDefinition->getFieldTypeIdentifier());
             $hash = $fieldType->toHash($value);
 
             return $this->hashToString($hash);
