@@ -7,6 +7,7 @@ namespace Masilia\IbexaAi\Tests\Agent\Tool;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\TrashService;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query;
+use Ibexa\Core\Repository\Values\Content\Location;
 use Ibexa\Core\Repository\Values\Content\TrashItem;
 use Ibexa\Contracts\Core\Repository\Values\Content\Trash\SearchResult as TrashSearchResult;
 use Masilia\Bundle\IbexaAi\Agent\Tool\TrashRestorer;
@@ -33,7 +34,7 @@ final class TrashRestorerTest extends TestCase
         $trash->method('recover')->willReturnCallback(function (TrashItem $item) use (&$recovered) {
             $recovered[] = $item->contentId;
 
-            return null;
+            return new Location(['id' => $item->id]);
         });
 
         $repository = $this->createMock(Repository::class);
