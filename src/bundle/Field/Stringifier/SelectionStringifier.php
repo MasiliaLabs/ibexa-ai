@@ -26,7 +26,7 @@ final class SelectionStringifier implements FieldValueStringifierInterface
             return '';
         }
 
-        $options = $fieldDefinition->fieldSettings['options'] ?? [];
+        $options = $fieldDefinition->getFieldSettings()['options'] ?? [];
         $selected = $field->value->selection ?? [];
         $labels = [];
 

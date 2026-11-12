@@ -41,7 +41,7 @@ trait ContentTypeSchemaHelper
         switch ($fieldDef->fieldTypeIdentifier) {
             case FieldType::EZMATRIX:
                 $columns = [];
-                foreach ((array) ($fieldDef->fieldSettings['columns'] ?? []) as $column) {
+                foreach ((array) ($fieldDef->getFieldSettings()['columns'] ?? []) as $column) {
                     $columns[] = [
                         'identifier' => (string) ($column['identifier'] ?? ''),
                         'name' => (string) ($column['name'] ?? ''),
@@ -53,14 +53,14 @@ trait ContentTypeSchemaHelper
 
             case FieldType::EZOBJECTRELATIONLIST:
                 $info['allowedTypes'] = array_values(
-                    (array) ($fieldDef->fieldSettings['selectionContentTypes'] ?? [])
+                    (array) ($fieldDef->getFieldSettings()['selectionContentTypes'] ?? [])
                 );
                 $this->appendRelationListItemLimits($info, $fieldDef);
                 break;
 
             case FieldType::EZSELECTION:
                 $info['options'] = array_values(
-                    (array) ($fieldDef->fieldSettings['options'] ?? [])
+                    (array) ($fieldDef->getFieldSettings()['options'] ?? [])
                 );
                 break;
 

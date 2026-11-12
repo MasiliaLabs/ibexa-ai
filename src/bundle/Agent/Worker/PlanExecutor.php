@@ -220,7 +220,7 @@ final readonly class PlanExecutor
             return null;
         }
 
-        $allowedTypes = array_values((array)($fieldDef->fieldSettings['selectionContentTypes'] ?? []));
+        $allowedTypes = array_values((array)($fieldDef->getFieldSettings()['selectionContentTypes'] ?? []));
         if ($allowedTypes === []) {
             return null;
         }
