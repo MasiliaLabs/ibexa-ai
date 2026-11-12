@@ -21,7 +21,7 @@ final class Configuration implements ConfigurationInterface
                     ->children()
                         ->scalarNode('provider')
                             ->defaultNull()
-                            ->info('openai, anthropic, gemini, mistral, ollama, qwen, kimi or minimax')
+                            ->info('openai, anthropic, gemini, mistral, ollama, qwen, kimi, minimax or mimo')
                         ->end()
                         ->scalarNode('model')->defaultValue('')->end()
                         ->scalarNode('api_key')->defaultNull()->end()
