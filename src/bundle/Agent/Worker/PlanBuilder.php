@@ -140,8 +140,9 @@ final readonly class PlanBuilder
         // Same container of sites (e.g. /1/2/...), but a different site below it.
         if (isset($rootParts[2], $parentParts[2]) && $rootParts[1] === $parentParts[1] && $rootParts[2] !== $parentParts[2]) {
             return sprintf(
-                'Parent location %d is in a different site than siteaccess "%s" (site location %s). Use a parent under that site, or the siteaccess of the parent\'s site.',
+                'Parent location %d is under the site at location %s, but siteaccess "%s" belongs to the site at location %s: they are in different sites. Use a parent under the siteaccess\'s site, or the siteaccess of the parent\'s site.',
                 $plan->parentLocationId,
+                $parentParts[2],
                 $plan->siteaccess,
                 $rootParts[2],
             );

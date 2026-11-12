@@ -48,7 +48,7 @@ final class PlanBuilderTargetsTest extends TestCase
     public function testAParentInAnotherSiteIsRefused(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('is in a different site than siteaccess "fossil_exit"');
+        $this->expectExceptionMessage('Parent location 311 is under the site at location 311, but siteaccess "fossil_exit" belongs to the site at location 1016');
 
         $this->builder()->build($this->plan(['parent_location_id' => 311]));
     }
