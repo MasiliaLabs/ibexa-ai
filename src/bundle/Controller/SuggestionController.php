@@ -133,11 +133,12 @@ final readonly class SuggestionController
 
         return new StreamedResponse(function () use ($service, $suggestionRequest, $format): void {
             try {
-                foreach ($service->stream($suggestionRequest) as $token) {
-                    echo $this->sse->token($token);
+                foreach ($service->streamWithActivity($suggestionRequest) as $text) {
+                    // Null: the model is reasoning. Nothing to show, but the connection must not go idle.
+                    echo $text === null ? $this->sse->keepAlive() : $this->sse->delta($text);
                     flush();
                 }
-                echo $this->sse->done($format);
+                echo $this->sse->completed($format);
             } catch (Throwable $e) {
                 $this->aiLogger->error('[AI] Streaming suggestion failed: {message}', [
                     'message' => $e->getMessage(),

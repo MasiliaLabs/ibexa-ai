@@ -60,6 +60,21 @@ final readonly class SuggestionService
      */
     public function stream(SuggestionRequest $request): Generator
     {
+        foreach ($this->streamWithActivity($request) as $text) {
+            if ($text !== null) {
+                yield $text;
+            }
+        }
+    }
+
+    /**
+     * Like {@see stream()}, but also yields null each time the model produced something that is not visible
+     * (its reasoning), so a caller can keep a connection busy while the model thinks.
+     *
+     * @return Generator<int, string|null>
+     */
+    public function streamWithActivity(SuggestionRequest $request): Generator
+    {
         $reasoning = new ReasoningFilter();
 
         foreach ($this->generator->stream(
@@ -67,9 +82,7 @@ final readonly class SuggestionService
             $this->prompts->userPrompt($request),
         ) as $chunk) {
             $visible = $reasoning->feed($chunk);
-            if ($visible !== '') {
-                yield $visible;
-            }
+            yield $visible !== '' ? $visible : null;
         }
 
         $rest = $reasoning->flush();

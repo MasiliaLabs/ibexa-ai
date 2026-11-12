@@ -5,32 +5,53 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Api;
 
 /**
- * Encodes stream events as Server-Sent Events lines, in the shape the admin
- * front already reads: token events, a final done event carrying the format,
- * or a single error event.
+ * Encodes the suggestion stream as named, versioned Server-Sent Events:
+ *
+ *   suggestion.delta      {"v":1,"text":"..."}                 visible text, in order
+ *   suggestion.completed  {"v":1,"format":"html"}              the stream ended well
+ *   suggestion.error      {"v":1,"code":"...","message":"..."}  the stream failed
+ *
+ * Clients ignore events they do not know and frames of another version, so events can be added later.
+ * Keep-alive comments carry no event: they keep the connection busy while a reasoning model thinks.
  */
 final class SseEncoder
 {
-    public function token(string $token): string
+    public const VERSION = 1;
+
+    public const DELTA = 'suggestion.delta';
+    public const COMPLETED = 'suggestion.completed';
+    public const ERROR = 'suggestion.error';
+
+    public function delta(string $text): string
     {
-        return $this->event(['token' => $token, 'done' => false]);
+        return $this->event(self::DELTA, ['text' => $text]);
     }
 
-    public function done(string $format): string
+    public function completed(string $format): string
     {
-        return $this->event(['token' => '', 'done' => true, 'format' => $format]);
+        return $this->event(self::COMPLETED, ['format' => $format]);
     }
 
     public function error(ApiError $error): string
     {
-        return $this->event($error->toArray());
+        return $this->event(self::ERROR, ['code' => $error->code, 'message' => $error->message]);
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * An SSE comment: no event, ignored by clients, but it keeps the connection from going idle.
      */
-    private function event(array $payload): string
+    public function keepAlive(): string
     {
-        return 'data: ' . json_encode($payload, JSON_THROW_ON_ERROR) . "\n\n";
+        return ": keep-alive\n\n";
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function event(string $name, array $data): string
+    {
+        $payload = json_encode(['v' => self::VERSION] + $data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        return "event: {$name}\ndata: {$payload}\n\n";
     }
 }

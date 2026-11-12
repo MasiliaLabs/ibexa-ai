@@ -75,6 +75,35 @@ final class SuggestionServiceTest extends TestCase
         self::assertCount(1, $generator->calls);
     }
 
+    public function testReasoningIsReportedAsActivityWithoutVisibleText(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(chunks: ['<think>planning ', 'the answer', '</think>', 'Hello']));
+
+        $events = iterator_to_array($service->streamWithActivity(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Summarize,
+            language: 'en-GB',
+            currentValue: 'Some text.',
+        )), false);
+
+        // One entry per model chunk, so a caller can keep the connection busy; null means nothing visible.
+        self::assertSame([null, null, null, 'Hello'], $events);
+    }
+
+    public function testStreamNeverYieldsTheActivityMarkers(): void
+    {
+        $service = new SuggestionService(new FakeTextGenerator(chunks: ['<think>hmm</think>', 'Hi']));
+
+        $chunks = iterator_to_array($service->stream(new SuggestionRequest(
+            field: SupportedField::Text,
+            action: SuggestionAction::Summarize,
+            language: 'en-GB',
+            currentValue: 'Some text.',
+        )), false);
+
+        self::assertSame(['Hi'], $chunks);
+    }
+
     public function testInventedFiguresTriggerOneRetryWithAGroundedAnswer(): void
     {
         $generator = new FakeTextGenerator(answers: [

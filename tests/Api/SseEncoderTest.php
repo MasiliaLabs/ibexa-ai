@@ -13,24 +13,45 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ApiError::class)]
 final class SseEncoderTest extends TestCase
 {
-    public function testTokenLineMatchesTheFrontContract(): void
-    {
-        self::assertSame("data: {\"token\":\"Hi\",\"done\":false}\n\n", (new SseEncoder())->token('Hi'));
-    }
-
-    public function testDoneLineCarriesTheFormat(): void
+    public function testDeltaIsANamedVersionedEvent(): void
     {
         self::assertSame(
-            "data: {\"token\":\"\",\"done\":true,\"format\":\"html\"}\n\n",
-            (new SseEncoder())->done('html'),
+            "event: suggestion.delta\ndata: {\"v\":1,\"text\":\"Hi\"}\n\n",
+            (new SseEncoder())->delta('Hi'),
         );
     }
 
-    public function testErrorLineUsesTheErrorEnvelope(): void
+    public function testATextWithNewlinesStaysOnOneDataLineAndDecodesIdentically(): void
     {
-        $line = (new SseEncoder())->error(ApiError::serviceUnavailable('down'));
+        $frame = (new SseEncoder())->delta("Énergie\nsolaire");
 
-        self::assertSame("data: {\"error\":{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"down\"}}\n\n", $line);
+        // event line, one data line, then the blank line that ends the frame: a raw newline in the text would add lines.
+        $lines = explode("\n", $frame);
+        self::assertCount(4, $lines);
+        self::assertSame('event: suggestion.delta', $lines[0]);
+        self::assertStringStartsWith('data: ', $lines[1]);
+        self::assertSame("Énergie\nsolaire", json_decode(substr($lines[1], 6), true)['text']);
+    }
+
+    public function testCompletedCarriesTheFormat(): void
+    {
+        self::assertSame(
+            "event: suggestion.completed\ndata: {\"v\":1,\"format\":\"html\"}\n\n",
+            (new SseEncoder())->completed('html'),
+        );
+    }
+
+    public function testErrorCarriesTheCodeAndTheMessage(): void
+    {
+        self::assertSame(
+            "event: suggestion.error\ndata: {\"v\":1,\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"down\"}\n\n",
+            (new SseEncoder())->error(ApiError::serviceUnavailable('down')),
+        );
+    }
+
+    public function testKeepAliveIsAnEventlessComment(): void
+    {
+        self::assertSame(": keep-alive\n\n", (new SseEncoder())->keepAlive());
     }
 
     public function testAccessDeniedEnvelope(): void
