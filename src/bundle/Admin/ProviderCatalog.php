@@ -11,6 +11,7 @@ use Masilia\Bundle\IbexaAi\Entity\AiProviderSiteaccess;
 use Masilia\Bundle\IbexaAi\Repository\AiModelRepository;
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
 use Masilia\IbexaAi\Provider\ProviderId;
+use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
 
 /**
  * Create, update and delete providers and models, and choose the active ones.
@@ -27,6 +28,7 @@ final readonly class ProviderCatalog
         private EntityManagerInterface $entities,
         private AiProviderRepository $providers,
         private AiModelRepository $models,
+        private ProviderKeys $keys,
     ) {
     }
 
@@ -95,7 +97,7 @@ final readonly class ProviderCatalog
 
         $apiKey = (string) ($data['apiKey'] ?? '');
         if ($apiKey !== '' && $apiKey !== self::KEY_MASK) {
-            $provider->setApiKey($apiKey);
+            $this->keys->store($provider, $apiKey);
         }
 
         $apiUrl = trim((string) ($data['apiUrl'] ?? ''));
@@ -242,8 +244,6 @@ final readonly class ProviderCatalog
      */
     private function providerArray(AiProvider $provider): array
     {
-        $key = $provider->getApiKey();
-
         return [
             'id' => $provider->getId(),
             'name' => $provider->getName(),
@@ -252,7 +252,7 @@ final readonly class ProviderCatalog
                 static fn (AiProviderSiteaccess $assignment): string => $assignment->getSiteaccess(),
                 $provider->getSiteaccesses()->toArray(),
             )),
-            'apiKey' => $key !== null && $key !== '' ? self::KEY_MASK : null,
+            'apiKey' => $this->keys->has($provider) ? self::KEY_MASK : null,
             'apiUrl' => $provider->getApiUrl(),
             'activeChatModelId' => $provider->getActiveChatModel()?->getId(),
             'activeImageModelId' => $provider->getActiveImageModel()?->getId(),

@@ -6,6 +6,7 @@
     "require": {
         "php": ">=8.3",
         "ext-curl": "*",
+        "ext-sodium": "*",
         "ibexa/core": "^5.0",
         "neuron-core/neuron-ai": "^4.1",
         "psr/log": "^3.0",

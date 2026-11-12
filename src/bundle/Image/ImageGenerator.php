@@ -10,6 +10,7 @@ use Masilia\Bundle\IbexaAi\Support\ImageGenerationResult;
 use Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface;
 use RuntimeException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
 
 /**
  * Image generation for the current siteaccess, using the active image model of the admin.
@@ -28,6 +29,7 @@ final readonly class ImageGenerator implements ImageGeneratorInterface
         private AiProviderRepository $providers,
         private SiteAccessServiceInterface $siteAccess,
         private HttpClientInterface $http,
+        private ProviderKeys $keys,
     ) {
     }
 
@@ -35,14 +37,14 @@ final readonly class ImageGenerator implements ImageGeneratorInterface
     {
         $provider = $this->target();
 
-        return $provider !== null && $provider->getApiKey() !== null && $provider->getApiKey() !== '';
+        return $provider !== null && $this->keys->has($provider);
     }
 
     public function generate(string $prompt, ?string $size = null, ?string $quality = null): ImageGenerationResult
     {
         $provider = $this->target() ?? throw new RuntimeException('No image model is configured for this siteaccess.');
         $model = $provider->getActiveImageModel()?->getIdentifier() ?? throw new RuntimeException('No image model is selected.');
-        $key = $provider->getApiKey() ?? throw new RuntimeException('The image provider has no API key.');
+        $key = $this->keys->reveal($provider) ?? throw new RuntimeException('The image provider has no API key.');
 
         return match ($provider->getIdentifier()) {
             'openai' => $this->openAi($provider->getApiUrl(), $key, $model, $prompt, $size, $quality),

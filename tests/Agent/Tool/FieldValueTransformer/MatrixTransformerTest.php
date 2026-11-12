@@ -72,7 +72,7 @@ final class MatrixTransformerTest extends TestCase
     {
         $fieldDef = $this->createMock(FieldDefinition::class);
         $fieldDef->method('getFieldTypeIdentifier')->willReturn('ibexa_matrix');
-        $fieldDef->fieldSettings = ['columns' => $columns];
+        $fieldDef->method('getFieldSettings')->willReturn(['columns' => $columns]);
 
         return $fieldDef;
     }

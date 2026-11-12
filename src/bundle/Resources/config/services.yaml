@@ -35,6 +35,18 @@ services:
 
     Masilia\IbexaAi\Provider\ProviderFactory: ~
 
+    Masilia\IbexaAi\Security\SecretCipher:
+        factory: ['Masilia\IbexaAi\Security\SecretCipher', 'fromConfiguration']
+        arguments:
+            $configuredKey: '%ibexa_ai.encryption_key%'
+            $appSecret: '%kernel.secret%'
+
+    Masilia\Bundle\IbexaAi\Security\:
+        resource: '../../Security/'
+
+    Masilia\Bundle\IbexaAi\Command\:
+        resource: '../../Command/'
+
     Masilia\Bundle\IbexaAi\Llm\:
         resource: '../../Llm/'
         exclude: '../../Llm/NeuronTextGenerator.php'

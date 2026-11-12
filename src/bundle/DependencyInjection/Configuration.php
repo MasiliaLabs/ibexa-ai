@@ -30,6 +30,10 @@ final class Configuration implements ConfigurationInterface
                         ->integerNode('max_tokens')->defaultValue(4096)->min(1)->end()
                     ->end()
                 ->end()
+                ->scalarNode('encryption_key')
+                    ->defaultNull()
+                    ->info('Key that encrypts the provider API keys stored in the database: base64 of 32 random bytes (php -r "echo base64_encode(random_bytes(32));"). When empty, the key is derived from the application secret, so changing that secret makes the stored keys unreadable.')
+                ->end()
             ->end();
 
         return $builder;

@@ -6,6 +6,7 @@ namespace Masilia\Bundle\IbexaAi\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
 
@@ -27,7 +28,8 @@ class AiProvider
     #[ORM\Column(length: 100)]
     private string $identifier = '';
 
-    #[ORM\Column(name: 'api_key', length: 255, nullable: true)]
+    /** The key as stored: encrypted (see ProviderKeys), or plain text from before the encryption existed. */
+    #[ORM\Column(name: 'api_key', type: Types::TEXT, nullable: true)]
     private ?string $apiKey = null;
 
     #[ORM\Column(name: 'api_url', length: 255, nullable: true)]

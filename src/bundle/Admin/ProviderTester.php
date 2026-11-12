@@ -10,6 +10,7 @@ use Masilia\IbexaAi\Provider\ProviderConnection;
 use Masilia\IbexaAi\Provider\ProviderFactory;
 use Masilia\IbexaAi\Provider\ProviderId;
 use Throwable;
+use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
 
 /**
  * "Test connection" from the admin: one short completion, optionally one streamed chunk.
@@ -20,6 +21,7 @@ final readonly class ProviderTester
     public function __construct(
         private AiProviderRepository $providers,
         private ProviderFactory $factory,
+        private ProviderKeys $keys,
     ) {
     }
 
@@ -43,7 +45,7 @@ final readonly class ProviderTester
                 provider: ProviderId::tryFrom($provider->getIdentifier())
                     ?? throw new \InvalidArgumentException(sprintf('Provider "%s" is not supported.', $provider->getIdentifier())),
                 model: $model->getIdentifier(),
-                apiKey: $provider->getApiKey(),
+                apiKey: $this->keys->reveal($provider),
                 apiUrl: $provider->getApiUrl(),
                 temperature: 0.0,
                 maxTokens: 32,

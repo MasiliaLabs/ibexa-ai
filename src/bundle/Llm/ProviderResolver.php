@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Llm;
 
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
+use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Provider\ProviderConnection;
 use Masilia\IbexaAi\Provider\ProviderId;
@@ -21,12 +22,13 @@ final readonly class ProviderResolver
      */
     public function __construct(
         private AiProviderRepository $providers,
+        private ProviderKeys $keys,
         private array $settings,
     ) {
     }
 
     /**
-     * @throws ProviderConfigurationException when neither the admin nor the YAML configure a usable provider
+     * @throws ProviderConfigurationException when neither the admin nor the YAML configure a usable provider, or a stored key cannot be decrypted
      */
     public function resolveChat(string $siteaccess): ProviderConnection
     {
@@ -37,7 +39,7 @@ final readonly class ProviderResolver
             return new ProviderConnection(
                 provider: $this->providerId($provider->getIdentifier()),
                 model: $model->getIdentifier(),
-                apiKey: $provider->getApiKey(),
+                apiKey: $this->keys->reveal($provider),
                 apiUrl: $provider->getApiUrl(),
                 temperature: $model->getTemperature(),
                 maxTokens: $model->getMaxTokens(),

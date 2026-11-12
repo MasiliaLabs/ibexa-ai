@@ -221,7 +221,7 @@ readonly class MatrixTransformer implements FieldValueTransformerInterface
      */
     private function extractColumnIdentifiers(FieldDefinition $fieldDef): array
     {
-        $columns = (array) ($fieldDef->fieldSettings['columns'] ?? []);
+        $columns = (array) ($fieldDef->getFieldSettings()['columns'] ?? []);
         $ids = [];
         foreach ($columns as $column) {
             if (isset($column['identifier'])) {
