@@ -9,10 +9,9 @@ import { AssistantMessage, UserMessage } from './Messages';
 interface ThreadProps {
     chat: ChatRuntime;
     onClose: () => void;
-    onSwitchMode: () => void;
 }
 
-export function Thread({ chat, onClose, onSwitchMode }: ThreadProps) {
+export function Thread({ chat, onClose }: ThreadProps) {
     const [confirming, setConfirming] = useState(false);
     const empty = useAuiState((state) => state.thread.isEmpty);
 
@@ -21,9 +20,6 @@ export function Thread({ chat, onClose, onSwitchMode }: ThreadProps) {
             <header className="masilia-chat__header">
                 <h2 className="masilia-chat__title">Content assistant</h2>
                 <div className="masilia-chat__header-actions">
-                    <button type="button" className="masilia-chat__mode" onClick={onSwitchMode} title="Switch the protocol (spike)">
-                        {chat.mode === 'agui' ? 'AG-UI' : 'SSE'}
-                    </button>
                     {!empty && !confirming ? (
                         <Button type="tertiary" icon="trash" ariaLabel="New conversation" title="New conversation" onClick={() => setConfirming(true)} />
                     ) : null}

@@ -4,7 +4,7 @@ import { api } from './api';
 import type { ApiResult } from './api';
 import { modelPayload, providerPayload } from './forms';
 import type { ModelDraft, ProviderDraft } from './forms';
-import { notify } from './notify';
+import { notify } from '../shared/notify';
 import type { Health, Snapshot, TestResult } from './types';
 
 const EMPTY: Snapshot = { providers: [], models: [], providerTypes: [], siteaccesses: [], currentSiteaccess: '' };

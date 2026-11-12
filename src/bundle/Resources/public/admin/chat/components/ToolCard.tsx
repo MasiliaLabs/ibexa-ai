@@ -2,6 +2,7 @@ import type { ToolCallMessagePartProps } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
 import { Button, Icon } from '../../shared/ids';
+import { toolOutcome } from '../toolResult';
 
 const LABELS: Record<string, string> = {
     explore_site: 'Explored the site',
@@ -35,8 +36,9 @@ export function ToolCard(props: ToolCallMessagePartProps) {
     const { toolName, args, result, isError, status, approval } = props;
     const waiting = approval !== undefined && approval.approved === undefined && approval.resolution === undefined;
     const refused = approval?.approved === false;
+    const outcome = result === undefined ? null : toolOutcome(result);
     const running = !waiting && status.type === 'running';
-    const failed = !refused && (isError === true || (status.type === 'incomplete' && status.reason === 'error'));
+    const failed = !refused && (isError === true || outcome?.ok === false || (status.type === 'incomplete' && status.reason === 'error'));
     const state = waiting ? 'waiting' : refused ? 'refused' : running ? 'running' : failed ? 'failed' : 'ok';
     const inputs = args !== undefined && Object.keys(args as object).length > 0 ? JSON.stringify(args, null, 2) : '';
 
@@ -50,7 +52,7 @@ export function ToolCard(props: ToolCallMessagePartProps) {
                     {LABELS[toolName] ?? toolName}
                     <span className="visually-hidden">{`, ${STATE_LABELS[state]}`}</span>
                 </summary>
-                {typeof result === 'string' && result !== '' ? <p className="masilia-chat__tool-message">{result}</p> : null}
+                {outcome !== null && outcome.message !== '' ? <p className="masilia-chat__tool-message">{outcome.message}</p> : null}
                 {inputs !== '' ? <pre className="masilia-chat__tool-inputs">{inputs}</pre> : null}
             </details>
             {approval !== undefined ? <Approval {...props} approval={approval} /> : null}

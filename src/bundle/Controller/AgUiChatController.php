@@ -7,6 +7,9 @@ namespace Masilia\Bundle\IbexaAi\Controller;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
+use Masilia\Bundle\IbexaAi\Agent\Stream\AgUiFrames;
+use Masilia\Bundle\IbexaAi\Agent\Stream\AlreadyDecidedException;
+use Masilia\Bundle\IbexaAi\Agent\Stream\DecisionPendingException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\ReasoningFilteredAGUIAdapter;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
@@ -30,6 +33,7 @@ use Throwable;
  * POST /admin/api/ai/agent/agui        a RunAgentInput: a new user message, or `resume` entries answering the
  *                                      change that awaits a decision. Streams AG-UI events.
  * GET  /admin/api/ai/agent/agui/state  the stored conversation and its pending interrupts, to restore a page.
+ * DELETE /admin/api/ai/agent/conversation  forgets the conversation of the current user.
  *
  * The conversation is the server's: the thread belongs to the current user and siteaccess, the client only
  * sends its last message or its decision.
@@ -65,11 +69,24 @@ final readonly class AgUiChatController
                 messages: is_array($input['messages'] ?? null) ? array_values($input['messages']) : [],
                 state: is_array($input['state'] ?? null) ? $input['state'] : [],
             );
+        } catch (InputTranslationException $e) {
+            $this->aiLogger->info('[AI Agent] AG-UI input refused: {message}', ['message' => $e->getMessage()]);
+
+            return new JsonResponse(ApiError::validation('The conversation sent by the client is not valid.')->toArray(), Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
             $agent = $this->agents->create($this->currentSiteaccess(), $this->threadId());
             $agent->setStreamAdapter(static fn () => $adapter);
 
             if (is_array($input['resume'] ?? null) && $input['resume'] !== []) {
-                $events = $agent->submitInputs($input, new AGUIInputTranslator())->events();
+                try {
+                    $events = $agent->submitInputs($input, new AGUIInputTranslator())->events();
+                } catch (InputTranslationException $e) {
+                    // A decision for a run that is no longer waiting: decided in another window.
+                    $this->aiLogger->info('[AI Agent] AG-UI decision refused: {message}', ['message' => $e->getMessage()]);
+                    throw new AlreadyDecidedException($e->getMessage(), 0, $e);
+                }
             } else {
                 $text = $this->lastUserText($input);
                 if ($text === '') {
@@ -77,27 +94,16 @@ final readonly class AgUiChatController
                 }
                 // A suspended run cannot take a new message: the pending change must be decided first.
                 if ($agent->pendingApprovals() !== []) {
-                    return new JsonResponse(
-                        ApiError::validation('A change is waiting for your decision. Approve or refuse it first.')->toArray(),
-                        Response::HTTP_CONFLICT,
-                    );
+                    throw new DecisionPendingException('A change is waiting for a decision.');
                 }
                 $events = $agent->stream(new UserMessage($text));
             }
-        } catch (ProviderConfigurationException $e) {
-            return new JsonResponse(ApiError::serviceUnavailable($e->getMessage())->toArray(), Response::HTTP_SERVICE_UNAVAILABLE);
-        } catch (InputTranslationException $e) {
-            // A decision for a run that is no longer waiting (decided in another window), or a malformed input.
-            $this->aiLogger->info('[AI Agent] AG-UI input refused: {message}', ['message' => $e->getMessage()]);
-
-            return new JsonResponse(
-                (new ApiError('ALREADY_DECIDED', 'This change was already decided, probably in another window. Reload the conversation.'))->toArray(),
-                Response::HTTP_CONFLICT,
-            );
         } catch (Throwable $e) {
-            $this->aiLogger->error('[AI Agent] AG-UI run could not start: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
+            if (!$e instanceof AlreadyDecidedException && !$e instanceof DecisionPendingException && !$e instanceof ProviderConfigurationException) {
+                $this->aiLogger->error('[AI Agent] AG-UI run could not start: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
+            }
 
-            return new JsonResponse(ApiError::serviceUnavailable(self::GENERIC_ERROR)->toArray(), Response::HTTP_SERVICE_UNAVAILABLE);
+            return $this->failedRun($adapter, $e);
         }
 
         $headers = $adapter->getHeaders() + ['X-Accel-Buffering' => 'no'];
@@ -105,7 +111,7 @@ final readonly class AgUiChatController
         return new StreamedResponse(function () use ($events): void {
             $closed = false;
             try {
-                foreach (SSEEncoder::encode($events) as $frame) {
+                foreach (AgUiFrames::encode($events) as $frame) {
                     echo $frame;
                     flush();
                     $closed = $closed || str_contains($frame, '"type":"RUN_ERROR"') || str_contains($frame, '"type":"RUN_FINISHED"');
@@ -120,6 +126,20 @@ final readonly class AgUiChatController
                 }
             }
         }, Response::HTTP_OK, $headers);
+    }
+
+    /**
+     * A run that cannot start, told the way AG-UI tells any failed run, so the client shows the message as it
+     * shows every other one.
+     */
+    private function failedRun(ReasoningFilteredAGUIAdapter $adapter, Throwable $failure): StreamedResponse
+    {
+        return new StreamedResponse(static function () use ($adapter, $failure): void {
+            foreach ([...$adapter->start(), ...$adapter->error($failure)] as $event) {
+                echo SSEEncoder::frame($event);
+                flush();
+            }
+        }, Response::HTTP_OK, $adapter->getHeaders() + ['X-Accel-Buffering' => 'no']);
     }
 
     #[Route('/admin/api/ai/agent/agui/state', name: 'masilia.ibexa_ai.agent.agui_state', methods: ['GET'])]
@@ -155,6 +175,20 @@ final readonly class AgUiChatController
         }
 
         return new JsonResponse(['threadId' => $threadId, 'messages' => $messages, 'interrupts' => $hydrated['interrupts']]);
+    }
+
+    #[Route('/admin/api/ai/agent/conversation', name: 'masilia.ibexa_ai.agent.clear', methods: ['DELETE'])]
+    public function clear(): JsonResponse
+    {
+        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+
+        $threadId = $this->threadId();
+        $this->agents->messages($threadId)->clear($threadId);
+        $this->agents->forgetWorkflow($threadId);
+
+        return new JsonResponse(['success' => true]);
     }
 
     /**

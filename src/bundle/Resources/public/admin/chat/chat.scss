@@ -81,16 +81,6 @@ $panel-width: min(440px, calc(100vw - 32px));
     gap: calculateRem(4px);
 }
 
-.masilia-chat__mode {
-    padding: calculateRem(2px) calculateRem(8px);
-    background: ibexa.$ibexa-color-white;
-    border: 1px solid ibexa.$ibexa-color-dark-200;
-    border-radius: calculateRem(10px);
-    color: ibexa.$ibexa-color-dark-400;
-    font-size: ibexa.$ibexa-text-font-size-extra-small;
-    cursor: pointer;
-}
-
 .masilia-chat__confirm {
     padding: calculateRem(12px) calculateRem(16px);
     background: ibexa.$ibexa-color-light-300;
