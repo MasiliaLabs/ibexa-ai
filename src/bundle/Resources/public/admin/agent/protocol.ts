@@ -6,6 +6,12 @@
  * without breaking an open widget.
  */
 
+import { readFrames, splitFrames } from '../shared/sse';
+import type { RawFrame } from '../shared/sse';
+
+export { splitFrames };
+export type { RawFrame };
+
 export const PROTOCOL_VERSION = 1;
 
 export type Inputs = Record<string, unknown>;
@@ -17,39 +23,6 @@ export type AgentEvent =
     | { type: 'approval.requested'; id: string; tool: string; reason: string; inputs: Inputs }
     | { type: 'run.completed'; interrupted: boolean }
     | { type: 'run.error'; code: string; message: string };
-
-export interface RawFrame {
-    event: string;
-    data: string;
-}
-
-/**
- * Splits as many complete frames as the buffer holds. The unfinished tail is returned as `rest`,
- * to be prepended to the next chunk.
- */
-export function splitFrames(buffer: string): { frames: RawFrame[]; rest: string } {
-    const normalized = buffer.replace(/\r\n/g, '\n');
-    const pieces = normalized.split('\n\n');
-    const rest = pieces.pop() ?? '';
-    const frames: RawFrame[] = [];
-
-    for (const piece of pieces) {
-        let event = 'message';
-        const dataLines: string[] = [];
-        for (const line of piece.split('\n')) {
-            if (line.startsWith('event:')) {
-                event = line.slice('event:'.length).trim();
-            } else if (line.startsWith('data:')) {
-                dataLines.push(line.slice('data:'.length).replace(/^ /, ''));
-            }
-        }
-        if (dataLines.length > 0) {
-            frames.push({ event, data: dataLines.join('\n') });
-        }
-    }
-
-    return { frames, rest };
-}
 
 /**
  * Turns a frame into a typed event, or null when it is not a version-1 event this widget knows.
@@ -115,35 +88,11 @@ export function toAgentEvent(frame: RawFrame): AgentEvent | null {
  * Reads a response body as a stream of agent events. Ends when the body ends.
  */
 export async function* readAgentEvents(body: ReadableStream<Uint8Array>): AsyncGenerator<AgentEvent> {
-    const reader = body.getReader();
-    const decoder = new TextDecoder();
-    let rest = '';
-
-    try {
-        for (;;) {
-            const { value, done } = await reader.read();
-            if (done) {
-                break;
-            }
-            const split = splitFrames(rest + decoder.decode(value, { stream: true }));
-            rest = split.rest;
-            for (const frame of split.frames) {
-                const event = toAgentEvent(frame);
-                if (event !== null) {
-                    yield event;
-                }
-            }
+    for await (const frame of readFrames(body)) {
+        const event = toAgentEvent(frame);
+        if (event !== null) {
+            yield event;
         }
-
-        const tail = splitFrames(rest + decoder.decode());
-        for (const frame of [...tail.frames]) {
-            const event = toAgentEvent(frame);
-            if (event !== null) {
-                yield event;
-            }
-        }
-    } finally {
-        reader.releaseLock();
     }
 }
 
