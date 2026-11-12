@@ -47,7 +47,7 @@ readonly class UpdateContentTool implements ToolInterface
                 ],
                 'language' => [
                     'type' => 'string',
-                    'description' => 'Language code (default: eng-GB)',
+                    'description' => 'Language code the content is written in, e.g. "fre-FR" (default: the repository default language)',
                     'default' => AiConstants::DEFAULT_LANGUAGE_CODE,
                 ],
             ],
@@ -60,8 +60,9 @@ readonly class UpdateContentTool implements ToolInterface
         try {
             $contentId = (int) $params['content_id'];
             $attributes = $params['attributes'] ?? [];
+            // Without a language the update stays in the language of the content, not in the repository default.
             $languageCode = $params['language']
-                ?? $this->repository->getContentLanguageService()->getDefaultLanguageCode();
+                ?? $this->repository->getContentService()->loadContentInfo($contentId)->getMainLanguageCode();
 
             $published = $this->contentUpdater->update($contentId, $attributes, $languageCode);
 

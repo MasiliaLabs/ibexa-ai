@@ -69,12 +69,13 @@ final readonly class PlanExecutor
         if ($tool === null) {
             return ExecutionResult::fail('create_content tool not available', 'TOOL_UNAVAILABLE');
         }
-        $result = $tool->execute([
+        $result = $tool->execute(array_filter([
             'content_type' => $plan->contentType,
             'parent_location_id' => $plan->parentLocationId,
             'siteaccess' => $plan->siteaccess,
             'attributes' => $plan->fields,
-        ]);
+            'language' => $plan->language,
+        ], static fn (mixed $value): bool => $value !== null));
 
         return $this->toExecutionResult($result, 'content');
     }
@@ -124,16 +125,18 @@ final readonly class PlanExecutor
         }
 
         $folderName = trim(($contentInfo->getName() ?? 'items') . ' items') ?: 'items';
+        // The items are written in the language the plan names, else in the one of the content they belong to.
+        $languageCode = $plan->language ?? $contentInfo->getMainLanguageCode();
         $folderLocationId = $this->findOrCreateFolder(
             $parentLocation->getId(),
-            $folderName
+            $folderName,
+            $languageCode,
         );
 
         if ($folderLocationId === null) {
             return ExecutionResult::fail('Could not find or create items folder', 'NO_FOLDER');
         }
 
-        $languageCode = $this->repository->getContentLanguageService()->getDefaultLanguageCode();
         $itemIds = [];
 
         // Emit initial progress for create_items
@@ -246,7 +249,7 @@ final readonly class PlanExecutor
         return null;
     }
 
-    private function findOrCreateFolder(int $parentLocationId, string $name): ?int
+    private function findOrCreateFolder(int $parentLocationId, string $name, string $languageCode): ?int
     {
         $contentService = $this->repository->getContentService();
         $locationService = $this->repository->getLocationService();
@@ -274,7 +277,6 @@ final readonly class PlanExecutor
 
         try {
             $folderType = $this->contentTypeService->loadContentTypeByIdentifier(ContentTypeId::FOLDER);
-            $languageCode = $this->repository->getContentLanguageService()->getDefaultLanguageCode();
 
             $createStruct = $contentService->newContentCreateStruct($folderType, $languageCode);
             $createStruct->setField(FieldId::NAME, $name, $languageCode);
@@ -376,7 +378,7 @@ final readonly class PlanExecutor
         $result = $tool->execute(array_filter([
             'content_id' => $plan->contentId,
             'attributes' => $plan->fields,
-            // Absent: the tool falls back to the default language.
+            // Absent: the tool keeps the language of the content.
             'language' => $plan->language,
         ], static fn (mixed $value): bool => $value !== null));
 
@@ -389,10 +391,11 @@ final readonly class PlanExecutor
         if ($tool === null) {
             return ExecutionResult::fail('create_folder tool not available', 'TOOL_UNAVAILABLE');
         }
-        $result = $tool->execute([
+        $result = $tool->execute(array_filter([
             'name' => $plan->title,
             'parent_location_id' => $plan->parentLocationId,
-        ]);
+            'language' => $plan->language,
+        ], static fn (mixed $value): bool => $value !== null));
 
         return $this->toExecutionResult($result, 'folder');
     }
@@ -403,13 +406,14 @@ final readonly class PlanExecutor
         if ($tool === null) {
             return ExecutionResult::fail('create_site_structure tool not available', 'TOOL_UNAVAILABLE');
         }
-        $result = $tool->execute([
+        $result = $tool->execute(array_filter([
             'site_name' => $plan->title,
             'domain' => $plan->siteaccess ?? '',
             'siteaccess' => $plan->siteaccess,
             'pages' => $plan->blocks,
             'description' => $plan->description,
-        ]);
+            'language' => $plan->language,
+        ], static fn (mixed $value): bool => $value !== null));
 
         return $this->toExecutionResult($result, 'site');
     }

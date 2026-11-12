@@ -60,6 +60,35 @@ final class PlanExecutorTest extends TestCase
         self::assertSame(200, $result->locationId);
     }
 
+    public function testTheLanguageOfThePlanReachesTheCreationTools(): void
+    {
+        $received = [];
+        $registry = new ToolRegistry();
+        foreach ([ToolName::CREATE_CONTENT, ToolName::CREATE_FOLDER] as $name) {
+            $registry = $registry->register(new class($name, $received) implements ToolInterface {
+                public function __construct(private readonly string $name, private array &$received) {}
+
+                public function getName(): string { return $this->name; }
+                public function getDescription(): string { return 'mock'; }
+                public function getParameters(): array { return []; }
+                public function execute(array $params): ToolResult
+                {
+                    $this->received[$this->name] = $params;
+
+                    return ToolResult::ok('ok', ['content_id' => 1, 'location_id' => 2]);
+                }
+            });
+        }
+
+        $executor = new PlanExecutor($registry, new NullLogger());
+        $executor->execute(new Plan(intent: Plan::INTENT_CREATE_CONTENT, contentType: 'page', parentLocationId: 42, fields: ['title' => 'Titre'], language: 'fre-FR'));
+        $executor->execute(new Plan(intent: Plan::INTENT_CREATE_FOLDER, title: 'Dossier', parentLocationId: 42, language: 'fre-FR'));
+        $executor->execute(new Plan(intent: Plan::INTENT_CREATE_FOLDER, title: 'Sans langue', parentLocationId: 42));
+
+        self::assertSame('fre-FR', $received[ToolName::CREATE_CONTENT]['language']);
+        self::assertArrayNotHasKey('language', $received[ToolName::CREATE_FOLDER], 'a plan with no language leaves the tool to its default (last call)');
+    }
+
     public function testExecuteCreateContentToolFailure(): void
     {
         $registry = $this->makeRegistry([

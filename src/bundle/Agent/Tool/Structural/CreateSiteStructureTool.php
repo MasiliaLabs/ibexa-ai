@@ -77,7 +77,7 @@ readonly class CreateSiteStructureTool implements ToolInterface
                 ],
                 'language' => [
                     'type' => 'string',
-                    'description' => 'Language code (default: eng-GB)',
+                    'description' => 'Language code the content is written in, e.g. "fre-FR" (default: the repository default language)',
                     'default' => AiConstants::DEFAULT_LANGUAGE_CODE,
                 ],
             ],

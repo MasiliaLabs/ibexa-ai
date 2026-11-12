@@ -11,6 +11,8 @@ use InvalidArgumentException;
 use Masilia\Bundle\IbexaAi\Agent\Block\BlockCatalog;
 use Masilia\Bundle\IbexaAi\Agent\Block\ContentCatalog;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
+use Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages;
+use Masilia\IbexaAi\Suggestion\LanguageCode;
 use Masilia\Bundle\IbexaAi\Support\FieldType;
 
 /**
@@ -39,6 +41,7 @@ final readonly class PlanBuilder
         private ?ContentCatalog $contentCatalog = null,
         private ?Repository $repository = null,
         private ?SiteaccessLocationResolver $siteaccessResolver = null,
+        private ?SiteLanguages $siteLanguages = null,
     ) {
     }
 
@@ -61,6 +64,8 @@ final readonly class PlanBuilder
             throw new InvalidArgumentException($targetError);
         }
 
+        $plan = $this->withSiteLanguage($plan);
+
         $schemaError = $this->validateBlockSchemas($plan);
         if ($schemaError !== null) {
             throw new InvalidArgumentException($schemaError);
@@ -82,17 +87,6 @@ final readonly class PlanBuilder
     {
         if ($this->repository === null) {
             return null;
-        }
-
-        if ($plan->language !== null) {
-            if ($plan->intent !== Plan::INTENT_UPDATE_CONTENT) {
-                return 'A language can only be set on an update_content plan (to write a translation). Other plans use the default language.';
-            }
-            try {
-                $this->repository->getContentLanguageService()->loadLanguage($plan->language);
-            } catch (NotFoundException) {
-                return sprintf('Language "%s" does not exist. Use a language code such as "eng-GB" or "fre-FR".', $plan->language);
-            }
         }
 
         if ($plan->intent === Plan::INTENT_CREATE_CONTENT && $plan->contentType !== null && $plan->contentType !== '') {
@@ -119,6 +113,80 @@ final readonly class PlanBuilder
         }
 
         return $this->validateSameSite($plan, $parent->getPathString());
+    }
+
+    /**
+     * The language the content is written in, as one of the languages of the plan's site.
+     *
+     * The model names the language it writes in ("fr", "fre-FR") and the site decides the code: it is mapped to
+     * the language the site's siteaccesses use. A plan that names none is written in the siteaccess's own
+     * language, not in the repository default, which is not the site's language. A language the site is not
+     * served in is refused, so French text is never stored as English.
+     */
+    private function withSiteLanguage(Plan $plan): Plan
+    {
+        if ($this->repository === null) {
+            return $plan;
+        }
+
+        $writesContent = in_array($plan->intent, [
+            Plan::INTENT_CREATE_CONTENT,
+            Plan::INTENT_CREATE_ITEMS,
+            Plan::INTENT_UPDATE_CONTENT,
+            Plan::INTENT_CREATE_FOLDER,
+            Plan::INTENT_CREATE_SITE_STRUCTURE,
+        ], true);
+        if (!$writesContent) {
+            if ($plan->language !== null) {
+                throw new InvalidArgumentException('A language can only be set on a plan that writes content.');
+            }
+
+            return $plan;
+        }
+
+        $siteaccess = $plan->siteaccess ?? '';
+        $site = $siteaccess !== '' && $this->siteLanguages !== null ? $this->siteLanguages->forSiteaccess($siteaccess) : [];
+
+        if ($plan->language === null) {
+            // An update keeps the language of the content it changes: the tool reads it from the content.
+            return $plan->intent === Plan::INTENT_UPDATE_CONTENT || $site === [] ? $plan : $plan->withLanguage($site[0]);
+        }
+
+        $resolved = LanguageCode::resolve($plan->language, $site);
+        if ($resolved !== null) {
+            return $plan->withLanguage($resolved);
+        }
+
+        $repositoryLanguages = $this->repositoryLanguages();
+        if (LanguageCode::resolve($plan->language, $repositoryLanguages) === null) {
+            throw new InvalidArgumentException(sprintf('Language "%s" does not exist. Use a language code such as "eng-GB" or "fre-FR".', $plan->language));
+        }
+        if ($site === []) {
+            return $plan->withLanguage(LanguageCode::resolve($plan->language, $repositoryLanguages));
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            'The site of siteaccess "%s" has no "%s" language: it is served in %s. Write in one of these languages, or use the siteaccess of the site\'s %s version if it has one.',
+            $siteaccess,
+            $plan->language,
+            implode(', ', $site),
+            $plan->language,
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function repositoryLanguages(): array
+    {
+        $codes = [];
+        foreach ($this->repository?->getContentLanguageService()->loadLanguages() ?? [] as $language) {
+            if ($language->enabled) {
+                $codes[] = $language->languageCode;
+            }
+        }
+
+        return $codes;
     }
 
     /**

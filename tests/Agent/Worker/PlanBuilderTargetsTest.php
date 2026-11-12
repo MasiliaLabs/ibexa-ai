@@ -14,6 +14,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Language;
 use Ibexa\Core\Repository\Values\Content\Location;
 use InvalidArgumentException;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
+use Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages;
 use Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder;
 use PHPUnit\Framework\TestCase;
 
@@ -95,12 +96,57 @@ final class PlanBuilderTargetsTest extends TestCase
         ]);
     }
 
-    public function testALanguageOnAnotherIntentIsRefusedInsteadOfBeingIgnored(): void
+    public function testAPlanWithoutLanguageIsWrittenInTheSiteaccessLanguageNotTheRepositoryDefault(): void
+    {
+        $plan = $this->builder(['fossil_exit_fr' => ['fre-FR', 'eng-GB']])->build($this->plan(['siteaccess' => 'fossil_exit_fr']));
+
+        self::assertSame('fre-FR', $plan->language);
+    }
+
+    public function testAFrenchPlanOnTheEnglishSiteaccessIsMappedToTheSitesFrenchLanguage(): void
+    {
+        // fossil_exit is English, fossil_exit_fr French, on the same tree: French content gets fre-FR.
+        $plan = $this->builder()->build($this->plan(['language' => 'fr']));
+
+        self::assertSame('fre-FR', $plan->language);
+    }
+
+    public function testTheModelMayNameTheLanguageWithItsFullCode(): void
+    {
+        $plan = $this->builder()->build($this->plan(['language' => 'eng-GB']));
+
+        self::assertSame('eng-GB', $plan->language);
+    }
+
+    public function testALanguageTheSiteIsNotServedInIsRefusedInsteadOfWritingItAsAnotherOne(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('A language can only be set on an update_content plan');
+        $this->expectExceptionMessage('has no "fr" language: it is served in eng-GB');
 
-        $this->builder()->build($this->plan(['language' => 'fre-FR']));
+        $this->builder(['fossil_exit' => ['eng-GB']])->build($this->plan(['language' => 'fr']));
+    }
+
+    public function testALanguageTheRepositoryDoesNotHaveIsRefusedAsUnknown(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Language "de" does not exist');
+
+        $this->builder()->build($this->plan(['language' => 'de']));
+    }
+
+    public function testAnUpdateWithoutLanguageKeepsTheLanguageOfTheContent(): void
+    {
+        $plan = $this->builder()->build(['intent' => 'update_content', 'content_id' => 1342, 'siteaccess' => 'fossil_exit_fr', 'fields' => ['title' => 'Titre']]);
+
+        self::assertNull($plan->language);
+    }
+
+    public function testALanguageOnAPlanThatWritesNothingIsRefusedInsteadOfBeingIgnored(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A language can only be set on a plan that writes content');
+
+        $this->builder()->build(['intent' => 'trash_content', 'content_id' => 1342, 'language' => 'fre-FR']);
     }
 
     public function testAFolderPlanChecksItsParentToo(): void
@@ -132,8 +178,13 @@ final class PlanBuilderTargetsTest extends TestCase
         ];
     }
 
-    private function builder(): PlanBuilder
+    /**
+     * @param array<string, list<string>> $languagesBySiteaccess Siteaccesses of one site and their languages; by default
+     *                                                           fossil_exit (eng-GB), fossil_exit_fr (fre-FR), fossil_exit_ar (ara-MA)
+     */
+    private function builder(array $languagesBySiteaccess = []): PlanBuilder
     {
+        $languagesBySiteaccess = $languagesBySiteaccess ?: ['fossil_exit' => ['eng-GB'], 'fossil_exit_fr' => ['fre-FR'], 'fossil_exit_ar' => ['ara-MA']];
         $paths = [
             1018 => '/1/2/1016/1018/',
             1304 => '/1/2/1016/1304/',
@@ -164,9 +215,14 @@ final class PlanBuilderTargetsTest extends TestCase
         );
 
         $languages = $this->createMock(LanguageService::class);
+        $languages->method('loadLanguages')->willReturn([
+            new Language(['languageCode' => 'eng-GB', 'enabled' => true]),
+            new Language(['languageCode' => 'fre-FR', 'enabled' => true]),
+            new Language(['languageCode' => 'ara-MA', 'enabled' => true]),
+        ]);
         $languages->method('loadLanguage')->willReturnCallback(
             function (string $code): Language {
-                if (!in_array($code, ['eng-GB', 'fre-FR'], true)) {
+                if (!in_array($code, ['eng-GB', 'fre-FR', 'ara-MA'], true)) {
                     throw new NotFoundException('language', $code);
                 }
 
@@ -182,6 +238,17 @@ final class PlanBuilderTargetsTest extends TestCase
         $resolver = $this->createMock(SiteaccessLocationResolver::class);
         $resolver->method('resolve')->willReturn(1018);
 
-        return new PlanBuilder(repository: $repository, siteaccessResolver: $resolver);
+        $siteLanguages = $this->createMock(SiteLanguages::class);
+        $siteLanguages->method('forSiteaccess')->willReturnCallback(
+            static function (string $siteaccess) use ($languagesBySiteaccess): array {
+                if (!isset($languagesBySiteaccess[$siteaccess])) {
+                    return [];
+                }
+                // The siteaccess's own language first, then the ones of the siteaccesses of the same site.
+                return array_values(array_unique(array_merge(...array_values([$siteaccess => $languagesBySiteaccess[$siteaccess]] + $languagesBySiteaccess))));
+            },
+        );
+
+        return new PlanBuilder(repository: $repository, siteaccessResolver: $resolver, siteLanguages: $siteLanguages);
     }
 }

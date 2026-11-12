@@ -44,9 +44,27 @@ final readonly class Plan
         public ?string $description = null,
         public array  $items = [],
         public ?string $linkField = null,
-        /** Language code of the translation to write (update_content only); null means the default language. */
+        /** Language code the content is written in; the builder sets it to a language of the site. */
         public ?string $language = null,
     ) {
+    }
+
+    public function withLanguage(?string $language): self
+    {
+        return new self(
+            intent: $this->intent,
+            title: $this->title,
+            contentType: $this->contentType,
+            siteaccess: $this->siteaccess,
+            parentLocationId: $this->parentLocationId,
+            blocks: $this->blocks,
+            fields: $this->fields,
+            contentId: $this->contentId,
+            description: $this->description,
+            items: $this->items,
+            linkField: $this->linkField,
+            language: $language,
+        );
     }
 
     public function validate(): ?string

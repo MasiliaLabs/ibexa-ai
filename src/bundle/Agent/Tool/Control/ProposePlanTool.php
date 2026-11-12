@@ -84,7 +84,7 @@ final readonly class ProposePlanTool implements ToolInterface, GatedToolInterfac
                 ],
                 'language' => [
                     'type' => 'string',
-                    'description' => 'Language code of the translation to write, e.g. "fre-FR" (update_content only). If the content has no translation in that language it is created; the other languages are left untouched. Without it the default language is used.',
+                    'description' => 'The language the content is written in: "fre-FR", or just "fr". ALWAYS set it to the language of the text you write (a French page: fr, an English page: en). It must be a language of the site; it is mapped to the site\'s language code. For update_content it writes that translation (created if missing, other languages untouched). Without it, new content is written in the siteaccess\'s own language and an update keeps the content\'s language.',
                 ],
                 'link_field' => [
                     'type' => 'string',
@@ -144,7 +144,7 @@ final readonly class ProposePlanTool implements ToolInterface, GatedToolInterfac
             $parts[] = sprintf('Content ID: %d', $plan->contentId);
         }
         if ($plan->language !== null) {
-            $parts[] = sprintf('Language: %s (a translation: other languages are not changed)', $plan->language);
+            $parts[] = sprintf('Language: %s%s', $plan->language, $plan->intent === Plan::INTENT_UPDATE_CONTENT ? ' (a translation: other languages are not changed)' : '');
         }
         // What will actually change, so the user does not approve a field list they cannot see.
         if (in_array($plan->intent, [Plan::INTENT_CREATE_CONTENT, Plan::INTENT_UPDATE_CONTENT], true) && $plan->fields !== []) {
