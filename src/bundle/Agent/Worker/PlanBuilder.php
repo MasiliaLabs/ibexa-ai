@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Agent\Worker;
 
+use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
+use Ibexa\Contracts\Core\Repository\Exceptions\UnauthorizedException;
+use Ibexa\Contracts\Core\Repository\Repository;
 use InvalidArgumentException;
 use Masilia\Bundle\IbexaAi\Agent\Block\BlockCatalog;
 use Masilia\Bundle\IbexaAi\Agent\Block\ContentCatalog;
+use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
 use Masilia\Bundle\IbexaAi\Support\FieldType;
 
 /**
@@ -33,6 +37,8 @@ final readonly class PlanBuilder
     public function __construct(
         private ?BlockCatalog   $blockCatalog = null,
         private ?ContentCatalog $contentCatalog = null,
+        private ?Repository $repository = null,
+        private ?SiteaccessLocationResolver $siteaccessResolver = null,
     ) {
     }
 
@@ -48,6 +54,13 @@ final readonly class PlanBuilder
             throw new InvalidArgumentException($error);
         }
 
+        // Checked before the schemas and before any approval: the user is never asked to approve a plan
+        // that cannot run (unknown content type, missing parent, parent in another site).
+        $targetError = $this->validateTargets($plan);
+        if ($targetError !== null) {
+            throw new InvalidArgumentException($targetError);
+        }
+
         $schemaError = $this->validateBlockSchemas($plan);
         if ($schemaError !== null) {
             throw new InvalidArgumentException($schemaError);
@@ -59,6 +72,94 @@ final readonly class PlanBuilder
         }
 
         return $plan;
+    }
+
+    /**
+     * Validate what the plan points at: the content type exists, the parent location exists, and the parent
+     * is not in a different site than the siteaccess. Without a repository (unit tests) nothing is checked.
+     */
+    private function validateTargets(Plan $plan): ?string
+    {
+        if ($this->repository === null) {
+            return null;
+        }
+
+        if ($plan->intent === Plan::INTENT_CREATE_CONTENT && $plan->contentType !== null && $plan->contentType !== '') {
+            try {
+                $this->repository->getContentTypeService()->loadContentTypeByIdentifier($plan->contentType);
+            } catch (NotFoundException) {
+                return $this->unknownContentType($plan->contentType);
+            } catch (UnauthorizedException) {
+                return sprintf('You are not allowed to read the content type "%s".', $plan->contentType);
+            }
+        }
+
+        $createsUnderParent = in_array($plan->intent, [Plan::INTENT_CREATE_CONTENT, Plan::INTENT_CREATE_FOLDER], true);
+        if (!$createsUnderParent || $plan->parentLocationId === null) {
+            return null;
+        }
+
+        try {
+            $parent = $this->repository->getLocationService()->loadLocation($plan->parentLocationId);
+        } catch (NotFoundException) {
+            return sprintf('Parent location %d does not exist. Find the right location with explore_site or browse_location.', $plan->parentLocationId);
+        } catch (UnauthorizedException) {
+            return sprintf('You are not allowed to create content under location %d.', $plan->parentLocationId);
+        }
+
+        return $this->validateSameSite($plan, $parent->pathString);
+    }
+
+    /**
+     * A parent under another site than the siteaccess's is almost always a mistake (wrong language and wrong
+     * layout). Locations outside the sites tree (media, users) are not part of any site and are accepted.
+     */
+    private function validateSameSite(Plan $plan, string $parentPath): ?string
+    {
+        if ($this->siteaccessResolver === null || $plan->siteaccess === null || $plan->siteaccess === '') {
+            return null;
+        }
+
+        $root = $this->siteaccessResolver->resolve($plan->siteaccess);
+        if ($root === null || $root <= 0) {
+            return null;
+        }
+
+        try {
+            $rootPath = $this->repository?->getLocationService()->loadLocation($root)->pathString;
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($rootPath === null) {
+            return null;
+        }
+
+        $rootParts = array_values(array_filter(explode('/', $rootPath), static fn (string $part): bool => $part !== ''));
+        $parentParts = array_values(array_filter(explode('/', $parentPath), static fn (string $part): bool => $part !== ''));
+
+        // Same container of sites (e.g. /1/2/...), but a different site below it.
+        if (isset($rootParts[2], $parentParts[2]) && $rootParts[1] === $parentParts[1] && $rootParts[2] !== $parentParts[2]) {
+            return sprintf(
+                'Parent location %d is in a different site than siteaccess "%s" (site location %s). Use a parent under that site, or the siteaccess of the parent\'s site.',
+                $plan->parentLocationId,
+                $plan->siteaccess,
+                $rootParts[2],
+            );
+        }
+
+        return null;
+    }
+
+    private function unknownContentType(string $identifier): string
+    {
+        $known = array_keys($this->contentCatalog?->getAvailableContentTypes() ?? []);
+        sort($known);
+
+        return sprintf(
+            'Content type "%s" does not exist.%s',
+            $identifier,
+            $known === [] ? '' : ' Available types: ' . implode(', ', array_slice($known, 0, 40)) . '.',
+        );
     }
 
     /**
