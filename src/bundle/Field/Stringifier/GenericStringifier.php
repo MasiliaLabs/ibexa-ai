@@ -7,6 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Field\Stringifier;
 use Ibexa\Contracts\Core\Repository\FieldTypeService;
 use Ibexa\Contracts\Core\Repository\Values\Content\Field;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
+use Masilia\Bundle\IbexaAi\Field\FieldValueStringifierInterface;
 use Masilia\Bundle\IbexaAi\Field\FieldValueStringifierRegistry;
 use Throwable;
 
