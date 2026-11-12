@@ -124,17 +124,20 @@ export function reducer(state: SuggestState, action: Action): SuggestState {
             return { ...state, status: 'streaming', suggestion: '', error: null, undo: null, image: { ...state.image, image: null } };
 
         case 'stream.delta':
-            return state.status === 'streaming' ? { ...state, suggestion: state.suggestion + action.text } : state;
+            // A model often starts its answer after its reasoning with blank lines: they are never part of the value.
+            return state.status === 'streaming'
+                ? { ...state, suggestion: state.suggestion === '' ? action.text.trimStart() : state.suggestion + action.text }
+                : state;
 
         case 'stream.completed':
-            return state.status === 'streaming' ? { ...state, status: 'done' } : state;
+            return state.status === 'streaming' ? { ...state, status: 'done', suggestion: state.suggestion.trimEnd() } : state;
 
         case 'stream.failed':
             return { ...state, status: 'error', error: action.message };
 
         case 'stream.stopped':
             // What arrived is kept: the user can still apply a partial result or generate again.
-            return state.status === 'streaming' ? { ...state, status: state.suggestion === '' ? 'idle' : 'done' } : state;
+            return state.status === 'streaming' ? { ...state, status: state.suggestion === '' ? 'idle' : 'done', suggestion: state.suggestion.trimEnd() } : state;
 
         case 'image.ratio':
             return { ...state, image: { ...state.image, ratio: action.ratio } };

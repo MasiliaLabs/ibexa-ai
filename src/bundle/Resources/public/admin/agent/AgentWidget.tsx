@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { AssetsProvider, Button } from './ids';
+import { AssetsProvider, Button } from '../shared/ids';
 
 import { useAgent } from './useAgent';
 import type { AgentController } from './useAgent';

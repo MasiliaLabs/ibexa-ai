@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Button } from '../ids';
+import { Button } from '../../shared/ids';
 
 interface ComposerProps {
     busy: boolean;

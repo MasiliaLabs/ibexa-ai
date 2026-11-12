@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from '../ids';
+import { Icon } from '../../shared/ids';
 import { TOOL_ICONS } from '../icons';
 import type { ToolStep } from '../state';
 

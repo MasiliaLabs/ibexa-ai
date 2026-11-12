@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { Button } from '../ids';
+import { Button } from '../../shared/ids';
 
 import type { Approval, Decision } from '../state';
 

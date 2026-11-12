@@ -154,6 +154,20 @@ test('streamed text accumulates, then completes', () => {
     assert.equal(hasUnappliedResult(state), true);
 });
 
+test('blank lines before and after the answer are not part of the value', () => {
+    let state = streamed(opened(), '\n\n', 'Hello', ' world', '\n');
+    assert.equal(state.suggestion, 'Hello world\n', 'while streaming only the start is trimmed');
+
+    state = reducer(state, { type: 'stream.completed' });
+    assert.equal(state.suggestion, 'Hello world');
+});
+
+test('whitespace only at the start of a later chunk is kept: it separates words', () => {
+    const state = streamed(opened(), 'Hello', ' world');
+
+    assert.equal(state.suggestion, 'Hello world');
+});
+
 test('late text after a stop is ignored, and what arrived is kept', () => {
     let state = streamed(opened(), 'Hello');
     state = reducer(state, { type: 'stream.stopped' });
