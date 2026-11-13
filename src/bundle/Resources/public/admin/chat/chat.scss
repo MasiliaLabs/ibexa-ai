@@ -1043,3 +1043,73 @@ html {
         text-decoration: underline;
     }
 }
+
+// ── Attachments ─────────────────────────────────────────────
+.masilia-chat__composer-card--drop {
+    background: ibexa.$ibexa-color-primary-100;
+    border-color: ibexa.$ibexa-color-primary;
+    border-style: dashed;
+}
+
+.masilia-chat__attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calculateRem(6px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.masilia-chat__attachment,
+.masilia-chat__sent-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: calculateRem(6px);
+    max-width: 100%;
+    padding: calculateRem(2px) calculateRem(8px);
+    background: ibexa.$ibexa-color-light-300;
+    border: 1px solid ibexa.$ibexa-color-light;
+    border-radius: calculateRem(8px);
+    font-size: ibexa.$ibexa-text-font-size-small;
+
+    svg {
+        flex: none;
+        fill: ibexa.$ibexa-color-primary;
+    }
+}
+
+.masilia-chat__attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.masilia-chat__attachment-size {
+    flex: none;
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
+}
+
+.masilia-chat__attachment-remove {
+    display: inline-flex;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: ibexa.$ibexa-color-dark-400;
+    cursor: pointer;
+
+    svg {
+        fill: currentColor;
+    }
+}
+
+.masilia-chat__sent-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calculateRem(6px);
+    margin-top: calculateRem(6px);
+}
+
+.masilia-chat__sent-attachment {
+    background: ibexa.$ibexa-color-white;
+}

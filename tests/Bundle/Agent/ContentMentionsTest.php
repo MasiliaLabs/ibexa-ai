@@ -27,6 +27,14 @@ final class ContentMentionsTest extends TestCase
         self::assertSame(['Fossil exit', 'fossil fuels', 'About fossils', 'The page about fossils'], array_column($ranked, 'name'));
     }
 
+    public function testADocumentIsNotPartOfTheTitle(): void
+    {
+        $message = "Write a page from this\n\n<attachment name=\"brief.md\" bytes=\"12\">\n# Brief\nBody\n</attachment>";
+
+        self::assertSame('Write a page from this', ThreadTitle::from($message));
+        self::assertSame('Attached: brief.md', ThreadTitle::from("<attachment name=\"brief.md\" bytes=\"12\">\nx\n</attachment>"));
+    }
+
     public function testAMentionInAFirstMessageReadsAsItsNameInTheTitle(): void
     {
         self::assertSame('Translate @Les atouts to French', ThreadTitle::from('Translate @[Les atouts](content:1353/1343) to French'));

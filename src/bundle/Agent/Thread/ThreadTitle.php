@@ -28,8 +28,22 @@ final class ThreadTitle
     /** A mention in a message: @[Name](content:ID) or @[Name](content:ID/LOCATION). */
     public const MENTION = '/@\[([^\]\n]+)\]\(content:\d+(?:\/\d+)?\)/u';
 
+    /** A document attached to a message (see the chat's attachments). */
+    public const ATTACHMENT = '/\n*<attachment name="([^"]*)" bytes="\d+">\n.*?\n<\/attachment>/su';
+
     public static function from(string $firstMessage): string
     {
+        $attached = [];
+        $firstMessage = (string) preg_replace_callback(self::ATTACHMENT, static function (array $match) use (&$attached): string {
+            $attached[] = $match[1];
+
+            return '';
+        }, $firstMessage);
+        if (trim($firstMessage) === '' && $attached !== []) {
+            // Nothing written but a document: it names the conversation.
+            $firstMessage = 'Attached: ' . $attached[0];
+        }
+
         $line = trim((string) preg_replace('/\s+/u', ' ', (string) preg_replace(self::MENTION, '@$1', $firstMessage)));
         if ($line === '') {
             return self::DEFAULT;

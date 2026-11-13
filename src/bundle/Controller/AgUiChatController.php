@@ -46,6 +46,9 @@ use Throwable;
  */
 final readonly class AgUiChatController
 {
+    /** What one message can carry, attached documents included. */
+    private const MAX_MESSAGE = 400000;
+
     private const GENERIC_ERROR = 'The AI agent is currently unavailable. Please try again later or contact an administrator.';
 
     public function __construct(
@@ -74,8 +77,12 @@ final readonly class AgUiChatController
         if (!ThreadId::isValid($threadId)) {
             return new JsonResponse(ApiError::validation('Missing or invalid threadId')->toArray(), Response::HTTP_BAD_REQUEST);
         }
+        $message = $this->lastUserText($input);
+        if (mb_strlen($message) > self::MAX_MESSAGE) {
+            return new JsonResponse(ApiError::validation('The message is too long.')->toArray(), Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+        }
         try {
-            $this->threads->claim($threadId, $this->userId(), $this->currentSiteaccess(), $this->lastUserText($input));
+            $this->threads->claim($threadId, $this->userId(), $this->currentSiteaccess(), $message);
         } catch (ThreadAccessDeniedException) {
             return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
         }

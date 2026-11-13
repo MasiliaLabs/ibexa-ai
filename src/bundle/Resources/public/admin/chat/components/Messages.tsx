@@ -2,6 +2,7 @@ import { ActionBarPrimitive, ErrorPrimitive, MessagePrimitive, useAuiState } fro
 import React, { useState } from 'react';
 
 import { Icon } from '../../shared/ids';
+import { formatBytes, splitAttachments } from '../attachments';
 import { mentionHref, splitMentions } from '../mentions';
 import { collectSources } from '../sources';
 import type { SourcePart } from '../sources';
@@ -150,11 +151,16 @@ function Sources() {
     );
 }
 
-/** What the user wrote: a content they mentioned is a link that opens it. */
+/**
+ * What the user wrote: a content they mentioned is a link that opens it, and the documents they attached are
+ * chips (the text of a document is for the agent, not for the conversation).
+ */
 function UserText({ text }: { text: string }) {
+    const { body, attachments } = splitAttachments(text);
+
     return (
         <>
-            {splitMentions(text).map((piece, index) =>
+            {splitMentions(body).map((piece, index) =>
                 piece.type === 'text' ? (
                     <React.Fragment key={index}>{piece.text}</React.Fragment>
                 ) : (
@@ -163,6 +169,16 @@ function UserText({ text }: { text: string }) {
                     </a>
                 ),
             )}
+            {attachments.length > 0 ? (
+                <span className="masilia-chat__sent-attachments">
+                    {attachments.map((attachment, index) => (
+                        <span key={index} className="masilia-chat__sent-attachment" title={`${attachment.name} (${formatBytes(attachment.bytes)})`}>
+                            <Icon name="file-text" size="small" />
+                            <span className="masilia-chat__attachment-name">{attachment.name}</span>
+                        </span>
+                    ))}
+                </span>
+            ) : null}
         </>
     );
 }
