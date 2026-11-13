@@ -8,6 +8,8 @@ use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Core\Repository\Values\User\UserReference;
 use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
+use Masilia\Bundle\IbexaAi\Os\Selftest\SelftestContext;
+use Masilia\Bundle\IbexaAi\Os\Selftest\SelftestScenario;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -15,6 +17,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Throwable;
 
 #[AsCommand(
@@ -27,6 +30,9 @@ final class OsSelftestCommand extends Command
         private readonly CapabilityRunner $runner,
         private readonly Repository $repository,
         private readonly PermissionResolver $permissions,
+        /** @var iterable<SelftestScenario> The steps that packages on the OS add for their own capabilities */
+        #[AutowireIterator('masilia.ibexa_ai.selftest')]
+        private readonly iterable $scenarios = [],
     ) {
         parent::__construct();
     }
@@ -123,6 +129,24 @@ final class OsSelftestCommand extends Command
             $this->domains($step, $answers, $a['content_id'], $stamp);
             $this->structure($step, $answers, $contents, $parent, $stamp);
             $this->access($step, $answers, $stamp, $io);
+
+            $context = new SelftestContext(
+                \Closure::fromCallable($step),
+                function () use (&$answers): array {
+                    return $answers;
+                },
+                function (int $id) use (&$contents): void {
+                    $contents[] = $id;
+                },
+                static function (string $reason) use ($io): void {
+                    $io->writeln(sprintf(' <comment>skip</comment> %s', $reason));
+                },
+                $parent,
+                $stamp,
+            );
+            foreach ($this->scenarios as $scenario) {
+                $scenario->run($context);
+            }
             $step('trash A', 'content.trash', ['content_id' => $a['content_id']]);
             $step('delete A from the trash', 'trash.delete', ['content_id' => $a['content_id']]);
             $step('it is no longer in the trash', 'trash.delete', ['content_id' => $a['content_id']], null, null, true);
@@ -141,6 +165,13 @@ final class OsSelftestCommand extends Command
             }
             $this->removeStructures($stamp);
             $this->removeAccess($stamp);
+            foreach ($this->scenarios as $scenario) {
+                try {
+                    $scenario->cleanup();
+                } catch (Throwable) {
+                    // Whatever it could not remove is reported by its own checks next time.
+                }
+            }
         }
 
         if ($failed > 0) {
