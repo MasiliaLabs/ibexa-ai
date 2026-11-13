@@ -5,7 +5,9 @@
 @use '@ids-assets/scss/buttons';
 @use '@ids-assets/scss/icons';
 
-$panel-width: min(440px, calc(100vw - 32px));
+$dock-width: min(420px, 100vw);
+$dock-width-wide: min(760px, 60vw);
+$dock-top: calculateRem(59px); // under the admin's top bar
 
 .masilia-chat__anchor {
     position: fixed;
@@ -37,18 +39,77 @@ $panel-width: min(440px, calc(100vw - 32px));
     }
 }
 
-.masilia-chat__panel {
-    z-index: 1001;
+// The width the panel takes, shared with the page so that it can make room.
+html {
+    --masilia-chat-width: #{$dock-width};
+
+    &.masilia-chat-wide {
+        --masilia-chat-width: #{$dock-width-wide};
+    }
+
+    &.masilia-chat-open body {
+        padding-right: var(--masilia-chat-width);
+        transition: padding-right 0.2s ease;
+
+        @media (max-width: 900px) {
+            padding-right: 0;
+        }
+    }
+}
+
+.masilia-chat__dock {
+    position: fixed;
+    top: $dock-top;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
     display: flex;
-    width: $panel-width;
-    max-height: min(700px, 80vh);
+    width: var(--masilia-chat-width);
     background: ibexa.$ibexa-color-white;
-    border: 1px solid ibexa.$ibexa-color-light;
-    border-radius: ibexa.$ibexa-border-radius;
-    box-shadow: 0 calculateRem(8px) calculateRem(24px) rgba(19, 28, 38, 0.14);
+    border-left: 1px solid ibexa.$ibexa-color-light;
+    box-shadow: calculateRem(-8px) 0 calculateRem(24px) rgba(19, 28, 38, 0.08);
     color: ibexa.$ibexa-color-dark;
     font-size: ibexa.$ibexa-text-font-size;
-    overflow: hidden;
+    transition: width 0.2s ease;
+}
+
+.masilia-chat__badge {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: calculateRem(32px);
+    height: calculateRem(32px);
+    background: linear-gradient(135deg, ibexa.$ibexa-color-primary, ibexa.$ibexa-color-primary-600);
+    border-radius: calculateRem(10px);
+    color: ibexa.$ibexa-color-white;
+
+    svg {
+        fill: currentColor;
+    }
+
+    &--large {
+        width: calculateRem(48px);
+        height: calculateRem(48px);
+        border-radius: calculateRem(14px);
+    }
+}
+
+.masilia-chat__avatar {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: calculateRem(24px);
+    height: calculateRem(24px);
+    margin-top: calculateRem(2px);
+    background: ibexa.$ibexa-color-primary-100;
+    border-radius: calculateRem(8px);
+    color: ibexa.$ibexa-color-primary;
+
+    svg {
+        fill: currentColor;
+    }
 }
 
 .masilia-chat__thread {
@@ -62,11 +123,20 @@ $panel-width: min(440px, calc(100vw - 32px));
 .masilia-chat__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: calculateRem(8px);
-    padding: calculateRem(8px) calculateRem(8px) calculateRem(8px) calculateRem(16px);
-    background: ibexa.$ibexa-color-light-300;
+    gap: calculateRem(12px);
+    padding: calculateRem(12px) calculateRem(8px) calculateRem(12px) calculateRem(16px);
     border-bottom: 1px solid ibexa.$ibexa-color-light;
+}
+
+.masilia-chat__heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.masilia-chat__subtitle {
+    margin: 0;
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: ibexa.$ibexa-text-font-size-small;
 }
 
 .masilia-chat__title {
@@ -101,8 +171,8 @@ $panel-width: min(440px, calc(100vw - 32px));
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: calculateRem(12px);
-    min-height: calculateRem(200px);
+    gap: calculateRem(20px);
+    min-height: 0;
     padding: calculateRem(16px);
     overflow-y: auto;
     scroll-behavior: smooth;
@@ -111,33 +181,63 @@ $panel-width: min(440px, calc(100vw - 32px));
 .masilia-chat__empty {
     display: flex;
     flex-direction: column;
-    gap: calculateRem(16px);
-    margin: auto;
-    color: ibexa.$ibexa-color-dark-400;
+    align-items: center;
+    gap: calculateRem(8px);
+    margin: auto 0;
     text-align: center;
+}
+
+.masilia-chat__greeting {
+    margin: calculateRem(8px) 0 0;
+    font-size: calculateRem(18px);
+    font-weight: ibexa.$ibexa-font-weight-bold;
+}
+
+.masilia-chat__lead {
+    max-width: calculateRem(300px);
+    margin: 0 0 calculateRem(8px);
+    color: ibexa.$ibexa-color-dark-400;
 }
 
 .masilia-chat__suggestions {
     display: flex;
     flex-direction: column;
     gap: calculateRem(8px);
+    width: 100%;
 }
 
 .masilia-chat__suggestion {
     display: flex;
-    flex-direction: column;
-    gap: calculateRem(2px);
-    padding: calculateRem(8px) calculateRem(12px);
+    align-items: center;
+    justify-content: space-between;
+    gap: calculateRem(12px);
+    padding: calculateRem(10px) calculateRem(14px);
     background: ibexa.$ibexa-color-white;
     border: calculateRem(1px) solid ibexa.$ibexa-color-light;
-    border-radius: ibexa.$ibexa-border-radius;
+    border-radius: calculateRem(12px);
     color: ibexa.$ibexa-color-dark;
     text-align: left;
     cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
     &:hover,
     &:focus-visible {
         border-color: ibexa.$ibexa-color-primary;
+        box-shadow: 0 calculateRem(2px) calculateRem(8px) rgba(19, 28, 38, 0.08);
+    }
+}
+
+.masilia-chat__suggestion-text {
+    display: flex;
+    flex-direction: column;
+    gap: calculateRem(2px);
+}
+
+.masilia-chat__suggestion-arrow {
+    color: ibexa.$ibexa-color-dark-400;
+
+    svg {
+        fill: currentColor;
     }
 }
 
@@ -153,6 +253,7 @@ $panel-width: min(440px, calc(100vw - 32px));
 .masilia-chat__steps {
     summary {
         color: ibexa.$ibexa-color-dark-400;
+        font-size: ibexa.$ibexa-text-font-size-small;
         cursor: pointer;
     }
 }
@@ -167,17 +268,32 @@ $panel-width: min(440px, calc(100vw - 32px));
 }
 
 .masilia-chat__tool-link {
+    display: inline-flex;
+    align-items: center;
     align-self: flex-start;
+    gap: calculateRem(6px);
+    padding: calculateRem(4px) calculateRem(10px);
+    border: 1px solid ibexa.$ibexa-color-primary-200;
+    border-radius: calculateRem(8px);
     font-size: ibexa.$ibexa-text-font-size-small;
+    font-weight: ibexa.$ibexa-font-weight-bold;
+    text-decoration: none;
+
+    svg {
+        fill: currentColor;
+    }
+
+    &:hover {
+        background: ibexa.$ibexa-color-primary-100;
+    }
 }
 
 .masilia-chat__message {
     display: flex;
-    flex-direction: column;
-    gap: calculateRem(4px);
+    gap: calculateRem(10px);
 
     &--user {
-        align-items: flex-end;
+        justify-content: flex-end;
     }
 
     &--assistant {
@@ -185,29 +301,52 @@ $panel-width: min(440px, calc(100vw - 32px));
     }
 }
 
+.masilia-chat__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: calculateRem(4px);
+    min-width: 0;
+}
+
 .masilia-chat__bubble {
     display: flex;
     flex-direction: column;
-    gap: calculateRem(8px);
+    gap: calculateRem(10px);
     max-width: 100%;
-    padding: calculateRem(8px) calculateRem(12px);
-    border-radius: ibexa.$ibexa-border-radius;
     overflow-wrap: anywhere;
 
     .masilia-chat__message--user & {
-        background: ibexa.$ibexa-color-primary-100;
-        white-space: pre-wrap;
-    }
-
-    .masilia-chat__message--assistant & {
-        width: 100%;
+        max-width: 85%;
+        padding: calculateRem(8px) calculateRem(14px);
         background: ibexa.$ibexa-color-light-300;
+        border-radius: calculateRem(16px) calculateRem(16px) calculateRem(4px) calculateRem(16px);
+        white-space: pre-wrap;
     }
 }
 
 .masilia-chat__thinking {
     margin: 0;
     color: ibexa.$ibexa-color-dark-400;
+}
+
+.masilia-chat__shimmer {
+    background: linear-gradient(90deg, ibexa.$ibexa-color-dark-400 0%, ibexa.$ibexa-color-dark 50%, ibexa.$ibexa-color-dark-400 100%);
+    background-clip: text;
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    color: transparent !important;
+    animation: masilia-chat-shimmer 1.8s linear infinite;
+}
+
+@keyframes masilia-chat-shimmer {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
 }
 
 .masilia-chat__message-actions {
@@ -382,15 +521,81 @@ $panel-width: min(440px, calc(100vw - 32px));
 }
 
 .masilia-chat__approval {
-    padding: calculateRem(12px);
+    display: flex;
+    flex-direction: column;
+    gap: calculateRem(12px);
+    padding: calculateRem(14px);
     background: ibexa.$ibexa-color-white;
     border: 1px solid ibexa.$ibexa-color-primary-200;
-    border-radius: ibexa.$ibexa-border-radius;
+    border-radius: calculateRem(12px);
+    box-shadow: 0 calculateRem(2px) calculateRem(8px) rgba(19, 28, 38, 0.06);
+}
+
+.masilia-chat__approval-head {
+    display: flex;
+    align-items: center;
+    gap: calculateRem(10px);
+}
+
+.masilia-chat__approval-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: calculateRem(32px);
+    height: calculateRem(32px);
+    background: ibexa.$ibexa-color-primary-100;
+    border-radius: calculateRem(10px);
+    color: ibexa.$ibexa-color-primary;
+
+    svg {
+        fill: currentColor;
+    }
+}
+
+.masilia-chat__approval-eyebrow {
+    margin: 0;
+    color: ibexa.$ibexa-color-primary;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
+    font-weight: ibexa.$ibexa-font-weight-bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.masilia-chat__approval-rows {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    background: ibexa.$ibexa-color-light-300;
+    border-radius: calculateRem(8px);
+}
+
+.masilia-chat__approval-row {
+    display: flex;
+    gap: calculateRem(12px);
+    padding: calculateRem(6px) calculateRem(12px);
+
+    &:not(:last-child) {
+        border-bottom: 1px solid ibexa.$ibexa-color-light;
+    }
+
+    dt {
+        flex: none;
+        width: calculateRem(124px);
+        color: ibexa.$ibexa-color-dark-400;
+    }
+
+    dd {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
 }
 
 .masilia-chat__approval-title {
-    margin: 0 0 calculateRem(4px);
-    font-size: ibexa.$ibexa-text-font-size;
+    margin: 0;
+    font-size: calculateRem(16px);
     font-weight: ibexa.$ibexa-font-weight-bold;
 }
 
@@ -435,28 +640,88 @@ $panel-width: min(440px, calc(100vw - 32px));
 // ── Composer ────────────────────────────────────────────────
 .masilia-chat__composer {
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    gap: calculateRem(6px);
+    padding: calculateRem(8px) calculateRem(16px) calculateRem(10px);
+}
+
+.masilia-chat__composer-card {
+    display: flex;
+    flex-direction: column;
+    gap: calculateRem(6px);
+    padding: calculateRem(10px) calculateRem(10px) calculateRem(8px) calculateRem(14px);
+    background: ibexa.$ibexa-color-white;
+    border: 1px solid ibexa.$ibexa-color-dark-200;
+    border-radius: calculateRem(14px);
+    box-shadow: 0 calculateRem(2px) calculateRem(8px) rgba(19, 28, 38, 0.06);
+
+    &:focus-within {
+        border-color: ibexa.$ibexa-color-primary;
+        box-shadow: 0 0 0 calculateRem(3px) ibexa.$ibexa-color-primary-100;
+    }
+}
+
+.masilia-chat__composer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: calculateRem(8px);
-    padding: calculateRem(12px) calculateRem(16px);
-    border-top: 1px solid ibexa.$ibexa-color-light;
+}
+
+.masilia-chat__hint,
+.masilia-chat__disclaimer {
+    margin: 0;
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
+}
+
+.masilia-chat__disclaimer {
+    text-align: center;
+}
+
+.masilia-chat__chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: calculateRem(6px);
+    max-width: 100%;
+    padding: calculateRem(2px) calculateRem(8px);
+    background: ibexa.$ibexa-color-primary-100;
+    border: 0;
+    border-radius: calculateRem(8px);
+    color: ibexa.$ibexa-color-primary;
+    font-size: ibexa.$ibexa-text-font-size-small;
+    cursor: pointer;
+
+    svg {
+        flex: none;
+        fill: currentColor;
+    }
+
+    &--off {
+        background: ibexa.$ibexa-color-light-300;
+        color: ibexa.$ibexa-color-dark-400;
+    }
+}
+
+.masilia-chat__chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .masilia-chat__input {
-    flex: 1;
     min-width: 0;
-    padding: calculateRem(8px) calculateRem(12px);
-    border: 1px solid ibexa.$ibexa-color-dark-200;
-    border-radius: ibexa.$ibexa-border-radius;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
     font: inherit;
     resize: none;
 
-    &:focus-visible {
-        border-color: ibexa.$ibexa-color-primary;
-        outline: calculateRem(2px) solid ibexa.$ibexa-color-primary-200;
-    }
-
     &:disabled {
-        background: ibexa.$ibexa-color-light-300;
+        color: ibexa.$ibexa-color-dark-400;
+        cursor: not-allowed;
     }
 }
 
@@ -468,7 +733,7 @@ $panel-width: min(440px, calc(100vw - 32px));
     height: calculateRem(36px);
     background: ibexa.$ibexa-color-white;
     border: 1px solid ibexa.$ibexa-color-primary;
-    border-radius: ibexa.$ibexa-border-radius;
+    border-radius: calculateRem(10px);
     color: ibexa.$ibexa-color-primary;
     cursor: pointer;
 
@@ -487,7 +752,7 @@ $panel-width: min(440px, calc(100vw - 32px));
     }
 }
 
-.masilia-chat__panel .visually-hidden {
+.masilia-chat__dock .visually-hidden {
     position: absolute;
     width: 1px;
     height: 1px;

@@ -1,56 +1,89 @@
-import { AssistantModalPrimitive, AssistantRuntimeProvider, AuiConfig, Suggestions } from '@assistant-ui/react';
-import React, { useState } from 'react';
+import { AssistantRuntimeProvider } from '@assistant-ui/react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { AssetsBridge } from './bridge';
 import { Thread } from './components/Thread';
 import { Icon } from '../shared/ids';
+import { runContext } from './runtime/pageContext';
 import type { ChatRuntime } from './runtime/types';
-
-// Starting points shown while the conversation is empty: what the assistant is good at here.
-const CONFIG = AuiConfig({
-    suggestions: Suggestions([
-        { title: 'Site structure', label: 'sites and pages', prompt: 'Show me the structure of the site.' },
-        { title: 'Missing translations', label: 'pages without French', prompt: 'Which pages have no French translation?' },
-        { title: 'Hidden content', label: 'not visible to visitors', prompt: 'Which content is hidden from visitors?' },
-        { title: 'What can you do?', label: 'in this admin', prompt: 'What can you help me with here?' },
-    ]),
-});
+import { createSuggestionsConfig } from './suggestions';
 
 interface ChatWidgetProps {
     chat: ChatRuntime;
 }
 
+const WIDE_KEY = 'masilia.ai.wide';
+
+function readWide(): boolean {
+    try {
+        return window.localStorage.getItem(WIDE_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
 /**
- * The floating assistant: a launcher in the corner of every admin page and a panel above it.
+ * The assistant: a panel docked to the right of the admin, opened from a launcher in the corner. It can be widened
+ * for long answers; the choice is kept.
  */
 export function ChatWidget({ chat }: ChatWidgetProps) {
     // It is only loaded when the user clicked the launcher: it opens at once.
     const [open, setOpen] = useState(true);
+    const [wide, setWide] = useState(readWide);
+    const launcher = useRef<HTMLButtonElement>(null);
+    const wasOpen = useRef(true);
+    const config = useMemo(() => createSuggestionsConfig(runContext(window.location.pathname).length > 0), []);
+
+    useEffect(() => {
+        if (open) {
+            document.getElementById('masilia-chat-input')?.focus();
+        } else if (wasOpen.current) {
+            launcher.current?.focus();
+        }
+        wasOpen.current = open;
+    }, [open]);
+
+    // The page makes room for the panel, as a docked side panel does, instead of being covered by it.
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.toggle('masilia-chat-open', open);
+        root.classList.toggle('masilia-chat-wide', open && wide);
+
+        return () => root.classList.remove('masilia-chat-open', 'masilia-chat-wide');
+    }, [open, wide]);
+
+    const toggleWide = () => {
+        const next = !wide;
+        setWide(next);
+        try {
+            window.localStorage.setItem(WIDE_KEY, next ? '1' : '0');
+        } catch {
+            // Not kept: it still applies until the page is left.
+        }
+    };
 
     return (
         <AssetsBridge>
-            <AssistantRuntimeProvider runtime={chat.runtime} config={CONFIG}>
-                <AssistantModalPrimitive.Root open={open} onOpenChange={setOpen}>
-                    <AssistantModalPrimitive.Anchor className="masilia-chat__anchor">
-                        <AssistantModalPrimitive.Trigger className="masilia-chat__launcher" title="Content assistant" aria-label={open ? 'Close the assistant' : 'Open the assistant'}>
-                            <Icon name="ai" size="medium" />
-                        </AssistantModalPrimitive.Trigger>
-                    </AssistantModalPrimitive.Anchor>
-                    <AssistantModalPrimitive.Content
-                        className="masilia-chat__panel"
-                        sideOffset={12}
-                        align="end"
-                        side="top"
+            <AssistantRuntimeProvider runtime={chat.runtime} config={config}>
+                {open ? (
+                    <aside
+                        className={`masilia-chat__dock${wide ? ' masilia-chat__dock--wide' : ''}`}
                         aria-label="Content assistant"
-                        onOpenAutoFocus={(event) => {
-                            // The message box takes the focus, not the first button of the header.
-                            event.preventDefault();
-                            document.getElementById('masilia-chat-input')?.focus();
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape' && !event.defaultPrevented) {
+                                setOpen(false);
+                            }
                         }}
                     >
-                        <Thread chat={chat} onClose={() => setOpen(false)} />
-                    </AssistantModalPrimitive.Content>
-                </AssistantModalPrimitive.Root>
+                        <Thread chat={chat} wide={wide} onToggleWide={toggleWide} onClose={() => setOpen(false)} />
+                    </aside>
+                ) : (
+                    <div className="masilia-chat__anchor">
+                        <button ref={launcher} type="button" className="masilia-chat__launcher" title="Content assistant" aria-label="Open the assistant" onClick={() => setOpen(true)}>
+                            <Icon name="ai" size="medium" />
+                        </button>
+                    </div>
+                )}
             </AssistantRuntimeProvider>
         </AssetsBridge>
     );

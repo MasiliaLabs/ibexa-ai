@@ -2,6 +2,7 @@ import type { ToolCallMessagePartProps } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
 import { Button, Icon } from '../../shared/ids';
+import { parseApproval } from '../approval';
 import { toolOutcome } from '../toolResult';
 
 const LABELS: Record<string, string> = {
@@ -44,19 +45,23 @@ export function ToolCard(props: ToolCallMessagePartProps) {
 
     return (
         <div className={`masilia-chat__tool masilia-chat__tool--${state}`}>
-            <details className="masilia-chat__tool-details">
-                <summary>
-                    <span className="masilia-chat__tool-icon" aria-hidden="true">
-                        <Icon name={ICONS[state]} size="small" />
-                    </span>
-                    {LABELS[toolName] ?? toolName}
-                    <span className="visually-hidden">{`, ${STATE_LABELS[state]}`}</span>
-                </summary>
-                {outcome !== null && outcome.message !== '' ? <p className="masilia-chat__tool-message">{outcome.message}</p> : null}
-                {inputs !== '' ? <pre className="masilia-chat__tool-inputs">{inputs}</pre> : null}
-            </details>
+            {/* While the change waits for a decision, its card says it all. */}
+            {state === 'waiting' ? null : (
+                <details className="masilia-chat__tool-details">
+                    <summary>
+                        <span className="masilia-chat__tool-icon" aria-hidden="true">
+                            <Icon name={ICONS[state]} size="small" />
+                        </span>
+                        {LABELS[toolName] ?? toolName}
+                        <span className="visually-hidden">{`, ${STATE_LABELS[state]}`}</span>
+                    </summary>
+                    {outcome !== null && outcome.message !== '' ? <p className="masilia-chat__tool-message">{outcome.message}</p> : null}
+                    {inputs !== '' ? <pre className="masilia-chat__tool-inputs">{inputs}</pre> : null}
+                </details>
+            )}
             {state === 'ok' && outcome?.href ? (
                 <a className="masilia-chat__tool-link" href={outcome.href} target="_blank" rel="noopener noreferrer">
+                    <Icon name="open-new-window" size="small" />
                     Open the content
                 </a>
             ) : null}
@@ -90,10 +95,32 @@ function Approval({ approval, respondToApproval }: ToolCallMessagePartProps & { 
         );
     }
 
+    const summary = parseApproval(approval.prompt);
+
     return (
         <section className="masilia-chat__approval" aria-label="Change to review">
-            <h3 className="masilia-chat__approval-title">Change to review</h3>
-            <p className="masilia-chat__approval-reason">{approval.prompt ?? 'The assistant proposes a change.'}</p>
+            <header className="masilia-chat__approval-head">
+                <span className="masilia-chat__approval-icon" aria-hidden="true">
+                    <Icon name="clipboard-check" size="small" />
+                </span>
+                <div>
+                    <p className="masilia-chat__approval-eyebrow">Review this change</p>
+                    <h3 className="masilia-chat__approval-title">{summary.heading ?? 'The assistant proposes a change'}</h3>
+                </div>
+            </header>
+            {summary.rows.length > 0 ? (
+                <dl className="masilia-chat__approval-rows">
+                    {summary.rows.map((row) => (
+                        <div key={row.label} className="masilia-chat__approval-row">
+                            <dt>{row.label}</dt>
+                            <dd>{row.value}</dd>
+                        </div>
+                    ))}
+                </dl>
+            ) : null}
+            {summary.notes.map((note) => (
+                <p key={note} className="masilia-chat__approval-reason">{note}</p>
+            ))}
             {failed ? <p className="masilia-chat__error" role="alert">Your decision could not be sent. Try again.</p> : null}
             {refusing ? (
                 <div className="masilia-chat__refuse">

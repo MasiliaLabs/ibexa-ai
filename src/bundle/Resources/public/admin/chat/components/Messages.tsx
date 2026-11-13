@@ -20,13 +20,17 @@ export function AssistantMessage() {
 
     return (
         <MessagePrimitive.Root className="masilia-chat__message masilia-chat__message--assistant">
+            <span className="masilia-chat__avatar" aria-hidden="true">
+                <Icon name="ai" size="small" />
+            </span>
+            <div className="masilia-chat__body">
             <div className="masilia-chat__bubble">
-                {waiting ? <p className="masilia-chat__thinking" role="status">Thinking…</p> : null}
+                {waiting ? <p className="masilia-chat__thinking masilia-chat__shimmer" role="status">Thinking…</p> : null}
                 <MessagePrimitive.GroupedParts groupBy={groupSteps} indicator="never">
                     {({ part, children }) => {
                         switch (part.type) {
                             case 'group-steps':
-                                return <Steps count={part.indices.length} running={part.status.type === 'running'}>{children}</Steps>;
+                                return <Steps indices={part.indices} running={part.status.type === 'running'}>{children}</Steps>;
                             case 'text':
                                 return <Markdown />;
                             case 'tool-call':
@@ -47,6 +51,7 @@ export function AssistantMessage() {
                     <Icon name="copy" size="small" />
                 </ActionBarPrimitive.Copy>
             </ActionBarPrimitive.Root>
+            </div>
         </MessagePrimitive.Root>
     );
 }
@@ -59,10 +64,18 @@ function groupSteps(part: { type: string; toolName?: string }): readonly `group-
     return part.type === 'tool-call' && part.toolName !== 'propose_plan' ? ['group-steps'] : [];
 }
 
-function Steps({ count, running, children }: { count: number; running: boolean; children: React.ReactNode }) {
+const RUNNING: Record<string, string> = {
+    explore_site: 'Exploring the site',
+    browse_location: 'Looking up content',
+};
+
+function Steps({ indices, running, children }: { indices: readonly number[]; running: boolean; children: React.ReactNode }) {
+    const parts = useAuiState((state) => state.message.parts) as ReadonlyArray<{ type: string; toolName?: string }>;
     // Open while it works, so the user sees what is going on; once done it folds, unless the user chose.
     const [chosen, setChosen] = useState<boolean | null>(null);
     const open = chosen ?? running;
+    const tool = parts[indices[indices.length - 1]]?.toolName;
+    const label = running ? `${(tool !== undefined ? RUNNING[tool] : undefined) ?? 'Working'}…` : indices.length === 1 ? '1 step' : `${indices.length} steps`;
 
     return (
         <details
@@ -75,7 +88,7 @@ function Steps({ count, running, children }: { count: number; running: boolean; 
                 }
             }}
         >
-            <summary>{running ? 'Working…' : count === 1 ? '1 step' : `${count} steps`}</summary>
+            <summary className={running ? 'masilia-chat__shimmer' : undefined}>{label}</summary>
             <div className="masilia-chat__steps-list">{children}</div>
         </details>
     );
