@@ -62,3 +62,27 @@ export function toolOutcome(raw: unknown): ToolOutcome {
 
     return { ok: true, message: clip(raw), href: null };
 }
+
+/**
+ * The data a tool returned, when it succeeded: what the answer is made of (the contents found, the site tree).
+ * Null for a failure or for an answer that carries none.
+ */
+export function toolData(raw: unknown): unknown {
+    let decoded: unknown = raw;
+    if (typeof raw === 'string') {
+        if (raw.startsWith(NOT_EXECUTED_PREFIX)) {
+            return null;
+        }
+        try {
+            decoded = JSON.parse(raw);
+        } catch {
+            return null;
+        }
+    }
+    if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
+        return null;
+    }
+    const record = decoded as Record<string, unknown>;
+
+    return record.success === true ? (record.data ?? null) : null;
+}

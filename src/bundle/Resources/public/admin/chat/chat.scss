@@ -301,6 +301,11 @@ html {
     }
 }
 
+// The messages of one turn follow each other: the avatar is shown once.
+.masilia-chat__message--assistant + .masilia-chat__message--assistant .masilia-chat__avatar {
+    visibility: hidden;
+}
+
 .masilia-chat__body {
     display: flex;
     flex: 1;
@@ -762,4 +767,66 @@ html {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+// ── Sources ─────────────────────────────────────────────────
+.masilia-chat__sources {
+    display: flex;
+    flex-direction: column;
+    gap: calculateRem(6px);
+}
+
+.masilia-chat__sources-title {
+    margin: 0;
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
+    font-weight: ibexa.$ibexa-font-weight-bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.masilia-chat__sources-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calculateRem(6px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.masilia-chat__source {
+    display: inline-flex;
+    align-items: center;
+    gap: calculateRem(6px);
+    max-width: 100%;
+    padding: calculateRem(3px) calculateRem(10px);
+    background: ibexa.$ibexa-color-white;
+    border: 1px solid ibexa.$ibexa-color-light;
+    border-radius: calculateRem(999px);
+    color: ibexa.$ibexa-color-dark;
+    font-size: ibexa.$ibexa-text-font-size-small;
+    text-decoration: none;
+
+    svg {
+        flex: none;
+        fill: ibexa.$ibexa-color-primary;
+    }
+
+    &:hover,
+    &:focus-visible {
+        background: ibexa.$ibexa-color-primary-100;
+        border-color: ibexa.$ibexa-color-primary-200;
+    }
+}
+
+.masilia-chat__source-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.masilia-chat__source-type {
+    flex: none;
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
 }

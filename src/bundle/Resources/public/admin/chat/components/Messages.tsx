@@ -2,6 +2,8 @@ import { ActionBarPrimitive, ErrorPrimitive, MessagePrimitive, useAuiState } fro
 import React, { useState } from 'react';
 
 import { Icon } from '../../shared/ids';
+import { collectSources } from '../sources';
+import type { SourcePart } from '../sources';
 import { Markdown } from './Markdown';
 import { ToolCard } from './ToolCard';
 
@@ -40,6 +42,7 @@ export function AssistantMessage() {
                         }
                     }}
                 </MessagePrimitive.GroupedParts>
+                <Sources />
                 <MessagePrimitive.Error>
                     <ErrorPrimitive.Root className="masilia-chat__error" role="alert">
                         <ErrorPrimitive.Message />
@@ -91,5 +94,57 @@ function Steps({ indices, running, children }: { indices: readonly number[]; run
             <summary className={running ? 'masilia-chat__shimmer' : undefined}>{label}</summary>
             <div className="masilia-chat__steps-list">{children}</div>
         </details>
+    );
+}
+
+interface TurnMessage {
+    id: string;
+    role: string;
+    content: readonly SourcePart[] | string;
+}
+
+/**
+ * The contents the answer rests on, as links to open them in the admin. While it works, a turn can be several
+ * assistant messages (the calls, then the answer): the sources are those of the whole turn, shown under its last
+ * message once it is complete.
+ */
+function Sources() {
+    const id = useAuiState((state) => state.message.id);
+    const done = useAuiState((state) => state.message.status?.type !== 'running');
+    const messages = useAuiState((state) => state.thread.messages) as readonly TurnMessage[];
+    const sources = React.useMemo(() => {
+        const at = messages.findIndex((message) => message.id === id);
+        if (!done || at === -1 || messages[at + 1]?.role === 'assistant') {
+            return [];
+        }
+        const parts: SourcePart[] = [];
+        for (let i = at; i >= 0 && messages[i].role === 'assistant'; i--) {
+            const content = messages[i].content;
+            if (Array.isArray(content)) {
+                parts.unshift(...(content as readonly SourcePart[]));
+            }
+        }
+
+        return collectSources(parts);
+    }, [done, id, messages]);
+    if (sources.length === 0) {
+        return null;
+    }
+
+    return (
+        <section className="masilia-chat__sources" aria-label="Sources">
+            <h4 className="masilia-chat__sources-title">Sources</h4>
+            <ul className="masilia-chat__sources-list">
+                {sources.map((source) => (
+                    <li key={source.contentId}>
+                        <a className="masilia-chat__source" href={source.href} target="_blank" rel="noopener noreferrer" title={`Open ${source.name} in a new tab`}>
+                            <Icon name="file-text" size="small" />
+                            <span className="masilia-chat__source-name">{source.name}</span>
+                            {source.type !== null ? <span className="masilia-chat__source-type">{source.type}</span> : null}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </section>
     );
 }
