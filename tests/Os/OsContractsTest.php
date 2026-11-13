@@ -28,6 +28,7 @@ final class OsContractsTest extends TestCase
             public function risk(): Risk { return $this->risk; }
             public function requires(): array { return []; }
             public function examples(): array { return []; }
+            public function validate(array $arguments): ?string { return null; }
             public function preview(array $arguments): Preview { return new Preview($this->name); }
             public function execute(array $arguments): CapabilityResult { return CapabilityResult::ok('ok'); }
         };
@@ -46,7 +47,7 @@ final class OsContractsTest extends TestCase
     {
         $text = (new Preview('Update content', [['Content', 'Home (5)'], ['Fields', 'title, body']], ['The page is published again.']))->toApprovalText(Risk::WRITE);
 
-        self::assertSame("Action: Update content\nRisk: write\nContent: Home (5)\nFields: title, body\nThe page is published again.\n\nThe change runs only if you approve it.", $text);
+        self::assertSame("Action: Update content\nRisk: write\nContent: Home (5)\nFields: title, body\nNote: The page is published again.\n\nThe change runs only if you approve it.", $text);
     }
 
     public function testWhatIsShownCannotStartANewRowOfTheCard(): void

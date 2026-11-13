@@ -12,6 +12,7 @@ use Masilia\Bundle\IbexaAi\Agent\Tool\Control\ProposePlanTool;
 use Masilia\Bundle\IbexaAi\Llm\ProviderResolver;
 use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
+use Masilia\Bundle\IbexaAi\Os\Tool\ProposeChangesTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\RunCapabilityTool;
 use Masilia\IbexaAi\Provider\ProviderFactory;
 use NeuronAI\Chat\History\SQLMessageStore;
@@ -20,8 +21,8 @@ use PDO;
 /**
  * Builds the content agent for a siteaccess and a conversation thread.
  *
- * The model sees the site tools (explore_site, browse_location, propose_plan) and the three tools of the AI OS
- * (find_capabilities, describe_capability, run_capability); the other content tools are used internally and are not exposed.
+ * The model sees the site tools (explore_site, browse_location, propose_plan) and the four tools of the AI OS
+ * (find_capabilities, describe_capability, run_capability, propose_changes); the other content tools are used internally and are not exposed.
  */
 final readonly class AgentFactory
 {
@@ -35,6 +36,7 @@ final readonly class AgentFactory
         private FindCapabilitiesTool $findCapabilities,
         private DescribeCapabilityTool $describeCapability,
         private RunCapabilityTool $runCapability,
+        private ProposeChangesTool $proposeChanges,
     ) {
     }
 
@@ -61,6 +63,7 @@ final readonly class AgentFactory
             new NeuronToolAdapter($this->findCapabilities),
             new NeuronToolAdapter($this->describeCapability),
             new NeuronToolAdapter($this->runCapability),
+            new NeuronToolAdapter($this->proposeChanges),
         ], $this->pdo());
 
         return $agent->setThreadId($threadId);

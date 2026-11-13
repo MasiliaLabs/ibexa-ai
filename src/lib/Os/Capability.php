@@ -46,6 +46,15 @@ interface Capability
     public function examples(): array;
 
     /**
+     * A problem the schema cannot see, found without writing anything: the content type does not exist, the parent is
+     * in another site, the image is gone. Null when the call can go ahead. A call with a problem is answered to the
+     * model, not shown to the user for approval.
+     *
+     * @param array<string, mixed> $arguments Already validated against the schema
+     */
+    public function validate(array $arguments): ?string;
+
+    /**
      * What the call will do, for the person who approves it. Nothing is written.
      *
      * @param array<string, mixed> $arguments Already validated against the schema

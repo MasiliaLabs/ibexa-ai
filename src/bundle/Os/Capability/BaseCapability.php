@@ -24,6 +24,11 @@ abstract class BaseCapability implements Capability
         return [];
     }
 
+    public function validate(array $arguments): ?string
+    {
+        return null;
+    }
+
     public function preview(array $arguments): Preview
     {
         return new Preview($this->summary());

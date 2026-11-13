@@ -7,7 +7,8 @@ namespace Masilia\IbexaAi\Os;
 /**
  * What a change will do, written for the person who approves it. Computed without writing anything.
  *
- * It travels as lines of "Label: value" (see {@see toApprovalText}) which the chat reads into a card.
+ * It travels as lines of "Label: value", and "Note: sentence" for a note (see {@see toApprovalText}), which the chat
+ * reads into a card.
  */
 final readonly class Preview
 {
@@ -31,7 +32,7 @@ final readonly class Preview
             $lines[] = sprintf('%s: %s', self::line($label), self::line($value));
         }
         foreach ($this->notes as $note) {
-            $lines[] = self::line($note);
+            $lines[] = sprintf('Note: %s', self::line($note));
         }
 
         return implode("\n", $lines) . "\n\n" . self::CLOSING;

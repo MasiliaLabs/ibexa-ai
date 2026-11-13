@@ -45,7 +45,7 @@ test('adding an image is read like any other change', () => {
 });
 
 test('a capability of the AI OS gives its own heading, its risk and its own rows', () => {
-    const summary = parseApproval('Action: Empty the trash\nRisk: destructive\nItems: 12\nThese contents are deleted for good. This cannot be undone.\n\nThe change runs only if you approve it.');
+    const summary = parseApproval('Action: Empty the trash\nRisk: destructive\nItems: 12\nNote: These contents are deleted for good. This cannot be undone.\n\nThe change runs only if you approve it.');
 
     assert.equal(summary.heading, 'Empty the trash');
     assert.equal(summary.risk, 'destructive');
@@ -59,4 +59,12 @@ test('rows of a capability keep their labels, and an unknown risk is none', () =
     assert.equal(summary.risk, 'write');
     assert.deepEqual(summary.rows.map((row) => row.label), ['Content', 'Language', 'Fields']);
     assert.equal(parseApproval('Action: X\nRisk: weird').risk, null);
+});
+
+test('a note is a note even when it holds a colon, and a label may hold a number', () => {
+    const summary = parseApproval('Action: Apply 2 changes\nRisk: write\nStep 1: Create a folder: Title X\nStep 2: content.update: content_id: result of f.id\nNote: The steps are applied together: if one fails, none is kept.');
+
+    assert.deepEqual(summary.rows.map((row) => row.label), ['Step 1', 'Step 2']);
+    assert.equal(summary.rows[0].value, 'Create a folder: Title X');
+    assert.deepEqual(summary.notes, ['The steps are applied together: if one fails, none is kept.']);
 });

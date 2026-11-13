@@ -52,6 +52,9 @@ services:
     Masilia\Bundle\IbexaAi\Os\Capability\Content\LoadCapability:
         arguments:
             $loadTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\LoadContentTool'
+    Masilia\Bundle\IbexaAi\Os\Capability\Tree\BrowseCapability:
+        arguments:
+            $browseTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Control\BrowseLocationTool'
     Masilia\Bundle\IbexaAi\Os\Capability\Content\UpdateCapability:
         arguments:
             $updateTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\UpdateContentTool'

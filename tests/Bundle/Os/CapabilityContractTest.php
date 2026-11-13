@@ -44,7 +44,13 @@ final class CapabilityContractTest extends TestCase
     {
         $arguments = [];
         foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
-            $arguments[] = $this->createMock((string) $parameter->getType());
+            $type = (string) $parameter->getType();
+            // A final class cannot be mocked: those the capabilities take are built, bare.
+            $arguments[] = match ($type) {
+                \Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder::class => new \Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder(),
+                \Masilia\Bundle\IbexaAi\Agent\Worker\PlanExecutor::class => new \Masilia\Bundle\IbexaAi\Agent\Worker\PlanExecutor(new \Masilia\Bundle\IbexaAi\Agent\Tool\ToolRegistry(), new \Psr\Log\NullLogger()),
+                default => $this->createMock($type),
+            };
         }
 
         return new $class(...$arguments);

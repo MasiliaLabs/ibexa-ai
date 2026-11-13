@@ -59,7 +59,7 @@ export function parseApproval(prompt: string | undefined): ApprovalSummary {
             continue;
         }
 
-        const match = /^([A-Z][A-Za-z ]*): (.+)$/.exec(line);
+        const match = /^([A-Z][A-Za-z0-9 ]*): (.+)$/.exec(line);
         if (match === null) {
             summary.notes.push(line);
             continue;
@@ -71,6 +71,8 @@ export function parseApproval(prompt: string | undefined): ApprovalSummary {
         } else if (key === 'Action') {
             summary.heading = value;
             named = true;
+        } else if (key === 'Note') {
+            summary.notes.push(value);
         } else if (key === 'Risk') {
             summary.risk = value === 'write' || value === 'destructive' || value === 'access' ? value : null;
         } else if (key in LABELS) {

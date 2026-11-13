@@ -12,6 +12,7 @@ use Ibexa\Core\Repository\Values\User\UserReference;
 use Masilia\Bundle\IbexaAi\Os\Access\CapabilityAccess;
 use Masilia\Bundle\IbexaAi\Os\Audit\AuditLog;
 use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
+use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
 use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\RunCapabilityTool;
@@ -55,6 +56,7 @@ final class OsToolsTest extends TestCase
             public function risk(): Risk { return $this->risk; }
             public function requires(): array { return $this->behaviour['requires'] ?? []; }
             public function examples(): array { return [['description' => 'Example', 'arguments' => ['id' => 1]]]; }
+            public function validate(array $arguments): ?string { return $this->behaviour['problem'] ?? null; }
 
             public function preview(array $arguments): Preview
             {
@@ -94,7 +96,7 @@ final class OsToolsTest extends TestCase
         $access = new CapabilityAccess($permissions, $domains);
 
         return [
-            new RunCapabilityTool($registry, $access, new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger()),
+            new RunCapabilityTool(new CapabilityRunner($registry, $access, new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger())),
             new FindCapabilitiesTool($registry, $access),
             new DescribeCapabilityTool($registry, $access),
         ];
@@ -162,6 +164,18 @@ final class OsToolsTest extends TestCase
         self::assertStringContainsString('describe_capability', $result->message);
         self::assertSame([], $this->ran);
         self::assertSame([], $this->audit(), 'a call that ran nothing leaves no record');
+    }
+
+    public function testAProblemTheSchemaCannotSeeIsAnsweredNotApprovedNorRun(): void
+    {
+        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE, ['problem' => 'The parent is in another site.'])]);
+
+        self::assertNull($run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => 5]]));
+        $result = $run->execute(['name' => 'content.change', 'arguments' => ['id' => 5]]);
+
+        self::assertFalse($result->success);
+        self::assertSame('content.change: The parent is in another site.', $result->message);
+        self::assertSame([], $this->ran);
     }
 
     public function testANumberWrittenAsTextIsStillANumber(): void
