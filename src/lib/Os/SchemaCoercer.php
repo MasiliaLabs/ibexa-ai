@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Os;
 
 /**
- * Models often write a number as text ("50"), a flag as "true", or an object as a JSON string. A value that means
+ * Models often write a number as text ("50"), a flag as "true", an object as a JSON string, or a list wrapped in an
+ * object (`{"item": [...]}`, or keys "0", "1"…). A value that means
  * what the schema asks for, without doubt, is turned into it before it is checked; anything else is left as it is,
  * and the validation says what is wrong.
  */
@@ -52,7 +53,7 @@ final class SchemaCoercer
 
                 return $value;
             case 'array':
-                $value = self::decoded($value);
+                $value = self::asList(self::decoded($value));
                 if (!is_array($value) || !isset($schema['items']) || !is_array($schema['items'])) {
                     return $value;
                 }
@@ -61,6 +62,25 @@ final class SchemaCoercer
             default:
                 return $value;
         }
+    }
+
+    /**
+     * A list that arrives wrapped, as some models write it: `{"item": [...]}` or `{"0": ..., "1": ...}`.
+     */
+    private static function asList(mixed $value): mixed
+    {
+        if (!is_array($value) || array_is_list($value) || $value === []) {
+            return $value;
+        }
+        if (count($value) === 1 && isset($value['item']) && is_array($value['item'])) {
+            return array_is_list($value['item']) ? $value['item'] : [$value['item']];
+        }
+        $keys = array_keys($value);
+        if ($keys === array_map('strval', range(0, count($value) - 1))) {
+            return array_values($value);
+        }
+
+        return $value;
     }
 
     /** A JSON string for an object or a list is that object or list. */

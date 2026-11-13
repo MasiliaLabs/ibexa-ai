@@ -138,4 +138,14 @@ final class OsContractsTest extends TestCase
         self::assertSame(['limit' => '5.5x', 'hidden' => 'maybe', 'fields' => 'not json'], $coerced);
         self::assertCount(3, SchemaValidator::validate($schema, $coerced));
     }
+
+    public function testAListWrappedInAnObjectIsTheList(): void
+    {
+        $schema = ['type' => 'array', 'items' => ['type' => 'object', 'properties' => ['n' => ['type' => 'integer']]]];
+
+        self::assertSame([['n' => 1], ['n' => 2]], SchemaCoercer::coerce($schema, ['item' => [['n' => '1'], ['n' => 2]]]));
+        self::assertSame([['n' => 1]], SchemaCoercer::coerce($schema, ['item' => ['n' => 1]]), 'a single item wrapped');
+        self::assertSame([['n' => 1], ['n' => 2]], SchemaCoercer::coerce($schema, ['0' => ['n' => 1], '1' => ['n' => 2]]));
+        self::assertSame(['a' => 1], SchemaCoercer::coerce(['type' => 'array'], ['a' => 1]), 'an object that is not a wrapped list is left to the validation');
+    }
 }
