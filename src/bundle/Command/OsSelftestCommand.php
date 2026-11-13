@@ -200,7 +200,12 @@ final class OsSelftestCommand extends Command
         $step('delete the group', 'state.group.delete', ['group' => $section]);
 
         $step('add a language', 'localization.language.create', ['language_code' => 'tst-ZZ', 'name' => 'Selftest language']);
-        $step('disable it', 'localization.language.update', ['language_code' => 'tst-ZZ', 'enabled' => false]);
+        $step('translate A into it', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => ['name' => 'Selftest translated']]);
+        $step('A cannot be translated twice into it', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => ['name' => 'Again']], null, null, true);
+        $step('an empty translation is refused', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => new \stdClass()], null, null, true);
+        $step('remove the translation', 'localization.translation.remove', ['content_id' => $contentId, 'language_code' => 'tst-ZZ']);
+        $step('disable the language', 'localization.language.update', ['language_code' => 'tst-ZZ', 'enabled' => false]);
+        $step('a disabled language takes no translation', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => ['name' => 'No']], null, null, true);
         $step('it is listed, disabled', 'localization.language.list', [], static fn (array $d): ?string => array_filter($d['languages'], static fn (array $l): bool => $l['language_code'] === 'tst-ZZ' && !$l['enabled']) !== [] ? null : 'not listed as disabled');
         $step('the default language cannot be deleted', 'localization.language.delete', ['language_code' => $this->repository->getContentLanguageService()->getDefaultLanguageCode()], null, null, true);
         $step('delete the language', 'localization.language.delete', ['language_code' => 'tst-ZZ']);
@@ -224,14 +229,27 @@ final class OsSelftestCommand extends Command
         $step('list the links', 'url.link.list', ['limit' => 5]);
 
         $step('the versions of A', 'content.version.load', ['content_id' => $contentId], static fn (array $d): ?string => count($d['versions']) >= 1 ? null : 'no version', 'versions');
+        $published = 1;
+        foreach ($answers['versions']['versions'] ?? [] as $version) {
+            if ($version['status'] === 'published') {
+                $published = $version['version_no'];
+            }
+        }
         $step('start a draft of A', 'content.draft.create', ['content_id' => $contentId], null, 'draft');
         $step('read that draft', 'content.version.load', ['content_id' => $contentId, 'version_no' => $answers['draft']['version_no'] ?? 1]);
         $step('a draft is not deleted as a version', 'content.version.delete', ['content_id' => $contentId, 'version_no' => $answers['draft']['version_no'] ?? 1], null, null, true);
-        $step('the published version is not deleted', 'content.version.delete', ['content_id' => $contentId, 'version_no' => 1], null, null, true);
+        $step('the published version is not deleted', 'content.version.delete', ['content_id' => $contentId, 'version_no' => $published], null, null, true);
         $step('discard the draft', 'workspace.drafts.delete', ['content_id' => $contentId, 'version_no' => $answers['draft']['version_no'] ?? 1]);
 
         $step('list the bookmarks', 'workspace.bookmarks.list', []);
         $step('list the drafts', 'workspace.drafts.list', []);
+        $step('list the notifications', 'workspace.notifications.list', ['limit' => 5]);
+        $step('list the preferences', 'workspace.preferences.list', [], null, 'preferences');
+        // Setting a preference to the value it has changes nothing, and tests the write.
+        $first = $answers['preferences']['preferences'][0] ?? null;
+        if ($first !== null) {
+            $step('set a preference to its own value', 'workspace.preferences.set', ['name' => $first['name'], 'value' => (string) $first['value']]);
+        }
     }
 
     /**
