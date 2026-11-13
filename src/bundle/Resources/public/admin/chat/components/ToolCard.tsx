@@ -55,6 +55,11 @@ export function ToolCard(props: ToolCallMessagePartProps) {
                 {outcome !== null && outcome.message !== '' ? <p className="masilia-chat__tool-message">{outcome.message}</p> : null}
                 {inputs !== '' ? <pre className="masilia-chat__tool-inputs">{inputs}</pre> : null}
             </details>
+            {state === 'ok' && outcome?.href ? (
+                <a className="masilia-chat__tool-link" href={outcome.href} target="_blank" rel="noopener noreferrer">
+                    Open the content
+                </a>
+            ) : null}
             {approval !== undefined ? <Approval {...props} approval={approval} /> : null}
         </div>
     );

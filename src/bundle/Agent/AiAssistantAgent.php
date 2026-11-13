@@ -23,6 +23,8 @@ class AiAssistantAgent extends Agent
     public const MESSAGES_TABLE = 'app_ai_agent_messages';
     public const WORKFLOW_TABLE = 'app_ai_agent_workflow';
 
+    private ?PageContext $page = null;
+
     /**
      * @param list<\NeuronAI\Tools\ToolInterface> $exposedTools the tools the model can call
      */
@@ -34,6 +36,16 @@ class AiAssistantAgent extends Agent
         parent::__construct();
     }
 
+    /**
+     * Tells the agent where the editor is, for the runs of this instance.
+     */
+    public function withPageContext(?PageContext $page): static
+    {
+        $this->page = $page;
+
+        return $this;
+    }
+
     protected function provider(): AIProviderInterface
     {
         return $this->llm;
@@ -41,7 +53,7 @@ class AiAssistantAgent extends Agent
 
     protected function instructions(): SystemMessage|string
     {
-        return AgentSystemPrompt::get();
+        return $this->page === null ? AgentSystemPrompt::get() : AgentSystemPrompt::get() . "\n\n" . $this->page->toPrompt();
     }
 
     protected function tools(): array

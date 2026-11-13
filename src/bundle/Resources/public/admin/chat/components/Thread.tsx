@@ -1,4 +1,4 @@
-import { ThreadPrimitive, useAuiState } from '@assistant-ui/react';
+import { SuggestionPrimitive, ThreadPrimitive, useAuiState } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
 import { Button } from '../../shared/ids';
@@ -48,7 +48,12 @@ export function Thread({ chat, onClose }: ThreadProps) {
 
             <ThreadPrimitive.Viewport className="masilia-chat__viewport">
                 <ThreadPrimitive.Empty>
-                    <p className="masilia-chat__empty">Ask about the site, or describe a change you want to make.</p>
+                    <div className="masilia-chat__empty">
+                        <p>Ask about the site, or describe a change you want to make.</p>
+                        <div className="masilia-chat__suggestions">
+                            <ThreadPrimitive.Suggestions>{() => <Suggestion />}</ThreadPrimitive.Suggestions>
+                        </div>
+                    </div>
                 </ThreadPrimitive.Empty>
                 <ThreadPrimitive.Messages>
                     {({ message }) => (message.role === 'user' ? <UserMessage /> : <AssistantMessage />)}
@@ -57,5 +62,14 @@ export function Thread({ chat, onClose }: ThreadProps) {
 
             <Composer chat={chat} />
         </ThreadPrimitive.Root>
+    );
+}
+
+function Suggestion() {
+    return (
+        <SuggestionPrimitive.Trigger send className="masilia-chat__suggestion">
+            <span className="masilia-chat__suggestion-title"><SuggestionPrimitive.Title /></span>
+            <span className="masilia-chat__suggestion-label"><SuggestionPrimitive.Description /></span>
+        </SuggestionPrimitive.Trigger>
     );
 }

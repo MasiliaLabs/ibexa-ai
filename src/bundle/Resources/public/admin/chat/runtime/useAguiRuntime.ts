@@ -5,6 +5,7 @@ import { fromAgUiMessages, useAgUiInterrupts, useAgUiRuntime } from '@assistant-
 import { useMemo, useRef, useState } from 'react';
 
 import { notify } from '../../shared/notify';
+import { runContext } from './pageContext';
 import { isStaleDecision, withInterrupts, withPendingCalls } from './pending';
 import type { Wire } from './pending';
 import type { ChatRuntime } from './types';
@@ -64,6 +65,8 @@ export function useAguiRuntime(): ChatRuntime {
         adapters: { history },
         // The server stores one assistant record per model step: they are one answer for the user.
         joinAdjacentAssistantMessages: true,
+        // Read when a run starts: the editor may have moved to another page since the widget opened.
+        getRunContext: () => runContext(window.location.pathname),
         onError: (error) => {
             // The server is the source of truth: a decision that came too late (decided in another window) leaves
             // the view out of date, so it is read again. Other errors are shown with the answer, as they are.

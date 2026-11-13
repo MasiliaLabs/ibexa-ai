@@ -7,6 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Controller;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
+use Masilia\Bundle\IbexaAi\Agent\PageContext;
 use Masilia\Bundle\IbexaAi\Agent\Stream\AgUiFrames;
 use Masilia\Bundle\IbexaAi\Agent\Stream\AlreadyDecidedException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\DecisionPendingException;
@@ -78,6 +79,7 @@ final readonly class AgUiChatController
         try {
             $agent = $this->agents->create($this->currentSiteaccess(), $this->threadId());
             $agent->setStreamAdapter(static fn () => $adapter);
+            $agent->withPageContext(PageContext::fromAgUiContext($input['context'] ?? null));
 
             if (is_array($input['resume'] ?? null) && $input['resume'] !== []) {
                 try {

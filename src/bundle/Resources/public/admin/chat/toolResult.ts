@@ -10,6 +10,27 @@ const MAX_MESSAGE_LENGTH = 500;
 export interface ToolOutcome {
     ok: boolean;
     message: string;
+    /** Where the content the tool created or changed can be opened in the admin, when the answer names it. */
+    href: string | null;
+}
+
+/** The admin's view of a content at one of its locations. Only whole positive numbers go into the address. */
+export function contentHref(data: unknown): string | null {
+    if (typeof data !== 'object' || data === null) {
+        return null;
+    }
+    const { content_id: contentId, location_id: locationId } = data as Record<string, unknown>;
+    const whole = (value: unknown): value is number => Number.isInteger(value) && (value as number) > 0;
+
+    return whole(contentId) && whole(locationId) ? `/view/content/${contentId}/full/true/${locationId}` : null;
+}
+
+function fromRecord(record: Record<string, unknown>): ToolOutcome {
+    return {
+        ok: record.success === true,
+        message: clip(typeof record.message === 'string' ? record.message : ''),
+        href: record.success === true ? contentHref(record.data) : null,
+    };
 }
 
 function clip(text: string): string {
@@ -20,28 +41,24 @@ export function toolOutcome(raw: unknown): ToolOutcome {
     if (typeof raw !== 'string') {
         // Already structured (some runtimes parse the answer): the same fields apply.
         if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
-            const record = raw as Record<string, unknown>;
-
-            return { ok: record.success === true, message: clip(typeof record.message === 'string' ? record.message : '') };
+            return fromRecord(raw as Record<string, unknown>);
         }
 
-        return { ok: true, message: '' };
+        return { ok: true, message: '', href: null };
     }
 
     if (raw.startsWith(NOT_EXECUTED_PREFIX)) {
-        return { ok: false, message: 'Not run: the change was rejected.' };
+        return { ok: false, message: 'Not run: the change was rejected.', href: null };
     }
 
     try {
         const decoded: unknown = JSON.parse(raw);
         if (typeof decoded === 'object' && decoded !== null && !Array.isArray(decoded)) {
-            const record = decoded as Record<string, unknown>;
-
-            return { ok: record.success === true, message: clip(typeof record.message === 'string' ? record.message : '') };
+            return fromRecord(decoded as Record<string, unknown>);
         }
     } catch {
         // Not JSON: plain text.
     }
 
-    return { ok: true, message: clip(raw) };
+    return { ok: true, message: clip(raw), href: null };
 }

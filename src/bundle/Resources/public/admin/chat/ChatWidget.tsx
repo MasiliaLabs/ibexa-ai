@@ -1,10 +1,20 @@
-import { AssistantModalPrimitive, AssistantRuntimeProvider } from '@assistant-ui/react';
+import { AssistantModalPrimitive, AssistantRuntimeProvider, AuiConfig, Suggestions } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
 import { AssetsBridge } from './bridge';
 import { Thread } from './components/Thread';
 import { Icon } from '../shared/ids';
 import type { ChatRuntime } from './runtime/types';
+
+// Starting points shown while the conversation is empty: what the assistant is good at here.
+const CONFIG = AuiConfig({
+    suggestions: Suggestions([
+        { title: 'Site structure', label: 'sites and pages', prompt: 'Show me the structure of the site.' },
+        { title: 'Missing translations', label: 'pages without French', prompt: 'Which pages have no French translation?' },
+        { title: 'Hidden content', label: 'not visible to visitors', prompt: 'Which content is hidden from visitors?' },
+        { title: 'What can you do?', label: 'in this admin', prompt: 'What can you help me with here?' },
+    ]),
+});
 
 interface ChatWidgetProps {
     chat: ChatRuntime;
@@ -19,7 +29,7 @@ export function ChatWidget({ chat }: ChatWidgetProps) {
 
     return (
         <AssetsBridge>
-            <AssistantRuntimeProvider runtime={chat.runtime}>
+            <AssistantRuntimeProvider runtime={chat.runtime} config={CONFIG}>
                 <AssistantModalPrimitive.Root open={open} onOpenChange={setOpen}>
                     <AssistantModalPrimitive.Anchor className="masilia-chat__anchor">
                         <AssistantModalPrimitive.Trigger className="masilia-chat__launcher" title="Content assistant" aria-label={open ? 'Close the assistant' : 'Open the assistant'}>
