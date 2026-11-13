@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Masilia\Bundle\IbexaAi\Os\Capability\Location;
+
+use Masilia\IbexaAi\Os\CapabilityResult;
+use Masilia\IbexaAi\Os\Preview;
+use Masilia\IbexaAi\Os\Risk;
+
+final class CopyCapability extends LocationCapability
+{
+    public function name(): string
+    {
+        return 'location.copy';
+    }
+
+    public function summary(): string
+    {
+        return 'Copy a location, with everything under it, below another parent.';
+    }
+
+    public function description(): string
+    {
+        return 'Copies the content at the location and everything under it as new contents below the target parent. The answer has the location_id of the copy.';
+    }
+
+    public function inputSchema(): array
+    {
+        return ['type' => 'object', 'required' => ['location_id', 'target_parent_location_id'], 'properties' => ['location_id' => ['type' => 'integer', 'minimum' => 1], 'target_parent_location_id' => ['type' => 'integer', 'minimum' => 1]]];
+    }
+
+    public function risk(): Risk
+    {
+        return Risk::WRITE;
+    }
+
+    public function requires(): array
+    {
+        return [['content', 'create']];
+    }
+
+    public function examples(): array
+    {
+        return [['description' => 'Copy a folder and what is in it', 'arguments' => ['location_id' => 1364, 'target_parent_location_id' => 1020]]];
+    }
+
+    public function validate(array $arguments): ?string
+    {
+        return $this->missing((int) $arguments['location_id'], (int) $arguments['target_parent_location_id']);
+    }
+
+    public function preview(array $arguments): Preview
+    {
+        return new Preview('Copy a location', [['Copy', $this->label((int) $arguments['location_id'])], ['Below', $this->label((int) $arguments['target_parent_location_id'])]], ['Everything under it is copied too: the copy can be large.']);
+    }
+
+    public function execute(array $arguments): CapabilityResult
+    {
+        $service = $this->repository->getLocationService();
+        $copy = $service->copySubtree($this->load((int) $arguments['location_id']), $this->load((int) $arguments['target_parent_location_id']));
+
+        return CapabilityResult::ok(sprintf('Copied to location %d', $copy->id), ['location_id' => $copy->id, 'content_id' => $copy->contentInfo->id]);
+    }
+}
