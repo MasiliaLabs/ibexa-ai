@@ -1,0 +1,169 @@
+# Which capability answers each admin route of Ibexa (routes named "ibexa.*", REST excluded), or why none should.
+# `masilia:ai:os:coverage --strict` fails when a route is in neither section: a new admin screen needs an answer.
+#
+# capabilities: route => capability name. A capability that is not written yet makes the route "planned".
+# out_of_scope: route, or prefix ending in "*", => the reason it is not an action of an administrator.
+capabilities:
+  ibexa.asset.upload_image: media.add_image
+  ibexa.bookmark.list: workspace.bookmarks.list
+  ibexa.bookmark.remove: workspace.bookmarks.remove
+  ibexa.content.create: content.create
+  ibexa.content.create_no_draft: content.create
+  ibexa.content.draft.create: content.draft.create
+  ibexa.content.draft.edit: content.update
+  ibexa.content.draft.edit.cancel: content.draft.delete
+  ibexa.content.edit: content.update
+  ibexa.content.translate: localization.translation.add
+  ibexa.content.translate_with_location: localization.translation.add
+  ibexa.content.update_main_location: location.set_main
+  ibexa.content.update_main_translation: localization.set_main_language
+  ibexa.content.update_visibility: location.set_visibility
+  ibexa.content.view: content.load
+  ibexa.content_draft.list: workspace.drafts.list
+  ibexa.content_draft.remove: workspace.drafts.delete
+  ibexa.content_type.add: structure.type.create
+  ibexa.content_type.add_translation: structure.type.translate
+  ibexa.content_type.bulk_delete: structure.type.delete
+  ibexa.content_type.copy: structure.type.copy
+  ibexa.content_type.delete: structure.type.delete
+  ibexa.content_type.edit: structure.type.update
+  ibexa.content_type.field_definition.create: structure.field.add
+  ibexa.content_type.field_definition.remove: structure.field.remove
+  ibexa.content_type.field_definition.reorder: structure.field.reorder
+  ibexa.content_type.field_definition_form: structure.field.add
+  ibexa.content_type.list: structure.type.list
+  ibexa.content_type.remove_translation: structure.type.translate
+  ibexa.content_type.update: structure.type.update
+  ibexa.content_type.view: structure.type.describe
+  ibexa.content_type_group.bulk_delete: structure.group.delete
+  ibexa.content_type_group.create: structure.group.create
+  ibexa.content_type_group.delete: structure.group.delete
+  ibexa.content_type_group.list: structure.group.list
+  ibexa.content_type_group.update: structure.group.update
+  ibexa.content_type_group.view: structure.group.list
+  ibexa.custom_url.add: url.alias.add
+  ibexa.custom_url.remove: url.alias.remove
+  ibexa.language.bulk_delete: localization.language.delete
+  ibexa.language.create: localization.language.create
+  ibexa.language.delete: localization.language.delete
+  ibexa.language.edit: localization.language.update
+  ibexa.language.list: localization.language.list
+  ibexa.language.view: localization.language.list
+  ibexa.link_manager.edit: url.link.update
+  ibexa.link_manager.view: url.link.usages
+  ibexa.location.add: location.add
+  ibexa.location.assign_section: section.assign
+  ibexa.location.copy: location.copy
+  ibexa.location.copy_subtree: location.copy
+  ibexa.location.move: location.move
+  ibexa.location.remove: location.remove
+  ibexa.location.swap: location.swap
+  ibexa.location.trash: content.trash
+  ibexa.location.update: location.update
+  ibexa.location.update_visibility: location.set_visibility
+  ibexa.notifications.count: workspace.notifications.list
+  ibexa.notifications.delete: workspace.notifications.delete
+  ibexa.notifications.delete_multiple: workspace.notifications.delete
+  ibexa.notifications.get: workspace.notifications.list
+  ibexa.notifications.mark_all_as_read: workspace.notifications.mark_read
+  ibexa.notifications.mark_as_read: workspace.notifications.mark_read
+  ibexa.notifications.mark_as_unread: workspace.notifications.mark_read
+  ibexa.notifications.mark_multiple_as_read: workspace.notifications.mark_read
+  ibexa.object_state.content_state.update: state.set
+  ibexa.object_state.group.add: state.group.create
+  ibexa.object_state.group.bulk_delete: state.group.delete
+  ibexa.object_state.group.delete: state.group.delete
+  ibexa.object_state.group.update: state.group.update
+  ibexa.object_state.group.view: state.list
+  ibexa.object_state.groups.list: state.list
+  ibexa.object_state.state.add: state.create
+  ibexa.object_state.state.bulk_delete: state.delete
+  ibexa.object_state.state.delete: state.delete
+  ibexa.object_state.state.update: state.update
+  ibexa.object_state.state.view: state.list
+  ibexa.policy.bulk_delete: access.policy.remove
+  ibexa.policy.create: access.policy.add
+  ibexa.policy.create_with_limitation: access.policy.add
+  ibexa.policy.delete: access.policy.remove
+  ibexa.policy.list: access.role.describe
+  ibexa.policy.update: access.policy.update
+  ibexa.relation: relations.list
+  ibexa.role.bulk_delete: access.role.delete
+  ibexa.role.copy: access.role.copy
+  ibexa.role.create: access.role.create
+  ibexa.role.delete: access.role.delete
+  ibexa.role.list: access.role.list
+  ibexa.role.update: access.role.update
+  ibexa.role.view: access.role.describe
+  ibexa.role_assignment.bulk_delete: access.assignment.remove
+  ibexa.role_assignment.create: access.assignment.add
+  ibexa.role_assignment.delete: access.assignment.remove
+  ibexa.role_assignment.list: access.role.describe
+  ibexa.search: content.search
+  ibexa.section.assign_content: section.assign
+  ibexa.section.bulk_delete: section.delete
+  ibexa.section.create: section.create
+  ibexa.section.delete: section.delete
+  ibexa.section.list: section.list
+  ibexa.section.update: section.update
+  ibexa.section.view: section.list
+  ibexa.translation.add: localization.translation.add
+  ibexa.translation.remove: localization.translation.remove
+  ibexa.trash.delete: trash.delete
+  ibexa.trash.empty: trash.empty
+  ibexa.trash.list: trash.list
+  ibexa.trash.restore: trash.restore
+  ibexa.url_management: url.link.list
+  ibexa.url_wildcard.add: url.wildcard.create
+  ibexa.url_wildcard.bulk_delete: url.wildcard.delete
+  ibexa.url_wildcard.update: url.wildcard.update
+  ibexa.user.create: access.user.create
+  ibexa.user.delete: access.user.delete
+  ibexa.user.invite.to_group: access.user.invite
+  ibexa.user.invite_user: access.user.invite
+  ibexa.user.profile.edit: access.user.update
+  ibexa.user.profile.view: access.user.describe
+  ibexa.user.update: access.user.update
+  ibexa.user_profile.change_password: access.user.set_password
+  ibexa.user_settings.list: workspace.preferences.list
+  ibexa.user_settings.update: workspace.preferences.set
+  ibexa.version.preview: content.version.load
+  ibexa.version.remove: content.version.delete
+
+out_of_scope:
+  ibexa.api_platform.documentation: "Documentation of the API, not an admin action."
+  ibexa.content.check_edit_permission: "Answers the editing UI whether a button shows; the assistant is told by the repository."
+  ibexa.content.create.proxy: "Redirect of the creation form."
+  ibexa.content.download: "File download by the browser."
+  ibexa.content.download.field_id: "File download by the browser."
+  ibexa.content.on_the_fly.*: "Create and edit inside a modal of another form (UI plumbing); content.create and content.update do the same."
+  ibexa.content.preview: "Rendering a preview in the browser."
+  ibexa.content.preview.default: "Rendering a preview in the browser."
+  ibexa.content.translate.proxy: "Redirect of the translation form."
+  ibexa.content.translate_with_location.proxy: "Redirect of the translation form."
+  ibexa.content.translation.view: "Rendering of a translation in the browser."
+  ibexa.dashboard: "A landing page made of other screens."
+  ibexa.focus_mode.change: "A display preference of the admin UI."
+  ibexa.http_cache.invalidate_token: "Technical token of the cache layer."
+  ibexa.notifications.render.*: "Rendering of notification lists in the browser."
+  ibexa.permission.limitation.language.*: "Fills a select of the policy form."
+  ibexa.query.rest.field_results: "Feeds a field of the editing form."
+  ibexa.search.suggestion: "Autocomplete of the search box; content.search does the search."
+  ibexa.systeminfo: "System information screen: read-only and not about content."
+  ibexa.systeminfo.php: "System information screen: read-only and not about content."
+  ibexa.udw.*: "Data of the Universal Discovery Widget (the location picker): tree.browse and content.search give the same information."
+  ibexa.user.default_profile_image.initials: "Rendering of an avatar."
+  ibexa.user.forgot_password: "Authentication flow, done by the person for themselves."
+  ibexa.user.forgot_password.login: "Authentication flow, done by the person for themselves."
+  ibexa.user.forgot_password.migration: "Authentication flow, done by the person for themselves."
+  ibexa.user.from_invite.register: "The invited person completes their own registration."
+  ibexa.user.from_invite.user_register: "The invited person completes their own registration."
+  ibexa.user.on_the_fly.*: "Create and edit inside a modal of another form (UI plumbing); access.user.* do the same."
+  ibexa.user.register: "Public registration, not an administrator action."
+  ibexa.user.register_confirmation: "Public registration, not an administrator action."
+  ibexa.user.reset_password: "Authentication flow, done by the person for themselves."
+  ibexa.user.user_register: "Public registration, not an administrator action."
+  ibexa.user.user_register_confirmation: "Public registration, not an administrator action."
+  ibexa.user_hash: "Technical hash of the session for the cache layer."
+  ibexa.version.has_no_conflict: "Check of the editing UI before a save."
+  ibexa.version_draft.has_no_conflict: "Check of the editing UI before a save."
