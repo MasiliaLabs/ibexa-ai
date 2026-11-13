@@ -86,6 +86,10 @@ final readonly class ProposePlanTool implements ToolInterface, GatedToolInterfac
                     'type' => 'string',
                     'description' => 'The language the content is written in: "fre-FR", or just "fr". ALWAYS set it to the language of the text you write (a French page: fr, an English page: en). It must be a language of the site; it is mapped to the site\'s language code. For update_content it writes that translation (created if missing, other languages untouched). Without it, new content is written in the siteaccess\'s own language and an update keeps the content\'s language.',
                 ],
+                'attachment_id' => [
+                    'type' => 'string',
+                    'description' => 'For add_image: the id of the image the user attached (the id in its <attachment-image> tag). Also give parent_location_id (an "Images" folder of the media library), title (the name of the image; the file name without its extension by default) and description (its alternative text).',
+                ],
                 'link_field' => [
                     'type' => 'string',
                     'description' => 'Relation list field on the parent content to link created items to (e.g. "blocks" for pages, "items" for blocks with child items). Used with create_items intent.',
@@ -142,6 +146,9 @@ final readonly class ProposePlanTool implements ToolInterface, GatedToolInterfac
         }
         if ($plan->contentId !== null) {
             $parts[] = sprintf('Content ID: %d', $plan->contentId);
+        }
+        if ($plan->attachmentId !== null) {
+            $parts[] = 'Image: attached by you';
         }
         if ($plan->language !== null) {
             $parts[] = sprintf('Language: %s%s', $plan->language, $plan->intent === Plan::INTENT_UPDATE_CONTENT ? ' (a translation: other languages are not changed)' : '');

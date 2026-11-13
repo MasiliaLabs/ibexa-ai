@@ -14,6 +14,17 @@ interface ChatWidgetProps {
 
 const WIDE_KEY = 'masilia.ai.wide';
 
+/**
+ * Files dragged over the panel stay in it: the page (and the browser, which would open the file) is not told.
+ * The message box decides what it takes.
+ */
+function keepFiles(event: React.DragEvent): void {
+    event.stopPropagation();
+    if (event.dataTransfer.types.includes('Files')) {
+        event.preventDefault();
+    }
+}
+
 function readWide(): boolean {
     try {
         return window.localStorage.getItem(WIDE_KEY) === '1';
@@ -74,6 +85,12 @@ export function ChatWidget({ chat }: ChatWidgetProps) {
                                 setOpen(false);
                             }
                         }}
+                        // The admin turns a file dropped anywhere on its page into content (its multi-file upload).
+                        // A file dropped on the assistant is for the assistant, and must not reach the page.
+                        onDragEnter={keepFiles}
+                        onDragOver={keepFiles}
+                        onDragLeave={(event) => event.stopPropagation()}
+                        onDrop={keepFiles}
                     >
                         <Thread chat={chat} wide={wide} onToggleWide={toggleWide} onClose={() => setOpen(false)} />
                     </aside>

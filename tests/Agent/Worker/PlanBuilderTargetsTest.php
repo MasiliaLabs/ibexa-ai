@@ -13,6 +13,10 @@ use Ibexa\Core\Base\Exceptions\NotFoundException;
 use Ibexa\Contracts\Core\Repository\Values\Content\Language;
 use Ibexa\Core\Repository\Values\Content\Location;
 use InvalidArgumentException;
+use Doctrine\DBAL\DriverManager;
+use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Core\Repository\Values\User\UserReference;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages;
 use Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder;
@@ -149,6 +153,59 @@ final class PlanBuilderTargetsTest extends TestCase
         $this->builder()->build(['intent' => 'trash_content', 'content_id' => 1342, 'language' => 'fre-FR']);
     }
 
+    private function storeWithImageOf(int $userId): array
+    {
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $connection->executeStatement('CREATE TABLE app_ai_attachment (
+            id CHAR(36) PRIMARY KEY, user_id INT NOT NULL, name VARCHAR(160) NOT NULL, mime VARCHAR(40) NOT NULL, size INT NOT NULL,
+            width INT NOT NULL, height INT NOT NULL, filename VARCHAR(80) NOT NULL, created_at DATETIME NOT NULL)');
+        $store = new AttachmentStore($connection, sys_get_temp_dir() . '/ai-plan-test-' . bin2hex(random_bytes(4)));
+        $path = tempnam(sys_get_temp_dir(), 'img') ?: '';
+        imagepng(imagecreatetruecolor(20, 20), $path);
+
+        return [$store, $store->store($path, 'logo.png', $userId)->id];
+    }
+
+    public function testAnImagePlanNeedsItsAttachmentAndAFolder(): void
+    {
+        try {
+            $this->builder()->build(['intent' => 'add_image', 'parent_location_id' => 43]);
+            self::fail('no attachment');
+        } catch (InvalidArgumentException $e) {
+            self::assertStringContainsString('requires attachment_id', $e->getMessage());
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('requires parent_location_id');
+        $this->builder()->build(['intent' => 'add_image', 'attachment_id' => '3f2b8c1e-5d6a-4e7f-9a10-2b3c4d5e6f70']);
+    }
+
+    public function testAnImageOfTheUserIsAccepted(): void
+    {
+        [$store, $id] = $this->storeWithImageOf(14);
+
+        $plan = $this->builder([], $store, 14)->build(['intent' => 'add_image', 'attachment_id' => $id, 'parent_location_id' => 43, 'title' => 'Logo']);
+
+        self::assertSame($id, $plan->attachmentId);
+        self::assertSame(43, $plan->parentLocationId);
+    }
+
+    public function testAnImageOfAnotherUserOrOneThatIsGoneIsRefusedBeforeApproval(): void
+    {
+        [$store, $id] = $this->storeWithImageOf(15);
+
+        try {
+            $this->builder([], $store, 14)->build(['intent' => 'add_image', 'attachment_id' => $id, 'parent_location_id' => 43]);
+            self::fail('another user');
+        } catch (InvalidArgumentException $e) {
+            self::assertStringContainsString('not available', $e->getMessage());
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('not available');
+        $this->builder([], $store, 15)->build(['intent' => 'add_image', 'attachment_id' => '00000000-0000-4000-8000-000000000000', 'parent_location_id' => 43]);
+    }
+
     public function testAFolderPlanChecksItsParentToo(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -182,7 +239,7 @@ final class PlanBuilderTargetsTest extends TestCase
      * @param array<string, list<string>> $languagesBySiteaccess Siteaccesses of one site and their languages; by default
      *                                                           fossil_exit (eng-GB), fossil_exit_fr (fre-FR), fossil_exit_ar (ara-MA)
      */
-    private function builder(array $languagesBySiteaccess = []): PlanBuilder
+    private function builder(array $languagesBySiteaccess = [], ?AttachmentStore $attachments = null, int $userId = 14): PlanBuilder
     {
         $languagesBySiteaccess = $languagesBySiteaccess ?: ['fossil_exit' => ['eng-GB'], 'fossil_exit_fr' => ['fre-FR'], 'fossil_exit_ar' => ['ara-MA']];
         $paths = [
@@ -249,6 +306,9 @@ final class PlanBuilderTargetsTest extends TestCase
             },
         );
 
-        return new PlanBuilder(repository: $repository, siteaccessResolver: $resolver, siteLanguages: $siteLanguages);
+        $permissions = $this->createMock(PermissionResolver::class);
+        $permissions->method('getCurrentUserReference')->willReturn(new UserReference($userId));
+
+        return new PlanBuilder(repository: $repository, siteaccessResolver: $resolver, siteLanguages: $siteLanguages, attachments: $attachments, permissions: $attachments !== null ? $permissions : null);
     }
 }

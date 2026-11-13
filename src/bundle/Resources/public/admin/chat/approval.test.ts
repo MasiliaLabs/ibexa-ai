@@ -32,3 +32,14 @@ test('an intent it does not know is shown as it is; nothing to read gives an emp
     assert.deepEqual(parseApproval(undefined), { heading: null, rows: [], notes: [] });
     assert.deepEqual(parseApproval(''), { heading: null, rows: [], notes: [] });
 });
+
+test('adding an image is read like any other change', () => {
+    const summary = parseApproval('Intent: add_image\nTitle: "Logo"\nParent: 1020\nImage: attached by you\n\nThe change runs only if you approve it.');
+
+    assert.equal(summary.heading, 'Add an image to the media library');
+    assert.deepEqual(summary.rows, [
+        { label: 'Title', value: 'Logo' },
+        { label: 'Parent location', value: '1020' },
+        { label: 'Image', value: 'attached by you' },
+    ]);
+});

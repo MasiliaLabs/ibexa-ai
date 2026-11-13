@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Agent\Worker;
 
 use Ibexa\Contracts\Core\Repository\ContentTypeService;
+use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Core\FieldType\Image\Value as ImageValue;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
 use Ibexa\Contracts\Core\Repository\Exceptions\BadStateException;
 use Ibexa\Contracts\Core\Repository\Exceptions\ContentFieldValidationException;
 use Ibexa\Contracts\Core\Repository\Exceptions\ContentValidationException;
@@ -37,6 +40,8 @@ final readonly class PlanExecutor
         private ?Repository              $repository = null,
         private ?ContentTypeService      $contentTypeService = null,
         private ?ContentFactoryInterface $contentFactory = null,
+        private ?AttachmentStore $attachments = null,
+        private ?PermissionResolver $permissions = null,
     )
     {
     }
@@ -52,6 +57,7 @@ final readonly class PlanExecutor
                 Plan::INTENT_CREATE_SITE_STRUCTURE => $this->createSiteStructure($plan),
                 Plan::INTENT_TRASH_CONTENT => $this->trashContent($plan),
                 Plan::INTENT_RESTORE_CONTENT => $this->restoreContent($plan),
+                Plan::INTENT_ADD_IMAGE => $this->addImage($plan),
                 default => ExecutionResult::fail(sprintf('Unknown intent: %s', $plan->intent), 'UNKNOWN_INTENT'),
             };
         } catch (Throwable $e) {
@@ -61,6 +67,46 @@ final readonly class PlanExecutor
             ]);
             return ExecutionResult::fail($e->getMessage(), 'EXECUTION_EXCEPTION');
         }
+    }
+
+    /**
+     * Adds the image the user attached to the media library, as an "image" content under the folder the plan names.
+     * Ibexa keeps its own copy of the file when the content is published: the attachment is left as it is.
+     */
+    private function addImage(Plan $plan): ExecutionResult
+    {
+        if ($this->attachments === null || $this->permissions === null || $this->contentFactory === null || $this->repository === null) {
+            return ExecutionResult::fail('add_image executor dependencies not configured', 'EXECUTOR_NOT_CONFIGURED');
+        }
+
+        $attachment = $this->attachments->find((string) $plan->attachmentId, (int) $this->permissions->getCurrentUserReference()->getUserId());
+        $path = $attachment === null ? '' : $this->attachments->path($attachment);
+        if ($attachment === null || !is_file($path)) {
+            return ExecutionResult::fail('The attached image is no longer available. Attach it again.', 'ATTACHMENT_GONE');
+        }
+
+        $title = trim((string) $plan->title) !== '' ? trim((string) $plan->title) : (pathinfo($attachment->name, PATHINFO_FILENAME) ?: 'Image');
+        $value = new ImageValue([
+            'inputUri' => $path,
+            'fileName' => $attachment->name,
+            'fileSize' => $attachment->size,
+            'width' => $attachment->width,
+            'height' => $attachment->height,
+            'alternativeText' => trim((string) $plan->description),
+        ]);
+        $language = $plan->language ?? $this->repository->getContentLanguageService()->getDefaultLanguageCode();
+
+        $result = $this->contentFactory->createAndPublish('image', [(int) $plan->parentLocationId], ['name' => $title, 'image' => $value], $language);
+        if (!isset($result['content'], $result['location'])) {
+            return ExecutionResult::fail('The image could not be added: the media library did not accept it.', 'ADD_IMAGE_FAILED');
+        }
+
+        return ExecutionResult::ok(
+            sprintf('Added the image "%s" to the media library (ID: %d)', $title, $result['content']->getId()),
+            (int) $result['content']->getId(),
+            (int) $result['location']->getId(),
+            ['content_id' => $result['content']->getId(), 'location_id' => $result['location']->getId()],
+        );
     }
 
     private function createContent(Plan $plan): ExecutionResult

@@ -24,7 +24,8 @@ export interface SourcePart {
 const MAX_SOURCES = 8;
 const MAX_NODES = 5000;
 const MAX_DEPTH = 10;
-// A shorter name ("About", "Home") appears in ordinary sentences: only the id can cite it.
+// A shorter name ("About", "Home") appears in ordinary sentences: only the id can cite it. So does a name
+// several contents share (every media folder is called "Images"): the text cannot say which one it means.
 const MIN_NAME_LENGTH = 6;
 const WORD = /[\p{L}\p{N}]/u;
 
@@ -96,10 +97,17 @@ export function collectSources(parts: readonly SourcePart[]): Source[] {
         return [];
     }
 
+    const found = [...candidates(parts).values()];
+    const sharedNames = new Set<string>();
+    const seenNames = new Set<string>();
+    for (const candidate of found) {
+        (seenNames.has(candidate.name) ? sharedNames : seenNames).add(candidate.name);
+    }
+
     const cited: Array<{ at: number; source: Source }> = [];
-    for (const candidate of candidates(parts).values()) {
+    for (const candidate of found) {
         const byId = position(text, String(candidate.contentId));
-        const byName = candidate.name.length >= MIN_NAME_LENGTH ? position(text, candidate.name) : -1;
+        const byName = candidate.name.length >= MIN_NAME_LENGTH && !sharedNames.has(candidate.name) ? position(text, candidate.name) : -1;
         const at = byId === -1 ? byName : byName === -1 ? byId : Math.min(byId, byName);
         if (at === -1) {
             continue;

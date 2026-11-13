@@ -16,6 +16,7 @@ final readonly class Plan
     public const INTENT_CREATE_SITE_STRUCTURE = 'create_site_structure';
     public const INTENT_TRASH_CONTENT = 'trash_content';
     public const INTENT_RESTORE_CONTENT = 'restore_content';
+    public const INTENT_ADD_IMAGE = 'add_image';
 
     public const INTENTS = [
         self::INTENT_CREATE_CONTENT,
@@ -25,6 +26,7 @@ final readonly class Plan
         self::INTENT_CREATE_SITE_STRUCTURE,
         self::INTENT_TRASH_CONTENT,
         self::INTENT_RESTORE_CONTENT,
+        self::INTENT_ADD_IMAGE,
     ];
 
     /**
@@ -46,6 +48,8 @@ final readonly class Plan
         public ?string $linkField = null,
         /** Language code the content is written in; the builder sets it to a language of the site. */
         public ?string $language = null,
+        /** The image the user attached to a message, for add_image. */
+        public ?string $attachmentId = null,
     ) {
     }
 
@@ -64,6 +68,7 @@ final readonly class Plan
             items: $this->items,
             linkField: $this->linkField,
             language: $language,
+            attachmentId: $this->attachmentId,
         );
     }
 
@@ -80,6 +85,7 @@ final readonly class Plan
             self::INTENT_CREATE_FOLDER => $this->validateCreateFolder(),
             self::INTENT_CREATE_SITE_STRUCTURE => $this->validateCreateSiteStructure(),
             self::INTENT_TRASH_CONTENT, self::INTENT_RESTORE_CONTENT => $this->validateContentRef(),
+            self::INTENT_ADD_IMAGE => $this->validateAddImage(),
         };
     }
 
@@ -141,6 +147,18 @@ final readonly class Plan
         return null;
     }
 
+    private function validateAddImage(): ?string
+    {
+        if ($this->attachmentId === null || $this->attachmentId === '') {
+            return 'add_image requires attachment_id (the id in the image\'s attachment tag)';
+        }
+        if ($this->parentLocationId === null) {
+            return 'add_image requires parent_location_id (an Images folder of the media library)';
+        }
+
+        return null;
+    }
+
     private function validateContentRef(): ?string
     {
         if ($this->contentId === null && $this->fields === []) {
@@ -167,6 +185,7 @@ final readonly class Plan
             'items' => $this->items,
             'link_field' => $this->linkField,
             'language' => $this->language,
+            'attachment_id' => $this->attachmentId,
         ];
     }
 
@@ -188,6 +207,7 @@ final readonly class Plan
             items: $data['items'] ?? [],
             linkField: $data['link_field'] ?? null,
             language: isset($data['language']) && $data['language'] !== '' ? (string) $data['language'] : null,
+            attachmentId: isset($data['attachment_id']) && $data['attachment_id'] !== '' ? (string) $data['attachment_id'] : null,
         );
     }
 }

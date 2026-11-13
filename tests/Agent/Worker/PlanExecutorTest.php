@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Agent\Worker;
 
+use Doctrine\DBAL\DriverManager;
+use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Core\FieldType\Image\Value as ImageValue;
+use Ibexa\Core\Repository\Values\User\UserReference;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ContentFactoryInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolName;
@@ -87,6 +92,86 @@ final class PlanExecutorTest extends TestCase
 
         self::assertSame('fre-FR', $received[ToolName::CREATE_CONTENT]['language']);
         self::assertArrayNotHasKey('language', $received[ToolName::CREATE_FOLDER], 'a plan with no language leaves the tool to its default (last call)');
+    }
+
+    private function imageExecutor(?array &$received, int $ownerId = 14, int $userId = 14): array
+    {
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $connection->executeStatement('CREATE TABLE app_ai_attachment (
+            id CHAR(36) PRIMARY KEY, user_id INT NOT NULL, name VARCHAR(160) NOT NULL, mime VARCHAR(40) NOT NULL, size INT NOT NULL,
+            width INT NOT NULL, height INT NOT NULL, filename VARCHAR(80) NOT NULL, created_at DATETIME NOT NULL)');
+        $store = new AttachmentStore($connection, sys_get_temp_dir() . '/ai-exec-test-' . bin2hex(random_bytes(4)));
+        $path = tempnam(sys_get_temp_dir(), 'img') ?: '';
+        imagepng(imagecreatetruecolor(64, 32), $path);
+        $attachment = $store->store($path, 'logo.png', $ownerId);
+
+        $content = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Content::class);
+        $content->method('getId')->willReturn(900);
+        $location = $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Location::class);
+        $location->method('getId')->willReturn(901);
+
+        $factory = new class($content, $location, $received) implements ContentFactoryInterface {
+            public function __construct(private $content, private $location, private ?array &$received) {}
+
+            public function createAndPublish(string $contentTypeIdentifier, array $parentLocationIds, array $attributes, string $languageCode): array
+            {
+                $this->received = compact('contentTypeIdentifier', 'parentLocationIds', 'attributes', 'languageCode');
+
+                return ['content' => $this->content, 'location' => $this->location];
+            }
+        };
+
+        $languages = $this->createMock(\Ibexa\Contracts\Core\Repository\LanguageService::class);
+        $languages->method('getDefaultLanguageCode')->willReturn('eng-GB');
+        $repository = $this->createMock(\Ibexa\Contracts\Core\Repository\Repository::class);
+        $repository->method('getContentLanguageService')->willReturn($languages);
+        $permissions = $this->createMock(PermissionResolver::class);
+        $permissions->method('getCurrentUserReference')->willReturn(new UserReference($userId));
+
+        $executor = new PlanExecutor(new ToolRegistry(), new NullLogger(), $repository, null, $factory, $store, $permissions);
+
+        return [$executor, $attachment->id, $store->path($attachment)];
+    }
+
+    public function testAddImageCreatesAnImageContentInTheFolderWithItsAlternativeText(): void
+    {
+        $received = null;
+        [$executor, $id, $path] = $this->imageExecutor($received);
+
+        $result = $executor->execute(new Plan(intent: Plan::INTENT_ADD_IMAGE, title: 'Company logo', parentLocationId: 1020, description: 'Blue logo', attachmentId: $id));
+
+        self::assertTrue($result->success);
+        self::assertSame([900, 901], [$result->contentId, $result->locationId]);
+        self::assertSame('image', $received['contentTypeIdentifier']);
+        self::assertSame([1020], $received['parentLocationIds']);
+        self::assertSame('eng-GB', $received['languageCode']);
+        self::assertSame('Company logo', $received['attributes']['name']);
+        $value = $received['attributes']['image'];
+        self::assertInstanceOf(ImageValue::class, $value);
+        self::assertSame($path, $value->inputUri);
+        self::assertSame('Blue logo', $value->alternativeText);
+        self::assertSame('logo.png', $value->fileName);
+    }
+
+    public function testAddImageNamesTheContentAfterTheFileWhenThePlanGivesNoTitle(): void
+    {
+        $received = null;
+        [$executor, $id] = $this->imageExecutor($received);
+
+        $executor->execute(new Plan(intent: Plan::INTENT_ADD_IMAGE, parentLocationId: 1020, attachmentId: $id));
+
+        self::assertSame('logo', $received['attributes']['name']);
+    }
+
+    public function testAddImageDoesNotUseAnotherUsersImage(): void
+    {
+        $received = null;
+        [$executor, $id] = $this->imageExecutor($received, ownerId: 15, userId: 14);
+
+        $result = $executor->execute(new Plan(intent: Plan::INTENT_ADD_IMAGE, parentLocationId: 1020, attachmentId: $id));
+
+        self::assertFalse($result->success);
+        self::assertNull($received, 'nothing was created');
     }
 
     public function testExecuteCreateContentToolFailure(): void

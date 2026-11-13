@@ -24,6 +24,7 @@ const ACTIONS: Record<string, string> = {
     create_site_structure: 'Create a site',
     trash_content: 'Move to the trash',
     restore_content: 'Restore from the trash',
+    add_image: 'Add an image to the media library',
 };
 
 const LABELS: Record<string, string> = {
@@ -35,6 +36,7 @@ const LABELS: Record<string, string> = {
     Language: 'Language',
     Fields: 'Fields',
     Blocks: 'Blocks',
+    Image: 'Image',
 };
 
 const CLOSING = 'The change runs only if you approve it.';

@@ -68,3 +68,10 @@ test('no more than eight sources, and nothing without an answer', () => {
     assert.equal(collectSources([call({ items }), text(answerText)]).length, 8);
     assert.deepEqual(collectSources([call({ items })]), []);
 });
+
+test('a name several contents share cannot cite one of them, but their id can', () => {
+    const folders = [{ content_id: 20, name: 'Images folder' }, { content_id: 21, name: 'Images folder' }, { content_id: 22, name: 'Fossil Exit Media' }];
+
+    assert.deepEqual(collectSources([call({ items: folders }), text('It is in the Images folder of Fossil Exit Media.')]).map((source) => source.contentId), [22]);
+    assert.deepEqual(collectSources([call({ items: folders }), text('It is in the Images folder (content 21).')]).map((source) => source.contentId), [21]);
+});

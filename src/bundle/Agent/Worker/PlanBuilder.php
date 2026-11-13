@@ -6,8 +6,10 @@ namespace Masilia\Bundle\IbexaAi\Agent\Worker;
 
 use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
 use Ibexa\Contracts\Core\Repository\Exceptions\UnauthorizedException;
+use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\Repository;
 use InvalidArgumentException;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
 use Masilia\Bundle\IbexaAi\Agent\Block\BlockCatalog;
 use Masilia\Bundle\IbexaAi\Agent\Block\ContentCatalog;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
@@ -42,6 +44,8 @@ final readonly class PlanBuilder
         private ?Repository $repository = null,
         private ?SiteaccessLocationResolver $siteaccessResolver = null,
         private ?SiteLanguages $siteLanguages = null,
+        private ?AttachmentStore $attachments = null,
+        private ?PermissionResolver $permissions = null,
     ) {
     }
 
@@ -99,7 +103,14 @@ final readonly class PlanBuilder
             }
         }
 
-        $createsUnderParent = in_array($plan->intent, [Plan::INTENT_CREATE_CONTENT, Plan::INTENT_CREATE_FOLDER], true);
+        if ($plan->intent === Plan::INTENT_ADD_IMAGE && $this->attachments !== null && $this->permissions !== null) {
+            $userId = (int) $this->permissions->getCurrentUserReference()->getUserId();
+            if (!AttachmentStore::isValidId($plan->attachmentId) || $this->attachments->find((string) $plan->attachmentId, $userId) === null) {
+                return 'That image is not available (it is kept for a week). Ask the user to attach it again.';
+            }
+        }
+
+        $createsUnderParent = in_array($plan->intent, [Plan::INTENT_CREATE_CONTENT, Plan::INTENT_CREATE_FOLDER, Plan::INTENT_ADD_IMAGE], true);
         if (!$createsUnderParent || $plan->parentLocationId === null) {
             return null;
         }
@@ -135,6 +146,7 @@ final readonly class PlanBuilder
             Plan::INTENT_UPDATE_CONTENT,
             Plan::INTENT_CREATE_FOLDER,
             Plan::INTENT_CREATE_SITE_STRUCTURE,
+            Plan::INTENT_ADD_IMAGE,
         ], true);
         if (!$writesContent) {
             if ($plan->language !== null) {
