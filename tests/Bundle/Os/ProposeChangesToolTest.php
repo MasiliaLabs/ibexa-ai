@@ -180,19 +180,45 @@ final class ProposeChangesToolTest extends TestCase
         self::assertSame(['folder.create:[]'], $this->log);
     }
 
-    public function testAStepWithAProblemIsRefusedUpFrontUnlessItDependsOnAnEarlierStep(): void
+    public function testAStepWithAProblemIsRefusedUpFrontWhenNothingBeforeItChangesAnything(): void
+    {
+        $tool = $this->tool([$this->capability('content.look', Risk::READ), $this->capability('page.create', Risk::WRITE, ['problem' => 'The type does not exist.'])]);
+
+        $upFront = $tool->execute(['steps' => [['capability' => 'content.look'], ['capability' => 'page.create']]]);
+
+        self::assertStringContainsString('Step "s2": page.create: The type does not exist.', $upFront->message);
+        self::assertSame([], $this->log);
+        self::assertSame(['begin' => 0, 'commit' => 0, 'rollback' => 0], $this->transaction);
+    }
+
+    public function testAProblemFoundWhenAStepRunsUndoesEarlierSteps(): void
     {
         $tool = $this->tool([$this->capability('folder.create', Risk::WRITE, ['data' => ['location_id' => 7]]), $this->capability('page.create', Risk::WRITE, ['problem' => 'The type does not exist.'])]);
 
-        $upFront = $tool->execute(['steps' => [['capability' => 'folder.create'], ['capability' => 'page.create']]]);
-        self::assertStringContainsString('Step "s2": page.create: The type does not exist.', $upFront->message);
-        self::assertSame([], $this->log);
-
-        // With a reference its arguments are not known yet: the problem is found when they are, and everything is undone.
+        // With a reference, or after a step that changes something, the arguments are checked when the step runs.
         $late = $tool->execute(['steps' => [['id' => 'f', 'capability' => 'folder.create'], ['capability' => 'page.create', 'arguments' => ['parent' => '$f.location_id']]]]);
+
         self::assertFalse($late->success);
         self::assertStringContainsString('The type does not exist.', $late->message);
         self::assertSame(1, $this->transaction['rollback']);
+    }
+
+    public function testWhatAStepNeedsFromTheRepositoryIsCheckedWhenItRunsIfAnEarlierStepChangesSomething(): void
+    {
+        // The second step needs what the first creates (a group by its name): it cannot be checked up front.
+        $tool = $this->tool([$this->capability('group.create', Risk::WRITE), $this->capability('type.create', Risk::WRITE, ['problem' => 'There is no group.'])]);
+        $steps = ['steps' => [['capability' => 'group.create'], ['capability' => 'type.create']]];
+
+        self::assertNotNull($tool->approvalReason($steps), 'the batch is shown for approval');
+        $result = $tool->execute($steps);
+
+        self::assertFalse($result->success, 'and it is checked, and undone, when the step runs');
+        self::assertStringContainsString('There is no group.', $result->message);
+        self::assertSame(1, $this->transaction['rollback']);
+
+        // After reads only, the state is the one that is checked up front.
+        $reads = $this->tool([$this->capability('a.read', Risk::READ), $this->capability('type.create', Risk::WRITE, ['problem' => 'There is no group.'])]);
+        self::assertNull($reads->approvalReason(['steps' => [['capability' => 'a.read'], ['capability' => 'type.create']]]));
     }
 
     public function testBadBatchesAreAnsweredNotRun(): void

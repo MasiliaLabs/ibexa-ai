@@ -121,11 +121,11 @@ final class OsSelftestCommand extends Command
             $step('move B under itself is refused', 'location.move', ['location_id' => $b['location_id'], 'new_parent_location_id' => $answers['copy']['location_id'] ?? 0], null, null, true);
             $step('remove the extra location of A', 'location.remove', ['location_id' => $answers['added']['location_id'] ?? 0]);
             $this->domains($step, $answers, $a['content_id'], $stamp);
+            $this->structure($step, $answers, $contents, $parent, $stamp);
             $step('trash A', 'content.trash', ['content_id' => $a['content_id']]);
             $step('delete A from the trash', 'trash.delete', ['content_id' => $a['content_id']]);
             $step('it is no longer in the trash', 'trash.delete', ['content_id' => $a['content_id']], null, null, true);
         } finally {
-            $this->removeStructures($stamp);
             // What was trashed (A, and what sat under it) is deleted from the trash first, then the rest for good.
             foreach ($this->trashLeftovers($contents) as $leftover) {
                 $io->warning($leftover);
@@ -138,6 +138,7 @@ final class OsSelftestCommand extends Command
                     // Already gone (deleted with its parent).
                 }
             }
+            $this->removeStructures($stamp);
         }
 
         if ($failed > 0) {
@@ -233,6 +234,60 @@ final class OsSelftestCommand extends Command
         $step('list the drafts', 'workspace.drafts.list', []);
     }
 
+    /**
+     * Content types: a group, a type with fields, its changes, a content of it, and their deletion.
+     *
+     * @param callable                             $step
+     * @param array<string, array<string, mixed>>  $answers
+     * @param list<int>                            $contents
+     */
+    private function structure(callable $step, array &$answers, array &$contents, int $parent, string $stamp): void
+    {
+        $group = 'selftest_' . $stamp;
+        $type = 'selftest_type_' . $stamp;
+        $fieldIds = static fn (array $d): array => array_column($d['fields'], 'identifier');
+
+        $step('create a group of types', 'structure.group.create', ['identifier' => $group]);
+        $step('the group is listed', 'structure.group.list', [], static fn (array $d): ?string => in_array($group, array_column($d['groups'], 'identifier'), true) ? null : 'not listed');
+        $step('the field types are listed', 'structure.field_type.list', [], static fn (array $d): ?string => in_array('ibexa_string', $d['field_types'], true) ? null : 'ibexa_string is missing');
+        $step('a type with an unknown field type is refused', 'structure.type.create', ['identifier' => $type, 'name' => 'Selftest', 'group' => $group, 'fields' => [['identifier' => 'title', 'field_type' => 'nope_nope']]], null, null, true);
+        $step('create a type with two fields', 'structure.type.create', ['identifier' => $type, 'name' => 'Selftest type', 'group' => $group, 'container' => true, 'fields' => [
+            ['identifier' => 'title', 'field_type' => 'ibexa_string', 'name' => 'Title', 'required' => true],
+            ['identifier' => 'body', 'field_type' => 'ibexa_text', 'name' => 'Body'],
+        ]]);
+        $step('describe it', 'structure.type.describe', ['type' => $type], static fn (array $d): ?string => $fieldIds($d) === ['title', 'body'] && $d['name_schema'] === '<title>' && $d['container'] ? null : 'unexpected fields or schema: ' . implode(',', $fieldIds($d)));
+        $step('add a field', 'structure.field.add', ['type' => $type, 'field' => ['identifier' => 'summary', 'field_type' => 'ibexa_text', 'name' => 'Summary']]);
+        $step('the same field cannot be added twice', 'structure.field.add', ['type' => $type, 'field' => ['identifier' => 'summary', 'field_type' => 'ibexa_text']], null, null, true);
+        $step('reorder the fields', 'structure.field.reorder', ['type' => $type, 'order' => ['body']]);
+        $step('the order changed', 'structure.type.describe', ['type' => $type], static fn (array $d): ?string => $fieldIds($d) === ['body', 'title', 'summary'] ? null : 'order is ' . implode(',', $fieldIds($d)));
+        $step('remove a field', 'structure.field.remove', ['type' => $type, 'field' => 'summary']);
+        $step('a missing field cannot be removed', 'structure.field.remove', ['type' => $type, 'field' => 'summary'], null, null, true);
+        $step('rename the type', 'structure.type.update', ['type' => $type, 'name' => 'Selftest renamed']);
+        $step('name it in French', 'structure.type.translate', ['type' => $type, 'language_code' => 'fre-FR', 'name' => 'Type de test']);
+        $step('the type is listed in its group', 'structure.type.list', ['group' => $group], static fn (array $d): ?string => count($d['types']) === 1 && $d['types'][0]['fields'] === ['body:ibexa_text', 'title:ibexa_string'] ? null : 'unexpected list');
+        $step('a non-empty group cannot be deleted', 'structure.group.delete', ['group' => $group], null, null, true);
+
+        $contents[] = $this->createContentOfType($type, $parent, 'Selftest content ' . $stamp);
+        $step('a used type cannot be deleted', 'structure.type.delete', ['type' => $type], null, null, true);
+        $step('copy the type', 'structure.type.copy', ['type' => $type], null, 'typecopy');
+        $step('delete the copy', 'structure.type.delete', ['type' => $answers['typecopy']['type'] ?? 'none']);
+        $content = $this->repository->getContentService();
+        $content->deleteContent($content->loadContentInfo($contents[array_key_last($contents)]));
+        $step('delete the type', 'structure.type.delete', ['type' => $type]);
+        $step('delete the group', 'structure.group.delete', ['group' => $group]);
+    }
+
+    /** A published content of the type, written directly (the capabilities of contents are tested elsewhere). */
+    private function createContentOfType(string $type, int $parent, string $title): int
+    {
+        $content = $this->repository->getContentService();
+        $struct = $content->newContentCreateStruct($this->repository->getContentTypeService()->loadContentTypeByIdentifier($type), 'eng-GB');
+        $struct->setField('title', $title);
+        $draft = $content->createContent($struct, [$this->repository->getLocationService()->newLocationCreateStruct($parent)]);
+
+        return $content->publishVersion($draft->getVersionInfo())->contentInfo->id;
+    }
+
     /** The id of a system-generated alias of the location (those cannot be removed). */
     private function systemAliasId(int $locationId): string
     {
@@ -248,7 +303,19 @@ final class OsSelftestCommand extends Command
     private function removeStructures(string $stamp): void
     {
         $identifier = $this->sectionIdentifier($stamp);
+        $types = $this->repository->getContentTypeService();
         $attempts = [
+            function () use ($types, $identifier, $stamp): void {
+                // The type, and the copies of it that a failed run may have left.
+                foreach ($types->loadContentTypes($types->loadContentTypeGroupByIdentifier($identifier)) as $type) {
+                    $types->deleteContentType($type);
+                }
+                $types->deleteContentTypeGroup($types->loadContentTypeGroupByIdentifier($identifier));
+            },
+            function () use ($types, $stamp): void {
+                $copy = $types->loadContentTypeByIdentifier('copy_of_selftest_type_' . $stamp);
+                $types->deleteContentType($copy);
+            },
             fn () => $this->repository->getSectionService()->deleteSection($this->repository->getSectionService()->loadSectionByIdentifier($identifier)),
             fn () => $this->repository->getObjectStateService()->deleteObjectStateGroup($this->repository->getObjectStateService()->loadObjectStateGroupByIdentifier($identifier)),
             fn () => $this->repository->getContentLanguageService()->deleteLanguage($this->repository->getContentLanguageService()->loadLanguage('tst-ZZ')),

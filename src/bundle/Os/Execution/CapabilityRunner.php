@@ -39,10 +39,12 @@ final readonly class CapabilityRunner
      * @param array<string, mixed>|mixed $arguments
      * @param (callable(array<string, mixed>, array<string, mixed>): array<string, mixed>)|null $forValidation Turns arguments into ones that can be
      *        validated when some values are not known yet (a reference to an earlier step), given the schema
+     * @param bool $checkState False to check the schema only: what the capability checks against the repository is left to when it runs
+     *        (an earlier step of the same batch may create what this one needs)
      *
      * @return array{0: Capability|null, 1: array<string, mixed>, 2: string|null} The capability, its arguments (typed), and what is wrong
      */
-    public function prepare(string $name, mixed $arguments, ?callable $forValidation = null): array
+    public function prepare(string $name, mixed $arguments, ?callable $forValidation = null, bool $checkState = true): array
     {
         $name = trim($name);
         $capability = $this->registry->get($name);
@@ -69,7 +71,7 @@ final readonly class CapabilityRunner
             return [$capability, $arguments, sprintf('%s: %s Read it with describe_capability.', $name, implode(' ', $errors))];
         }
         // What the schema cannot see. Not when some values are references: they are checked when they are known.
-        $problem = $checked === $arguments ? $this->problem($capability, $arguments) : null;
+        $problem = $checkState && $checked === $arguments ? $this->problem($capability, $arguments) : null;
         if ($problem !== null) {
             return [$capability, $arguments, sprintf('%s: %s', $name, $problem)];
         }

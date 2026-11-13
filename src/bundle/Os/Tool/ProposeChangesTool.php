@@ -182,6 +182,7 @@ final readonly class ProposeChangesTool implements ToolInterface, GatedToolInter
 
         $steps = [];
         $seen = [];
+        $changes = false;
         foreach ($raw as $index => $step) {
             $id = is_array($step) && isset($step['id']) ? (string) $step['id'] : sprintf('s%d', $index + 1);
             if (!is_array($step) || !is_string($step['capability'] ?? null)) {
@@ -202,12 +203,14 @@ final readonly class ProposeChangesTool implements ToolInterface, GatedToolInter
                 }
             }
 
-            [$capability, $typed, $problem] = $this->runner->prepare($step['capability'], $arguments, static fn (array $schema, array $args): array => (array) References::standIn($schema, $args));
+            // After a step that changes something, the repository is no longer what it is now: what a step needs from it is checked when it runs.
+            [$capability, $typed, $problem] = $this->runner->prepare($step['capability'], $arguments, static fn (array $schema, array $args): array => (array) References::standIn($schema, $args), !$changes);
             if ($capability === null || $problem !== null) {
                 return [[], sprintf('Step "%s": %s', $id, $problem ?? 'Unknown capability.')];
             }
 
             $seen[$id] = true;
+            $changes = $changes || $capability->risk() !== Risk::READ;
             $steps[] = ['id' => $id, 'capability' => $capability, 'args' => $typed, 'uses' => $uses];
         }
 
