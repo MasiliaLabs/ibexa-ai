@@ -9,7 +9,13 @@ const LABELS: Record<string, string> = {
     explore_site: 'Explored the site',
     browse_location: 'Looked up content',
     propose_plan: 'Proposed a change',
+    find_capabilities: 'Looked for a capability',
+    describe_capability: 'Read how a capability works',
+    run_capability: 'Ran a capability',
 };
+
+/** The tools that act on a named capability say which. */
+const NAMED = new Set(['describe_capability', 'run_capability']);
 
 type State = 'waiting' | 'refused' | 'running' | 'failed' | 'ok';
 
@@ -53,6 +59,7 @@ export function ToolCard(props: ToolCallMessagePartProps) {
                             <Icon name={ICONS[state]} size="small" />
                         </span>
                         {LABELS[toolName] ?? toolName}
+                    {NAMED.has(toolName) && typeof (args as { name?: unknown } | undefined)?.name === 'string' ? <span className="masilia-chat__tool-capability">{(args as { name: string }).name}</span> : null}
                         <span className="visually-hidden">{`, ${STATE_LABELS[state]}`}</span>
                     </summary>
                     {outcome !== null && outcome.message !== '' ? <p className="masilia-chat__tool-message">{outcome.message}</p> : null}
@@ -98,13 +105,13 @@ function Approval({ approval, respondToApproval }: ToolCallMessagePartProps & { 
     const summary = parseApproval(approval.prompt);
 
     return (
-        <section className="masilia-chat__approval" aria-label="Change to review">
+        <section className={`masilia-chat__approval${summary.risk === 'destructive' || summary.risk === 'access' ? ' masilia-chat__approval--serious' : ''}`} aria-label="Change to review">
             <header className="masilia-chat__approval-head">
                 <span className="masilia-chat__approval-icon" aria-hidden="true">
                     <Icon name="clipboard-check" size="small" />
                 </span>
                 <div>
-                    <p className="masilia-chat__approval-eyebrow">Review this change</p>
+                    <p className="masilia-chat__approval-eyebrow">{summary.risk === 'destructive' ? 'Review this change: it cannot be undone' : summary.risk === 'access' ? 'Review this change: it changes who can do what' : 'Review this change'}</p>
                     <h3 className="masilia-chat__approval-title">{summary.heading ?? 'The assistant proposes a change'}</h3>
                 </div>
             </header>

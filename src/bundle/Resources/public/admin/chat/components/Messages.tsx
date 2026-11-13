@@ -7,6 +7,7 @@ import type { AttachmentPiece } from '../attachments';
 import { attachmentUrl } from '../runtime/uploads';
 import { mentionHref, splitMentions } from '../mentions';
 import { collectSources } from '../sources';
+import { groupSteps } from '../steps';
 import type { SourcePart } from '../sources';
 import { Markdown } from './Markdown';
 import { ToolCard } from './ToolCard';
@@ -63,17 +64,12 @@ export function AssistantMessage() {
     );
 }
 
-/**
- * What the assistant does to look around (explore, browse) is folded into one line; a proposed change is not: it
- * asks for a decision and stays in the open.
- */
-function groupSteps(part: { type: string; toolName?: string }): readonly `group-${string}`[] {
-    return part.type === 'tool-call' && part.toolName !== 'propose_plan' ? ['group-steps'] : [];
-}
-
 const RUNNING: Record<string, string> = {
     explore_site: 'Exploring the site',
     browse_location: 'Looking up content',
+    find_capabilities: 'Looking for what I can do',
+    describe_capability: 'Reading how it works',
+    run_capability: 'Doing it',
 };
 
 function Steps({ indices, running, children }: { indices: readonly number[]; running: boolean; children: React.ReactNode }) {

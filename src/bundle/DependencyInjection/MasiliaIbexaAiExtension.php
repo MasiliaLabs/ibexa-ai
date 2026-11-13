@@ -42,6 +42,7 @@ final class MasiliaIbexaAiExtension extends Extension implements PrependExtensio
 
         $container->setParameter('ibexa_ai.connection', $config['connection']);
         $container->setParameter('ibexa_ai.encryption_key', $config['encryption_key']);
+        $container->setParameter('ibexa_ai.os.domains', $config['os']['domains']);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');

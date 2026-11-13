@@ -17,6 +17,7 @@ use Masilia\Bundle\IbexaAi\Agent\Stream\AlreadyDecidedException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\DecisionPendingException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\ReasoningFilteredAGUIAdapter;
 use Masilia\Bundle\IbexaAi\Agent\Thread\AgentThreads;
+use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadAccessDeniedException;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadId;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadTitle;
@@ -63,6 +64,7 @@ final readonly class AgUiChatController
         private ContentMentions $mentions,
         private AttachmentStore $attachments,
         private UserMessageBuilder $messages,
+        private RunContext $runContext,
         private LoggerInterface $aiLogger,
     ) {
     }
@@ -109,6 +111,7 @@ final readonly class AgUiChatController
         try {
             $agent = $this->agents->create($this->currentSiteaccess(), $threadId);
             $agent->setStreamAdapter(static fn () => $adapter);
+            $this->runContext->begin($threadId, $this->currentSiteaccess());
             $agent->withPageContext(PageContext::fromAgUiContext($input['context'] ?? null));
             $vision = $this->agents->supportsVision($this->currentSiteaccess());
             $agent->withVision($vision);

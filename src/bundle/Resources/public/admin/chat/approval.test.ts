@@ -29,8 +29,8 @@ test('free text stays a note, and the closing sentence is dropped', () => {
 
 test('an intent it does not know is shown as it is; nothing to read gives an empty summary', () => {
     assert.equal(parseApproval('Intent: fly_to_mars').heading, 'fly_to_mars');
-    assert.deepEqual(parseApproval(undefined), { heading: null, rows: [], notes: [] });
-    assert.deepEqual(parseApproval(''), { heading: null, rows: [], notes: [] });
+    assert.deepEqual(parseApproval(undefined), { heading: null, rows: [], notes: [], risk: null });
+    assert.deepEqual(parseApproval(''), { heading: null, rows: [], notes: [], risk: null });
 });
 
 test('adding an image is read like any other change', () => {
@@ -42,4 +42,21 @@ test('adding an image is read like any other change', () => {
         { label: 'Parent location', value: '1020' },
         { label: 'Image', value: 'attached by you' },
     ]);
+});
+
+test('a capability of the AI OS gives its own heading, its risk and its own rows', () => {
+    const summary = parseApproval('Action: Empty the trash\nRisk: destructive\nItems: 12\nThese contents are deleted for good. This cannot be undone.\n\nThe change runs only if you approve it.');
+
+    assert.equal(summary.heading, 'Empty the trash');
+    assert.equal(summary.risk, 'destructive');
+    assert.deepEqual(summary.rows, [{ label: 'Items', value: '12' }]);
+    assert.deepEqual(summary.notes, ['These contents are deleted for good. This cannot be undone.']);
+});
+
+test('rows of a capability keep their labels, and an unknown risk is none', () => {
+    const summary = parseApproval('Action: Update content\nRisk: write\nContent: Home (5)\nLanguage: its own language\nFields: title, body');
+
+    assert.equal(summary.risk, 'write');
+    assert.deepEqual(summary.rows.map((row) => row.label), ['Content', 'Language', 'Fields']);
+    assert.equal(parseApproval('Action: X\nRisk: weird').risk, null);
 });

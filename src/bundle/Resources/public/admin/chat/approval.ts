@@ -10,10 +10,14 @@ export interface ApprovalRow {
     value: string;
 }
 
+export type ApprovalRisk = 'write' | 'destructive' | 'access';
+
 export interface ApprovalSummary {
     heading: string | null;
     rows: ApprovalRow[];
     notes: string[];
+    /** How far the change reaches, when the server says: destructive and access changes get a warning. */
+    risk: ApprovalRisk | null;
 }
 
 const ACTIONS: Record<string, string> = {
@@ -46,8 +50,9 @@ function unquote(value: string): string {
 }
 
 export function parseApproval(prompt: string | undefined): ApprovalSummary {
-    const summary: ApprovalSummary = { heading: null, rows: [], notes: [] };
+    const summary: ApprovalSummary = { heading: null, rows: [], notes: [], risk: null };
 
+    let named = false;
     for (const raw of (prompt ?? '').split('\n')) {
         const line = raw.trim();
         if (line === '' || line === CLOSING) {
@@ -63,8 +68,16 @@ export function parseApproval(prompt: string | undefined): ApprovalSummary {
         const [, key, value] = match;
         if (key === 'Intent') {
             summary.heading = ACTIONS[value] ?? value;
+        } else if (key === 'Action') {
+            summary.heading = value;
+            named = true;
+        } else if (key === 'Risk') {
+            summary.risk = value === 'write' || value === 'destructive' || value === 'access' ? value : null;
         } else if (key in LABELS) {
             summary.rows.push({ label: LABELS[key], value: unquote(value) });
+        } else if (named) {
+            // A capability of the AI OS (it begins with its "Action") names its own rows.
+            summary.rows.push({ label: key, value: unquote(value) });
         } else {
             summary.notes.push(line);
         }

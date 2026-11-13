@@ -1,0 +1,9 @@
+# What the assistant may do for a user, by role. The Administrator role has them all.
+# A capability needs the policy of its risk (write, destructive, access) on top of the policies of what it touches,
+# and "structure" for the content model (types, groups, fields).
+masilia_ai:
+    use: ~
+    write: ~
+    destructive: ~
+    structure: ~
+    access: ~

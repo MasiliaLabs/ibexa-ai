@@ -4,6 +4,8 @@ services:
             tags: ['masilia.ibexa_ai.tool']
         Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerInterface:
             tags: ['masilia.ibexa_ai.field_value_transformer']
+        Masilia\IbexaAi\Os\Capability:
+            tags: ['masilia.ibexa_ai.capability']
         Masilia\Bundle\IbexaAi\Field\FieldValueStringifierInterface:
             tags: ['masilia.ibexa_ai.stringifier']
 
@@ -16,6 +18,7 @@ services:
             $settings: '%ibexa_ai.connection%'
             $cachePool: '@cache.app'
             $cache: '@cache.app'
+            $domains: '%ibexa_ai.os.domains%'
             $attachmentsDirectory: '%kernel.project_dir%/var/ai-attachments'
 
     Masilia\Bundle\IbexaAi\Ibexa\:
@@ -33,6 +36,25 @@ services:
 
     Masilia\Bundle\IbexaAi\Admin\:
         resource: '../../Admin/'
+
+    # The AI OS: capabilities (tagged), their registry, access, audit and the three tools the model sees.
+    Masilia\Bundle\IbexaAi\Os\:
+        resource: '../../Os/'
+
+    Masilia\IbexaAi\Os\CapabilityRegistry:
+        arguments:
+            $capabilities: !tagged_iterator masilia.ibexa_ai.capability
+
+    # Capabilities that do what an existing tool does take that tool.
+    Masilia\Bundle\IbexaAi\Os\Capability\Content\SearchCapability:
+        arguments:
+            $searchTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\SearchContentTool'
+    Masilia\Bundle\IbexaAi\Os\Capability\Content\LoadCapability:
+        arguments:
+            $loadTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\LoadContentTool'
+    Masilia\Bundle\IbexaAi\Os\Capability\Content\UpdateCapability:
+        arguments:
+            $updateTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\UpdateContentTool'
 
     Masilia\IbexaAi\Provider\ProviderFactory: ~
 

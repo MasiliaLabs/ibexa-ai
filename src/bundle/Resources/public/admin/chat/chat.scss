@@ -1134,3 +1134,25 @@ html {
         object-fit: cover;
     }
 }
+
+// A change that cannot be undone, or that changes access, is told apart on the card.
+.masilia-chat__approval--serious {
+    border-color: ibexa.$ibexa-color-danger;
+
+    .masilia-chat__approval-eyebrow {
+        color: ibexa.$ibexa-color-danger;
+    }
+
+    .masilia-chat__approval-icon {
+        background: ibexa.$ibexa-color-danger-100;
+        color: ibexa.$ibexa-color-danger;
+    }
+}
+
+.masilia-chat__tool-capability {
+    padding: 0 calculateRem(6px);
+    background: ibexa.$ibexa-color-light-300;
+    border-radius: calculateRem(6px);
+    font-family: monospace;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
+}
