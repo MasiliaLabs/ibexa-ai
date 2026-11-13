@@ -122,6 +122,7 @@ final class OsSelftestCommand extends Command
             $step('remove the extra location of A', 'location.remove', ['location_id' => $answers['added']['location_id'] ?? 0]);
             $this->domains($step, $answers, $a['content_id'], $stamp);
             $this->structure($step, $answers, $contents, $parent, $stamp);
+            $this->access($step, $answers, $stamp, $io);
             $step('trash A', 'content.trash', ['content_id' => $a['content_id']]);
             $step('delete A from the trash', 'trash.delete', ['content_id' => $a['content_id']]);
             $step('it is no longer in the trash', 'trash.delete', ['content_id' => $a['content_id']], null, null, true);
@@ -139,6 +140,7 @@ final class OsSelftestCommand extends Command
                 }
             }
             $this->removeStructures($stamp);
+            $this->removeAccess($stamp);
         }
 
         if ($failed > 0) {
@@ -249,6 +251,113 @@ final class OsSelftestCommand extends Command
         $first = $answers['preferences']['preferences'][0] ?? null;
         if ($first !== null) {
             $step('set a preference to its own value', 'workspace.preferences.set', ['name' => $first['name'], 'value' => (string) $first['value']]);
+        }
+    }
+
+    /**
+     * Roles, policies, assignments and users, on a throwaway user group. Skipped when the access domain is turned off
+     * (it is off by default): turn it on with masilia_ibexa_ai.os.domains.access to test it.
+     *
+     * @param callable                            $step
+     * @param array<string, array<string, mixed>> $answers
+     */
+    private function access(callable $step, array &$answers, string $stamp, SymfonyStyle $io): void
+    {
+        [, , $off] = $this->runner->prepare('access.role.list', []);
+        if ($off !== null && str_contains($off, 'turned off')) {
+            $io->writeln(' <comment>skip</comment> access capabilities (the domain is turned off)');
+
+            return;
+        }
+
+        $role = 'selftest_role_' . $stamp;
+        $renamed = $role . '_renamed';
+        $copy = $role . '_copy';
+        $login = 'selftest_' . $stamp;
+        $users = $this->repository->getUserService();
+
+        // The throwaway group the role is assigned to and the user goes in (users and groups are made directly: the assistant
+        // makes users, not groups).
+        $groupStruct = $users->newUserGroupCreateStruct('eng-GB');
+        $groupStruct->setField('name', 'Selftest group ' . $stamp);
+        $group = $users->createUserGroup($groupStruct, $users->loadUserGroup(4));
+        $groupId = $group->id;
+
+        $limits = ['Section' => [1]];
+        $step('create a role', 'access.role.create', ['name' => $role, 'policies' => [['module' => 'content', 'function' => 'read'], ['module' => 'content', 'function' => 'create', 'limitations' => $limits]]]);
+        $step('a role with that name exists', 'access.role.create', ['name' => $role], null, null, true);
+        $step('an unknown policy is refused', 'access.role.create', ['name' => $role . '_x', 'policies' => [['module' => 'nope', 'function' => 'nope']]], null, null, true);
+        $step('the role is listed', 'access.role.list', [], static fn (array $d): ?string => in_array($role, array_column($d['roles'], 'name'), true) ? null : 'not listed');
+        $step('describe the role', 'access.role.describe', ['role' => $role], static fn (array $d): ?string => count($d['policies']) === 2 && array_filter($d['policies'], static fn (array $p): bool => $p['function'] === 'create' && $p['limitations'] === ['Section' => [1]]) !== [] ? null : 'unexpected policies', 'described');
+        $createId = 0;
+        foreach ($answers['described']['policies'] ?? [] as $policy) {
+            if ($policy['function'] === 'create') {
+                $createId = $policy['policy_id'];
+            }
+        }
+        $step('add a policy', 'access.policy.add', ['role' => $role, 'policy' => ['module' => 'content', 'function' => 'edit', 'limitations' => $limits]]);
+        // Publishing a role gives its policies new ids: read them again.
+        $step('describe it again', 'access.role.describe', ['role' => $role], null, 'described');
+        foreach ($answers['described']['policies'] ?? [] as $policy) {
+            if ($policy['function'] === 'create') {
+                $createId = $policy['policy_id'];
+            }
+        }
+        $step('widen a policy', 'access.policy.update', ['role' => $role, 'policy_id' => $createId, 'limitations' => ['Section' => [1, 2]]]);
+        $step('the policies are as set', 'access.role.describe', ['role' => $role], static fn (array $d): ?string => count($d['policies']) === 3 && array_filter($d['policies'], static fn (array $p): bool => $p['function'] === 'create' && $p['limitations'] === ['Section' => [1, 2]]) !== [] ? null : 'unexpected policies: ' . json_encode($d['policies']), 'described');
+        $editId = 0;
+        foreach ($answers['described']['policies'] ?? [] as $policy) {
+            if ($policy['function'] === 'edit') {
+                $editId = $policy['policy_id'];
+            }
+        }
+        $step('a policy of another role is refused', 'access.policy.remove', ['role' => $role, 'policy_id' => 999999], null, null, true);
+        $step('remove a policy', 'access.policy.remove', ['role' => $role, 'policy_id' => $editId]);
+        $step('rename the role', 'access.role.update', ['role' => $role, 'new_name' => $renamed]);
+        $step('copy the role', 'access.role.copy', ['role' => $renamed, 'new_name' => $copy]);
+        $step('assign the role to the group', 'access.assignment.add', ['role' => $renamed, 'user_group_id' => $groupId, 'limitation' => ['type' => 'Section', 'values' => ['1']]], null, 'assignment');
+        $step('the assignment is described', 'access.role.describe', ['role' => $renamed], static fn (array $d): ?string => count($d['assignments']) === 1 && $d['assignments'][0]['user_group_id'] === $groupId ? null : 'unexpected assignments: ' . json_encode($d['assignments']));
+
+        $step('create a user', 'access.user.create', ['login' => $login, 'email' => $login . '@example.org', 'first_name' => 'Self', 'last_name' => 'Test', 'user_group_id' => $groupId], null, 'user');
+        $step('that login is taken', 'access.user.create', ['login' => $login, 'email' => 'other@example.org', 'first_name' => 'A', 'last_name' => 'B', 'user_group_id' => $groupId], null, null, true);
+        $step('describe the user, with the role of the group', 'access.user.describe', ['login' => $login], static fn (array $d): ?string => in_array($renamed, $d['roles'], true) && $d['enabled'] ? null : 'roles: ' . implode(',', $d['roles']));
+        $step('lock the account', 'access.user.update', ['user_id' => $answers['user']['user_id'] ?? 0, 'enabled' => false, 'first_name' => 'Renamed']);
+        $step('the account is locked', 'access.user.describe', ['user_id' => $answers['user']['user_id'] ?? 0], static fn (array $d): ?string => $d['enabled'] ? 'still enabled' : null);
+        $step('you cannot lock your own account', 'access.user.update', ['user_id' => $this->repository->getPermissionResolver()->getCurrentUserReference()->getUserId(), 'enabled' => false], null, null, true);
+        $step('you cannot delete your own account', 'access.user.delete', ['user_id' => $this->repository->getPermissionResolver()->getCurrentUserReference()->getUserId()], null, null, true);
+        $step('delete the user', 'access.user.delete', ['user_id' => $answers['user']['user_id'] ?? 0]);
+
+        $step('remove the assignment', 'access.assignment.remove', ['assignment_id' => $answers['assignment']['assignment_id'] ?? 0]);
+        $step('a system role cannot be deleted', 'access.role.delete', ['role' => 'Administrator'], null, null, true);
+        $step('delete the role', 'access.role.delete', ['role' => $renamed]);
+        $step('delete the copy', 'access.role.delete', ['role' => $copy]);
+        $this->removeAccess($stamp);
+    }
+
+    /** What the access steps made, removed whatever happened. */
+    private function removeAccess(string $stamp): void
+    {
+        $users = $this->repository->getUserService();
+        $roles = $this->repository->getRoleService();
+        $attempts = [
+            fn () => $users->deleteUser($users->loadUserByLogin('selftest_' . $stamp)),
+        ];
+        foreach ($users->loadSubUserGroups($users->loadUserGroup(4), 0, 200) as $group) {
+            if ($group->getName() === 'Selftest group ' . $stamp) {
+                $attempts[] = fn () => $users->deleteUserGroup($group);
+            }
+        }
+        foreach ($roles->loadRoles() as $role) {
+            if (str_starts_with($role->identifier, 'selftest_role_' . $stamp)) {
+                $attempts[] = fn () => $roles->deleteRole($role);
+            }
+        }
+        foreach ($attempts as $attempt) {
+            try {
+                $attempt();
+            } catch (Throwable) {
+                // Already removed by the steps.
+            }
         }
     }
 

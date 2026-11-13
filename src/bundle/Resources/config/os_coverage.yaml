@@ -119,12 +119,9 @@ capabilities:
   ibexa.url_wildcard.update: url.wildcard.update
   ibexa.user.create: access.user.create
   ibexa.user.delete: access.user.delete
-  ibexa.user.invite.to_group: access.user.invite
-  ibexa.user.invite_user: access.user.invite
   ibexa.user.profile.edit: access.user.update
   ibexa.user.profile.view: access.user.describe
   ibexa.user.update: access.user.update
-  ibexa.user_profile.change_password: access.user.set_password
   ibexa.user_settings.list: workspace.preferences.list
   ibexa.user_settings.update: workspace.preferences.set
   ibexa.version.preview: content.version.load
@@ -167,3 +164,6 @@ out_of_scope:
   ibexa.user_hash: "Technical hash of the session for the cache layer."
   ibexa.version.has_no_conflict: "Check of the editing UI before a save."
   ibexa.version_draft.has_no_conflict: "Check of the editing UI before a save."
+  ibexa.user.invite.to_group: "Sends an invitation email on the administrator's behalf: left to the admin interface."
+  ibexa.user.invite_user: "Sends an invitation email on the administrator's behalf: left to the admin interface."
+  ibexa.user_profile.change_password: "Credentials are never handled by the assistant: the person changes their own password."

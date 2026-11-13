@@ -45,6 +45,10 @@ final class CapabilityContractTest extends TestCase
         $arguments = [];
         foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
             $type = (string) $parameter->getType();
+            if ($type === 'array') {
+                $arguments[] = [];
+                continue;
+            }
             // A final class cannot be mocked: those the capabilities take are built, bare.
             $arguments[] = match ($type) {
                 \Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder::class => new \Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder(),
