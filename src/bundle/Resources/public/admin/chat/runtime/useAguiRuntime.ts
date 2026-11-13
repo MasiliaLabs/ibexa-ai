@@ -9,29 +9,40 @@ import { runContext } from './pageContext';
 import { sharesPage } from './sharePage';
 import { isStaleDecision, withInterrupts, withPendingCalls } from './pending';
 import type { Wire } from './pending';
+import { deleteThread, newThreadId } from './threads';
 import type { ChatRuntime } from './types';
 
 const RUN_URL = '/admin/api/ai/agent/agui';
 const STATE_URL = '/admin/api/ai/agent/agui/state';
-const CLEAR_URL = '/admin/api/ai/agent/conversation';
 
 interface AgUiState {
-    threadId: string;
+    threadId: string | null;
     messages: Wire[];
     interrupts: Wire[];
 }
 
-/** The conversation as the server stores it, with the change that waits for a decision, if any. */
-async function loadMessages(): Promise<ThreadMessageLike[]> {
-    const response = await fetch(STATE_URL, { headers: { Accept: 'application/json' } });
+interface Loaded {
+    /** The conversation the messages belong to; null when the user has none yet. */
+    threadId: string | null;
+    messages: ThreadMessageLike[];
+}
+
+/**
+ * A conversation as the server stores it, with the change that waits for a decision, if any. Without an id: the
+ * one the user was last in.
+ */
+async function loadConversation(threadId: string | null): Promise<Loaded> {
+    const url = threadId === null ? STATE_URL : `${STATE_URL}?threadId=${encodeURIComponent(threadId)}`;
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!response.ok) {
-        return [];
+        // A conversation that has no message yet is not known to the server: it is empty.
+        return { threadId, messages: [] };
     }
 
     const state = (await response.json()) as AgUiState;
     const messages = fromAgUiMessages(withPendingCalls(state.messages, state.interrupts), { joinAdjacentAssistantMessages: true }) as ThreadMessageLike[];
 
-    return withInterrupts(messages as never[], state.interrupts) as ThreadMessageLike[];
+    return { threadId: state.threadId, messages: withInterrupts(messages as never[], state.interrupts) as ThreadMessageLike[] };
 }
 
 /** The server takes no new message while an interrupt waits: the box is disabled until it is answered. */
@@ -45,19 +56,36 @@ function useBlocked(): boolean {
  * the server's: the client sends its last message, or its decision.
  */
 export function useAguiRuntime(): ChatRuntime {
-    const [agent] = useState(() => new HttpAgent({ url: RUN_URL, threadId: 'masilia-agent' }));
+    // The conversation in use. A new one is made up here: the server creates it on its first message.
+    const current = useRef<string>(newThreadId());
+    const [threadId, setThreadId] = useState<string | null>(null);
+    const [agent] = useState(() => new HttpAgent({ url: RUN_URL, threadId: current.current }));
+
+    const use = (id: string): void => {
+        current.current = id;
+        agent.threadId = id;
+        setThreadId(id);
+    };
+
     const history = useMemo<ThreadHistoryAdapter>(
         () => ({
-            load: async () => ExportedMessageRepository.fromArray(await loadMessages()),
+            load: async () => {
+                // The widget opens on the conversation the user was last in, or on a new one.
+                const loaded = await loadConversation(null);
+                use(loaded.threadId ?? current.current);
+
+                return ExportedMessageRepository.fromArray(loaded.messages);
+            },
             async append() {
                 // The server stores the conversation.
             },
         }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     );
 
     // The runtime exists once the hook has returned: the error handler reaches it through this holder.
-    const holder = useRef<{ reset: (messages: ThreadMessageLike[]) => void } | null>(null);
+    const holder = useRef<{ reset: (messages: ThreadMessageLike[]) => void; cancel: () => void } | null>(null);
 
     const runtime = useAgUiRuntime({
         // In development the package is symlinked, so TypeScript sees @ag-ui/client through two paths and takes the
@@ -73,18 +101,37 @@ export function useAguiRuntime(): ChatRuntime {
             // the view out of date, so it is read again. Other errors are shown with the answer, as they are.
             if (isStaleDecision(error.message)) {
                 notify('info', error.message);
-                void loadMessages().then((messages) => holder.current?.reset(messages));
+                void loadConversation(current.current).then((loaded) => holder.current?.reset(loaded.messages));
             }
         },
     });
-    holder.current = { reset: (messages) => runtime.thread.reset(messages) };
+    holder.current = { reset: (messages) => runtime.thread.reset(messages), cancel: () => runtime.thread.cancelRun() };
 
     return {
         runtime,
+        threadId,
         useBlocked,
-        clear: async () => {
-            await fetch(CLEAR_URL, { method: 'DELETE' });
+        startNew: () => {
+            holder.current?.cancel();
+            use(newThreadId());
             runtime.thread.reset([]);
+        },
+        select: async (id) => {
+            holder.current?.cancel();
+            use(id);
+            const loaded = await loadConversation(id);
+            // The user may have picked another one meanwhile.
+            if (current.current === id) {
+                runtime.thread.reset(loaded.messages);
+            }
+        },
+        remove: async (id) => {
+            await deleteThread(id);
+            if (current.current === id) {
+                holder.current?.cancel();
+                use(newThreadId());
+                runtime.thread.reset([]);
+            }
         },
     };
 }

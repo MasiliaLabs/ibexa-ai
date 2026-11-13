@@ -11,6 +11,7 @@ final readonly class ApiError
 {
     public const ACCESS_DENIED = 'ACCESS_DENIED';
     public const VALIDATION_ERROR = 'VALIDATION_ERROR';
+    public const NOT_FOUND = 'NOT_FOUND';
     public const UNSUPPORTED_FIELD_TYPE = 'UNSUPPORTED_FIELD_TYPE';
     public const INVALID_OUTPUT = 'INVALID_OUTPUT';
     public const SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE';
@@ -29,6 +30,11 @@ final readonly class ApiError
     public static function validation(string $message): self
     {
         return new self(self::VALIDATION_ERROR, $message);
+    }
+
+    public static function notFound(string $message): self
+    {
+        return new self(self::NOT_FOUND, $message);
     }
 
     public static function unsupportedFieldType(string $fieldType): self

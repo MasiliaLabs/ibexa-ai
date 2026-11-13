@@ -12,6 +12,9 @@ use Masilia\Bundle\IbexaAi\Agent\Stream\AgUiFrames;
 use Masilia\Bundle\IbexaAi\Agent\Stream\AlreadyDecidedException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\DecisionPendingException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\ReasoningFilteredAGUIAdapter;
+use Masilia\Bundle\IbexaAi\Agent\Thread\AgentThreads;
+use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadAccessDeniedException;
+use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadId;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
@@ -47,6 +50,7 @@ final readonly class AgUiChatController
         private PermissionResolver $permissions,
         private SiteAccessServiceInterface $siteAccess,
         private AgentFactory $agents,
+        private AgentThreads $threads,
         private LoggerInterface $aiLogger,
     ) {
     }
@@ -63,9 +67,19 @@ final readonly class AgUiChatController
             return new JsonResponse(ApiError::validation('Invalid JSON payload')->toArray(), Response::HTTP_BAD_REQUEST);
         }
 
+        $threadId = $input['threadId'] ?? null;
+        if (!ThreadId::isValid($threadId)) {
+            return new JsonResponse(ApiError::validation('Missing or invalid threadId')->toArray(), Response::HTTP_BAD_REQUEST);
+        }
+        try {
+            $this->threads->claim($threadId, $this->userId(), $this->currentSiteaccess(), $this->lastUserText($input));
+        } catch (ThreadAccessDeniedException) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+
         try {
             $adapter = new ReasoningFilteredAGUIAdapter(
-                threadId: (string) ($input['threadId'] ?? 'agent'),
+                threadId: $threadId,
                 runId: isset($input['runId']) ? (string) $input['runId'] : null,
                 messages: is_array($input['messages'] ?? null) ? array_values($input['messages']) : [],
                 state: is_array($input['state'] ?? null) ? $input['state'] : [],
@@ -77,7 +91,7 @@ final readonly class AgUiChatController
         }
 
         try {
-            $agent = $this->agents->create($this->currentSiteaccess(), $this->threadId());
+            $agent = $this->agents->create($this->currentSiteaccess(), $threadId);
             $agent->setStreamAdapter(static fn () => $adapter);
             $agent->withPageContext(PageContext::fromAgUiContext($input['context'] ?? null));
 
@@ -145,13 +159,26 @@ final readonly class AgUiChatController
     }
 
     #[Route('/admin/api/ai/agent/agui/state', name: 'masilia.ibexa_ai.agent.agui_state', methods: ['GET'])]
-    public function state(): JsonResponse
+    public function state(Request $request): JsonResponse
     {
         if (!$this->permissions->hasAccess('setup', 'administrate')) {
             return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
         }
 
-        $threadId = $this->threadId();
+        // Without an id: the conversation the user was last in, if any (the widget opens on it).
+        $requested = $request->query->get('threadId');
+        if ($requested === null) {
+            $latest = $this->threads->latest($this->userId(), $this->currentSiteaccess());
+            if ($latest === null) {
+                return new JsonResponse(['threadId' => null, 'messages' => [], 'interrupts' => []]);
+            }
+            $requested = $latest->id;
+        }
+        if (!ThreadId::isValid($requested) || $this->threads->owned($requested, $this->userId()) === null) {
+            return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
+        }
+
+        $threadId = $requested;
         $empty = ['threadId' => $threadId, 'messages' => [], 'interrupts' => []];
 
         try {
@@ -179,16 +206,34 @@ final readonly class AgUiChatController
         return new JsonResponse(['threadId' => $threadId, 'messages' => $messages, 'interrupts' => $hydrated['interrupts']]);
     }
 
-    #[Route('/admin/api/ai/agent/conversation', name: 'masilia.ibexa_ai.agent.clear', methods: ['DELETE'])]
-    public function clear(): JsonResponse
+    #[Route('/admin/api/ai/agent/threads', name: 'masilia.ibexa_ai.agent.threads', methods: ['GET'])]
+    public function threads(): JsonResponse
     {
         if (!$this->permissions->hasAccess('setup', 'administrate')) {
             return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
         }
 
-        $threadId = $this->threadId();
+        return new JsonResponse([
+            'threads' => array_map(
+                static fn ($thread): array => $thread->toArray(),
+                $this->threads->list($this->userId(), $this->currentSiteaccess()),
+            ),
+        ]);
+    }
+
+    #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_delete', methods: ['DELETE'])]
+    public function deleteThread(string $threadId): JsonResponse
+    {
+        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+        if (!ThreadId::isValid($threadId) || $this->threads->owned($threadId, $this->userId()) === null) {
+            return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
+        }
+
         $this->agents->messages($threadId)->clear($threadId);
         $this->agents->forgetWorkflow($threadId);
+        $this->threads->delete($threadId, $this->userId());
 
         return new JsonResponse(['success' => true]);
     }
@@ -221,9 +266,9 @@ final readonly class AgUiChatController
         return '';
     }
 
-    private function threadId(): string
+    private function userId(): int
     {
-        return sprintf('agent-%d-%s', $this->permissions->getCurrentUserReference()->getUserId(), $this->currentSiteaccess());
+        return (int) $this->permissions->getCurrentUserReference()->getUserId();
     }
 
     private function currentSiteaccess(): string
