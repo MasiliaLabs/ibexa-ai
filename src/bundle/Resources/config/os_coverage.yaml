@@ -11,7 +11,7 @@ capabilities:
   ibexa.content.create_no_draft: content.create
   ibexa.content.draft.create: content.draft.create
   ibexa.content.draft.edit: content.update
-  ibexa.content.draft.edit.cancel: content.draft.delete
+  ibexa.content.draft.edit.cancel: workspace.drafts.delete
   ibexa.content.edit: content.update
   ibexa.content.translate: localization.translation.add
   ibexa.content.translate_with_location: localization.translation.add

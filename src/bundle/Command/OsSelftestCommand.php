@@ -120,8 +120,10 @@ final class OsSelftestCommand extends Command
             $step('move the copy under B', 'location.move', ['location_id' => $answers['copy']['location_id'] ?? 0, 'new_parent_location_id' => $b['location_id']]);
             $step('move B under itself is refused', 'location.move', ['location_id' => $b['location_id'], 'new_parent_location_id' => $answers['copy']['location_id'] ?? 0], null, null, true);
             $step('remove the extra location of A', 'location.remove', ['location_id' => $answers['added']['location_id'] ?? 0]);
+            $this->domains($step, $answers, $a['content_id'], $stamp);
             $step('trash A', 'content.trash', ['content_id' => $a['content_id']]);
         } finally {
+            $this->removeStructures($stamp);
             // What was trashed (A, and what sat under it) is deleted from the trash first, then the rest for good.
             foreach ($this->trashLeftovers($contents) as $leftover) {
                 $io->warning($leftover);
@@ -144,6 +146,84 @@ final class OsSelftestCommand extends Command
         $io->success('All steps passed; the throwaway folders are gone.');
 
         return Command::SUCCESS;
+    }
+
+    private function sectionIdentifier(string $stamp): string
+    {
+        return 'selftest_' . $stamp;
+    }
+
+    /**
+     * Sections, states, languages and the user's own spaces, on the content A.
+     *
+     * @param callable $step
+     * @param array<string, array<string, mixed>> $answers
+     */
+    private function domains(callable $step, array &$answers, int|string $contentId, string $stamp): void
+    {
+        $section = $this->sectionIdentifier($stamp);
+        $step('create a section', 'section.create', ['identifier' => $section, 'name' => 'Selftest ' . $stamp], null, 'section');
+        $sectionId = (int) ($answers['section']['section_id'] ?? 0);
+        $step('rename the section', 'section.update', ['section_id' => $sectionId, 'name' => 'Selftest renamed ' . $stamp]);
+        $step('put A in the section', 'section.assign', ['section_id' => $sectionId, 'content_id' => $contentId]);
+        $step('the section holds A', 'section.list', [], static fn (array $d): ?string => array_filter($d['sections'], static fn (array $s): bool => $s['section_id'] === $sectionId && $s['contents'] === 1) !== [] ? null : 'the section does not hold exactly A', 'sections');
+        $step('a used section cannot be deleted', 'section.delete', ['section_id' => $sectionId], null, null, true);
+        $standard = 0;
+        foreach ($answers['sections']['sections'] ?? [] as $row) {
+            if ($row['identifier'] === 'standard') {
+                $standard = $row['section_id'];
+            }
+        }
+        $step('put A back in the standard section', 'section.assign', ['section_id' => $standard, 'content_id' => $contentId]);
+        $step('delete the section', 'section.delete', ['section_id' => $sectionId]);
+
+        $step('create a group of states', 'state.group.create', ['identifier' => $section, 'name' => 'Selftest']);
+        $step('create the default state', 'state.create', ['group' => $section, 'identifier' => 'draft_state', 'name' => 'Draft']);
+        $step('create a second state', 'state.create', ['group' => $section, 'identifier' => 'done_state', 'name' => 'Done']);
+        $step('rename the second state', 'state.update', ['group' => $section, 'state' => 'done_state', 'name' => 'Finished']);
+        $step('set A to the second state', 'state.set', ['content_id' => $contentId, 'group' => $section, 'state' => 'done_state']);
+        $step('the second state holds A', 'state.list', [], static function (array $d) use ($section): ?string {
+            foreach ($d['groups'] as $group) {
+                foreach ($group['identifier'] === $section ? $group['states'] : [] as $state) {
+                    if ($state['identifier'] === 'done_state') {
+                        return $state['contents'] === 1 && $state['name'] === 'Finished' ? null : sprintf('%d content(s), name "%s"', $state['contents'], $state['name']);
+                    }
+                }
+            }
+
+            return 'the group is not listed';
+        });
+        $step('delete the second state', 'state.delete', ['group' => $section, 'state' => 'done_state']);
+        $step('delete the group', 'state.group.delete', ['group' => $section]);
+
+        $step('add a language', 'localization.language.create', ['language_code' => 'tst-ZZ', 'name' => 'Selftest language']);
+        $step('disable it', 'localization.language.update', ['language_code' => 'tst-ZZ', 'enabled' => false]);
+        $step('it is listed, disabled', 'localization.language.list', [], static fn (array $d): ?string => array_filter($d['languages'], static fn (array $l): bool => $l['language_code'] === 'tst-ZZ' && !$l['enabled']) !== [] ? null : 'not listed as disabled');
+        $step('the default language cannot be deleted', 'localization.language.delete', ['language_code' => $this->repository->getContentLanguageService()->getDefaultLanguageCode()], null, null, true);
+        $step('delete the language', 'localization.language.delete', ['language_code' => 'tst-ZZ']);
+        $step('A has no translation to switch to', 'localization.set_main_language', ['content_id' => $contentId, 'language_code' => 'tst-ZZ'], null, null, true);
+        $step('A is not translated into another language', 'localization.translation.remove', ['content_id' => $contentId, 'language_code' => $this->repository->getContentService()->loadContentInfo((int) $contentId)->mainLanguageCode], null, null, true);
+
+        $step('list the bookmarks', 'workspace.bookmarks.list', []);
+        $step('list the drafts', 'workspace.drafts.list', []);
+    }
+
+    /** What the domains step made, removed whatever happened. */
+    private function removeStructures(string $stamp): void
+    {
+        $identifier = $this->sectionIdentifier($stamp);
+        $attempts = [
+            fn () => $this->repository->getSectionService()->deleteSection($this->repository->getSectionService()->loadSectionByIdentifier($identifier)),
+            fn () => $this->repository->getObjectStateService()->deleteObjectStateGroup($this->repository->getObjectStateService()->loadObjectStateGroupByIdentifier($identifier)),
+            fn () => $this->repository->getContentLanguageService()->deleteLanguage($this->repository->getContentLanguageService()->loadLanguage('tst-ZZ')),
+        ];
+        foreach ($attempts as $attempt) {
+            try {
+                $attempt();
+            } catch (Throwable) {
+                // Already removed by the steps.
+            }
+        }
     }
 
     /**
@@ -181,7 +261,13 @@ final class OsSelftestCommand extends Command
         $problems = [];
         $trash = $this->repository->getTrashService();
         $query = new \Ibexa\Contracts\Core\Repository\Values\Content\Query(['limit' => 200]);
-        foreach ($trash->findTrashItems($query)->items as $item) {
+        try {
+            $items = $trash->findTrashItems($query)->items;
+        } catch (Throwable $e) {
+            // A row of the trash whose content is gone makes the listing fail: the rest is still cleaned.
+            return [sprintf('The trash could not be listed: %s', $e->getMessage())];
+        }
+        foreach ($items as $item) {
             if (in_array($item->contentInfo->id, $contentIds, true)) {
                 try {
                     $trash->deleteTrashItem($item);
