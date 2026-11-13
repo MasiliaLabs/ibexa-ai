@@ -32,6 +32,8 @@ export interface Model {
     temperature: number;
     maxTokens: number;
     supportsImage: boolean;
+    /** Whether the model can read images sent in a message. */
+    supportsVision: boolean;
 }
 
 export interface Snapshot {

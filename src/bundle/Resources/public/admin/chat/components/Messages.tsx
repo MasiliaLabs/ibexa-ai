@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 
 import { Icon } from '../../shared/ids';
 import { formatBytes, splitAttachments } from '../attachments';
+import type { AttachmentPiece } from '../attachments';
+import { attachmentUrl } from '../runtime/uploads';
 import { mentionHref, splitMentions } from '../mentions';
 import { collectSources } from '../sources';
 import type { SourcePart } from '../sources';
@@ -172,13 +174,30 @@ function UserText({ text }: { text: string }) {
             {attachments.length > 0 ? (
                 <span className="masilia-chat__sent-attachments">
                     {attachments.map((attachment, index) => (
-                        <span key={index} className="masilia-chat__sent-attachment" title={`${attachment.name} (${formatBytes(attachment.bytes)})`}>
-                            <Icon name="file-text" size="small" />
-                            <span className="masilia-chat__attachment-name">{attachment.name}</span>
-                        </span>
+                        <SentAttachment key={index} attachment={attachment} />
                     ))}
                 </span>
             ) : null}
         </>
+    );
+}
+
+/** A file the user attached, as it shows in their message: an image as a thumbnail that opens it, a document as a chip. */
+function SentAttachment({ attachment }: { attachment: AttachmentPiece }) {
+    // An image is kept for a week: later it is only its name.
+    const [gone, setGone] = React.useState(false);
+    if (attachment.kind === 'image' && !gone) {
+        return (
+            <a className="masilia-chat__sent-image" href={attachmentUrl(attachment.id)} target="_blank" rel="noopener noreferrer" title={`${attachment.name} (${attachment.width}×${attachment.height}, ${formatBytes(attachment.bytes)})`}>
+                <img src={attachmentUrl(attachment.id)} alt={attachment.name} onError={() => setGone(true)} />
+            </a>
+        );
+    }
+
+    return (
+        <span className="masilia-chat__sent-attachment" title={`${attachment.name} (${formatBytes(attachment.bytes)})`}>
+            <Icon name="file-text" size="small" />
+            <span className="masilia-chat__attachment-name">{attachment.name}</span>
+        </span>
     );
 }

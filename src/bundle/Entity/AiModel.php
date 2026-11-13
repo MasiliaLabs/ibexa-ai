@@ -31,6 +31,9 @@ class AiModel
     #[ORM\Column(name: 'supports_image', type: 'boolean')]
     private bool $supportsImage = false;
 
+    #[ORM\Column(name: 'supports_vision', type: 'boolean', options: ['default' => false])]
+    private bool $supportsVision = false;
+
     #[ORM\Column(type: 'float')]
     private float $temperature = 0.7;
 
@@ -70,6 +73,17 @@ class AiModel
     public function setIdentifier(string $identifier): void
     {
         $this->identifier = $identifier;
+    }
+
+    /** Whether the model can read images sent to it (not generate them: see supportsImage). */
+    public function supportsVision(): bool
+    {
+        return $this->supportsVision;
+    }
+
+    public function setSupportsVision(bool $supportsVision): void
+    {
+        $this->supportsVision = $supportsVision;
     }
 
     public function supportsImage(): bool

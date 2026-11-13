@@ -3,13 +3,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
 import { Icon } from '../../shared/ids';
-import { encodeAttachments, formatBytes, isTextFile, toTextAttachment, tooMuch } from '../attachments';
-import type { TextAttachment } from '../attachments';
+import { MAX_IMAGE_BYTES, encodeAttachments, formatBytes, isImageFile, isTextFile, toTextAttachment, tooMuch } from '../attachments';
+import type { Attachment } from '../attachments';
 import { encodeMentions, insertMention, labelFor, mentionTrigger } from '../mentions';
 import type { Picked, Trigger } from '../mentions';
 import { useMentionSearch } from '../mentionSearch';
 import { pageTitle } from '../pageTitle';
 import { runContext } from '../runtime/pageContext';
+import { uploadImage } from '../runtime/uploads';
 import { setSharesPage, useSharesPage } from '../runtime/sharePage';
 import type { ChatRuntime } from '../runtime/types';
 import { MentionList } from './MentionList';
@@ -43,7 +44,8 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
     const [picked, setPicked] = useState<Picked[]>([]);
     const [trigger, setTrigger] = useState<Trigger | null>(null);
     const [active, setActive] = useState(0);
-    const [attachments, setAttachments] = useState<TextAttachment[]>([]);
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
+    const [uploading, setUploading] = useState(0);
     const [attachError, setAttachError] = useState<string | null>(null);
     const [dragging, setDragging] = useState(false);
     const picker = useRef<HTMLInputElement>(null);
@@ -81,10 +83,35 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
 
     const addFiles = async (files: readonly File[]) => {
         setAttachError(null);
-        const added: TextAttachment[] = [];
+        const added: Attachment[] = [];
         for (const file of files) {
+            if (isImageFile(file)) {
+                if (file.size > MAX_IMAGE_BYTES) {
+                    setAttachError(`${file.name} is too large (${formatBytes(file.size)}; up to ${formatBytes(MAX_IMAGE_BYTES)}).`);
+
+                    return;
+                }
+                // Checked before it is uploaded: the files already chosen count too.
+                const early = tooMuch(attachments, [...added, { kind: 'image', id: '', name: file.name, bytes: file.size, width: 0, height: 0 }]);
+                if (early !== null) {
+                    setAttachError(early);
+
+                    return;
+                }
+                setUploading((count) => count + 1);
+                try {
+                    added.push(await uploadImage(file));
+                } catch (error) {
+                    setAttachError(error instanceof Error ? error.message : 'The image could not be sent.');
+
+                    return;
+                } finally {
+                    setUploading((count) => count - 1);
+                }
+                continue;
+            }
             if (!isTextFile(file)) {
-                setAttachError(`${file.name} cannot be attached: text documents only (txt, md, csv, json, html…).`);
+                setAttachError(`${file.name} cannot be attached: images (JPEG, PNG, GIF, WebP) and text documents (txt, md, csv, json, html…) only.`);
 
                 return;
             }
@@ -105,15 +132,22 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
         setAttachments((previous) => [...previous, ...added]);
     };
 
+    const forget = (attachment: Attachment) => {
+        if (attachment.kind === 'image' && attachment.previewUrl !== undefined) {
+            URL.revokeObjectURL(attachment.previewUrl);
+        }
+    };
+
     const submit = () => {
         const current = aui.composer().getState().text;
-        if (disabled || running || (current.trim() === '' && attachments.length === 0)) {
+        if (disabled || running || uploading > 0 || (current.trim() === '' && attachments.length === 0)) {
             return;
         }
         // The mentions and the documents become what the agent and the history understand: the box showed "@label".
         aui.composer().setText(encodeAttachments(encodeMentions(current, picked), attachments));
         aui.composer().send();
         setPicked([]);
+        attachments.forEach(forget);
         setAttachments([]);
         setAttachError(null);
         setTrigger(null);
@@ -171,11 +205,15 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
             >
                 {open ? <MentionList id={LIST_ID} options={options} active={active} search={search} query={trigger.query} onChoose={choose} onHover={setActive} /> : null}
                 <PageChip />
-                {attachments.length > 0 ? (
+                {attachments.length > 0 || uploading > 0 ? (
                     <ul className="masilia-chat__attachments" aria-label="Attached documents">
                         {attachments.map((attachment, index) => (
                             <li key={`${attachment.name}-${index}`} className="masilia-chat__attachment">
-                                <Icon name="file-text" size="small" />
+                                {attachment.kind === 'image' && attachment.previewUrl !== undefined ? (
+                                    <img className="masilia-chat__attachment-thumb" src={attachment.previewUrl} alt="" />
+                                ) : (
+                                    <Icon name="file-text" size="small" />
+                                )}
                                 <span className="masilia-chat__attachment-name">{attachment.name}</span>
                                 <span className="masilia-chat__attachment-size">{formatBytes(attachment.bytes)}</span>
                                 <button
@@ -183,12 +221,16 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
                                     className="masilia-chat__attachment-remove"
                                     aria-label={`Remove ${attachment.name}`}
                                     title="Remove"
-                                    onClick={() => setAttachments((previous) => previous.filter((_item, at) => at !== index))}
+                                    onClick={() => {
+                                        forget(attachment);
+                                        setAttachments((previous) => previous.filter((_item, at) => at !== index));
+                                    }}
                                 >
                                     <Icon name="discard" size="small" />
                                 </button>
                             </li>
                         ))}
+                        {uploading > 0 ? <li className="masilia-chat__attachment masilia-chat__shimmer" role="status">Uploading…</li> : null}
                     </ul>
                 ) : null}
                 {attachError !== null ? <p className="masilia-chat__error" role="alert">{attachError}</p> : null}
@@ -225,13 +267,13 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
                         type="file"
                         multiple
                         hidden
-                        accept=".txt,.md,.markdown,.csv,.tsv,.json,.html,.htm,.xml,.yaml,.yml,.srt,.log,text/*"
+                        accept=".txt,.md,.markdown,.csv,.tsv,.json,.html,.htm,.xml,.yaml,.yml,.srt,.log,.jpg,.jpeg,.png,.gif,.webp,text/*,image/jpeg,image/png,image/gif,image/webp"
                         onChange={(event) => {
                             void addFiles([...(event.currentTarget.files ?? [])]);
                             event.currentTarget.value = '';
                         }}
                     />
-                    <button type="button" className="masilia-chat__icon-button" title="Attach a document" aria-label="Attach a document" disabled={disabled} onClick={() => picker.current?.click()}>
+                    <button type="button" className="masilia-chat__icon-button" title="Attach an image or a text document" aria-label="Attach an image or a text document" disabled={disabled} onClick={() => picker.current?.click()}>
                         <Icon name="file-add" size="small" />
                     </button>
                     <span className="masilia-chat__hint">Enter to send · @ to mention</span>
@@ -240,7 +282,7 @@ export function Composer({ chat }: { chat: ChatRuntime }) {
                             <Icon name="discard" size="small" />
                         </ComposerPrimitive.Cancel>
                     ) : (
-                        <button type="button" className="masilia-chat__send masilia-chat__send--primary" title="Send" aria-label="Send" disabled={disabled || (text.trim() === '' && attachments.length === 0)} onClick={submit}>
+                        <button type="button" className="masilia-chat__send masilia-chat__send--primary" title="Send" aria-label="Send" disabled={disabled || uploading > 0 || (text.trim() === '' && attachments.length === 0)} onClick={submit}>
                             <Icon name="arrow-up" size="small" />
                         </button>
                     )}

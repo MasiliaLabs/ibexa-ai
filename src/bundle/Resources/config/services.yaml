@@ -16,6 +16,7 @@ services:
             $settings: '%ibexa_ai.connection%'
             $cachePool: '@cache.app'
             $cache: '@cache.app'
+            $attachmentsDirectory: '%kernel.project_dir%/var/ai-attachments'
 
     Masilia\Bundle\IbexaAi\Ibexa\:
         resource: '../../Ibexa/'

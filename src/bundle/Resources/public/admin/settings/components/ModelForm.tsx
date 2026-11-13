@@ -84,6 +84,7 @@ export function ModelForm({ initial, providers, fixedProvider, onSave, onClose }
                     <TextField label="Maximum tokens" required type="number" min="1" step="1" value={draft.maxTokens} error={errors.maxTokens} hint="Length limit of an answer." onChange={(maxTokens) => patch({ maxTokens })} />
                 </div>
                 <CheckField label="Can generate images" checked={draft.supportsImage} hint="Check it for an image model." onChange={(supportsImage) => patch({ supportsImage })} />
+                <CheckField label="Can read images" checked={draft.supportsVision} hint="Check it when the model accepts images in a message (vision). The assistant sends it the images attached to a message only then." onChange={(supportsVision) => patch({ supportsVision })} />
             </form>
         </Dialog>
     );

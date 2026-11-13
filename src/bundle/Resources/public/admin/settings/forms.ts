@@ -20,6 +20,7 @@ export interface ModelDraft {
     temperature: string;
     maxTokens: string;
     supportsImage: boolean;
+    supportsVision: boolean;
 }
 
 export function emptyProviderDraft(identifier = 'openai', siteaccesses: string[] = []): ProviderDraft {
@@ -79,7 +80,7 @@ export function providerPayload(draft: ProviderDraft): Record<string, unknown> {
 }
 
 export function emptyModelDraft(providerId: number | null = null): ModelDraft {
-    return { id: null, providerId, name: '', identifier: '', temperature: '0.7', maxTokens: '2048', supportsImage: false };
+    return { id: null, providerId, name: '', identifier: '', temperature: '0.7', maxTokens: '2048', supportsImage: false, supportsVision: false };
 }
 
 export function modelToDraft(model: Model): ModelDraft {
@@ -91,6 +92,7 @@ export function modelToDraft(model: Model): ModelDraft {
         temperature: String(model.temperature),
         maxTokens: String(model.maxTokens),
         supportsImage: model.supportsImage,
+        supportsVision: model.supportsVision,
     };
 }
 
@@ -128,5 +130,6 @@ export function modelPayload(draft: ModelDraft): Record<string, unknown> {
         temperature: Number(draft.temperature),
         maxTokens: Number(draft.maxTokens),
         supportsImage: draft.supportsImage,
+        supportsVision: draft.supportsVision,
     };
 }

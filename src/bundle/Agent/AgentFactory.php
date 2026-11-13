@@ -32,6 +32,18 @@ final readonly class AgentFactory
     ) {
     }
 
+    /**
+     * Whether the chat model of the siteaccess reads images (the admin says so, per model).
+     */
+    public function supportsVision(string $siteaccess): bool
+    {
+        try {
+            return $this->resolver->resolveChat($siteaccess)->supportsVision;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function create(string $siteaccess, string $threadId): AiAssistantAgent
     {
         $llm = $this->providers->create($this->resolver->resolveChat($siteaccess));

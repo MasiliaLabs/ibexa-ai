@@ -59,10 +59,10 @@ test('model rules mirror the server: temperature 0..2, max tokens a whole number
 
 test('the model payload has numbers, not strings', () => {
     const draft = modelToDraft({
-        id: 9, providerId: 3, providerName: 'P', name: ' M ', identifier: 'm-1', temperature: 0.5, maxTokens: 4096, supportsImage: true,
+        id: 9, providerId: 3, providerName: 'P', name: ' M ', identifier: 'm-1', temperature: 0.5, maxTokens: 4096, supportsImage: true, supportsVision: true,
     });
 
     assert.deepEqual(modelPayload(draft), {
-        id: 9, providerId: 3, name: 'M', identifier: 'm-1', temperature: 0.5, maxTokens: 4096, supportsImage: true,
+        id: 9, providerId: 3, name: 'M', identifier: 'm-1', temperature: 0.5, maxTokens: 4096, supportsImage: true, supportsVision: true,
     });
 });

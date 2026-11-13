@@ -24,6 +24,7 @@ class AiAssistantAgent extends Agent
     public const WORKFLOW_TABLE = 'app_ai_agent_workflow';
 
     private ?PageContext $page = null;
+    private bool $vision = false;
 
     /**
      * @param list<\NeuronAI\Tools\ToolInterface> $exposedTools the tools the model can call
@@ -46,6 +47,16 @@ class AiAssistantAgent extends Agent
         return $this;
     }
 
+    /**
+     * Whether the model reads the images attached to the messages: it is told which, so that it does not pretend.
+     */
+    public function withVision(bool $vision): static
+    {
+        $this->vision = $vision;
+
+        return $this;
+    }
+
     protected function provider(): AIProviderInterface
     {
         return $this->llm;
@@ -53,7 +64,11 @@ class AiAssistantAgent extends Agent
 
     protected function instructions(): SystemMessage|string
     {
-        return $this->page === null ? AgentSystemPrompt::get() : AgentSystemPrompt::get() . "\n\n" . $this->page->toPrompt();
+        $prompt = AgentSystemPrompt::get() . "\n\n" . ($this->vision
+            ? "## Images\nYou can see the images attached to a message: they come with it."
+            : "## Images\nYou cannot see images. An `<attachment-image …/>` in a message only tells you the name and size of the image the user attached: if asked what is in it, say you cannot see it.");
+
+        return $this->page === null ? $prompt : $prompt . "\n\n" . $this->page->toPrompt();
     }
 
     protected function tools(): array

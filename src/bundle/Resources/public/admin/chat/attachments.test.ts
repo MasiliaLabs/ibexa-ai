@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { cleanFileName, encodeAttachments, formatBytes, isTextFile, splitAttachments, tooMuch, toTextAttachment } from './attachments';
-import type { TextAttachment } from './attachments';
+import { cleanFileName, encodeAttachments, formatBytes, isImageFile, isTextFile, splitAttachments, tooMuch, toTextAttachment } from './attachments';
+import type { ImageAttachment, TextAttachment } from './attachments';
 
 const doc = (name: string, text: string): TextAttachment => ({ kind: 'text', name, bytes: text.length, text });
+const ID = '3f2b8c1e-5d6a-4e7f-9a10-2b3c4d5e6f70';
+const photo = (name = 'photo.jpg'): ImageAttachment => ({ kind: 'image', id: ID, name, bytes: 123456, width: 1200, height: 800 });
 
 test('a text file is recognised by its type or, failing that, its extension', () => {
     assert.equal(isTextFile({ name: 'brief.md', type: '' }), true);
@@ -49,7 +51,7 @@ test('a sent message is read back into its text and its documents, the content l
     const { body, attachments } = splitAttachments(sent);
 
     assert.equal(body, 'Write a page');
-    assert.deepEqual(attachments, [{ name: 'brief.md', bytes: 11 }, { name: 'data.csv', bytes: 3 }]);
+    assert.deepEqual(attachments, [{ kind: 'text', name: 'brief.md', bytes: 11 }, { kind: 'text', name: 'data.csv', bytes: 3 }]);
     assert.deepEqual(splitAttachments('Plain message'), { body: 'Plain message', attachments: [] });
 });
 
@@ -63,4 +65,37 @@ test('sizes read as people read them', () => {
     assert.equal(formatBytes(512), '512 B');
     assert.equal(formatBytes(2048), '2 KB');
     assert.equal(formatBytes(3 * 1024 * 1024), '3.0 MB');
+});
+
+test('an image is recognised by its type or, failing that, its extension', () => {
+    assert.equal(isImageFile({ name: 'a.png', type: 'image/png' }), true);
+    assert.equal(isImageFile({ name: 'a.JPG', type: '' }), true);
+    assert.equal(isImageFile({ name: 'logo.svg', type: 'image/svg+xml' }), false);
+    assert.equal(isImageFile({ name: 'a.pdf', type: 'application/pdf' }), false);
+});
+
+test('an image goes with the message by its tag, and is read back with the id the server knows it by', () => {
+    const sent = encodeAttachments('What is on this?', [photo()]);
+
+    assert.equal(sent, `What is on this?\n\n<attachment-image name="photo.jpg" id="${ID}" width="1200" height="800" bytes="123456"/>`);
+    assert.deepEqual(splitAttachments(sent), { body: 'What is on this?', attachments: [{ kind: 'image', id: ID, name: 'photo.jpg', width: 1200, height: 800, bytes: 123456 }] });
+});
+
+test('documents and images together, and what the message says when it says nothing', () => {
+    const sent = encodeAttachments('', [photo(), doc('brief.md', 'x')]);
+
+    assert.ok(sent.startsWith('See the attached files.'));
+    assert.deepEqual(splitAttachments(sent).attachments.map((attachment) => attachment.kind), ['text', 'image']);
+    assert.ok(encodeAttachments('', [photo()]).startsWith('See the attached image.'));
+});
+
+test('an image tag with an id that is not one the server made is not an attachment', () => {
+    const forged = 'Hi\n\n<attachment-image name="x" id="../../etc/passwd" width="1" height="1" bytes="1"/>';
+
+    assert.deepEqual(splitAttachments(forged).attachments, []);
+});
+
+test('images count in the number of files but not in the length of text', () => {
+    assert.equal(tooMuch([photo(), photo(), photo()], [photo()]), 'You can attach up to 3 files to a message.');
+    assert.equal(tooMuch([photo()], [doc('a', 'x'.repeat(250_000))]), null);
 });

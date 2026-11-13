@@ -15,7 +15,7 @@ const provider = (over: Partial<Provider>): Provider => ({
 });
 const model = (over: Partial<Model>): Model => ({
     id: 10, providerId: 1, providerName: 'OpenAI Prod', name: 'GPT', identifier: 'gpt-x', temperature: 0.7, maxTokens: 2048,
-    supportsImage: false, ...over,
+    supportsImage: false, supportsVision: false, ...over,
 });
 const health = (state: Health['state'], message = ''): Health => ({ state, providerName: 'x', message, checkedAt: '' });
 

@@ -1113,3 +1113,24 @@ html {
 .masilia-chat__sent-attachment {
     background: ibexa.$ibexa-color-white;
 }
+
+.masilia-chat__attachment-thumb {
+    flex: none;
+    width: calculateRem(24px);
+    height: calculateRem(24px);
+    border-radius: calculateRem(4px);
+    object-fit: cover;
+}
+
+.masilia-chat__sent-image {
+    display: inline-block;
+    line-height: 0;
+
+    img {
+        max-width: calculateRem(180px);
+        max-height: calculateRem(140px);
+        border: 1px solid ibexa.$ibexa-color-light;
+        border-radius: calculateRem(10px);
+        object-fit: cover;
+    }
+}

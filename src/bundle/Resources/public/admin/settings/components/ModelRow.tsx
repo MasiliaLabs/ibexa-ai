@@ -20,6 +20,7 @@ export function ModelRow({ model, chatActive, imageActive, onEdit, onDelete }: M
                     {chatActive ? <span className="masilia-settings-tag masilia-settings-tag--chat">Chat</span> : null}
                     {imageActive ? <span className="masilia-settings-tag masilia-settings-tag--image">Image</span> : null}
                     {model.supportsImage && !imageActive ? <span className="masilia-settings-tag">Image capable</span> : null}
+                    {model.supportsVision ? <span className="masilia-settings-tag">Vision</span> : null}
                 </div>
                 <div className="masilia-settings-model__details">
                     <code>{model.identifier}</code>

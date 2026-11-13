@@ -43,6 +43,7 @@ final readonly class ProviderResolver
                 apiUrl: $provider->getApiUrl(),
                 temperature: $model->getTemperature(),
                 maxTokens: $model->getMaxTokens(),
+                supportsVision: $model->supportsVision(),
             );
         }
 
@@ -63,6 +64,7 @@ final readonly class ProviderResolver
             apiUrl: isset($this->settings['api_url']) && $this->settings['api_url'] !== '' ? (string) $this->settings['api_url'] : null,
             temperature: (float) ($this->settings['temperature'] ?? 0.7),
             maxTokens: (int) ($this->settings['max_tokens'] ?? 4096),
+            supportsVision: (bool) ($this->settings['vision'] ?? false),
         );
     }
 

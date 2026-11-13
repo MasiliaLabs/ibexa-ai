@@ -7,6 +7,9 @@ namespace Masilia\Bundle\IbexaAi\Controller;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentRejectedException;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
+use Masilia\Bundle\IbexaAi\Agent\Attachment\UserMessageBuilder;
 use Masilia\Bundle\IbexaAi\Agent\Mention\ContentMentions;
 use Masilia\Bundle\IbexaAi\Agent\PageContext;
 use Masilia\Bundle\IbexaAi\Agent\Stream\AgUiFrames;
@@ -21,14 +24,15 @@ use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use NeuronAI\Agent\Frontend\AGUIInputTranslator;
-use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Exceptions\InputTranslationException;
 use NeuronAI\Workflow\Streaming\ProtocolEvent;
 use NeuronAI\Workflow\Streaming\SSEEncoder;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Throwable;
@@ -57,6 +61,8 @@ final readonly class AgUiChatController
         private AgentFactory $agents,
         private AgentThreads $threads,
         private ContentMentions $mentions,
+        private AttachmentStore $attachments,
+        private UserMessageBuilder $messages,
         private LoggerInterface $aiLogger,
     ) {
     }
@@ -104,6 +110,8 @@ final readonly class AgUiChatController
             $agent = $this->agents->create($this->currentSiteaccess(), $threadId);
             $agent->setStreamAdapter(static fn () => $adapter);
             $agent->withPageContext(PageContext::fromAgUiContext($input['context'] ?? null));
+            $vision = $this->agents->supportsVision($this->currentSiteaccess());
+            $agent->withVision($vision);
 
             if (is_array($input['resume'] ?? null) && $input['resume'] !== []) {
                 try {
@@ -122,7 +130,7 @@ final readonly class AgUiChatController
                 if ($agent->pendingApprovals() !== []) {
                     throw new DecisionPendingException('A change is waiting for a decision.');
                 }
-                $events = $agent->stream(new UserMessage($text));
+                $events = $agent->stream($this->messages->build($text, $vision, $this->userId()));
             }
         } catch (Throwable $e) {
             if (!$e instanceof AlreadyDecidedException && !$e instanceof DecisionPendingException && !$e instanceof ProviderConfigurationException) {
@@ -207,6 +215,16 @@ final readonly class AgUiChatController
         // Reasoning written inline by the model is stored with the answer: it is never shown.
         $messages = [];
         foreach ($hydrated['messages'] as $message) {
+            if (($message['role'] ?? null) === 'user' && is_array($message['content'] ?? null)) {
+                // Images sent to the model are not sent back to the view: the text names them.
+                $text = '';
+                foreach ($message['content'] as $part) {
+                    if (is_array($part) && ($part['type'] ?? null) === 'text' && is_string($part['text'] ?? null)) {
+                        $text .= $part['text'];
+                    }
+                }
+                $message['content'] = $text;
+            }
             if (($message['role'] ?? null) === 'assistant' && is_string($message['content'] ?? null)) {
                 $message['content'] = trim(ReasoningFilter::strip($message['content']));
             }
@@ -214,6 +232,47 @@ final readonly class AgUiChatController
         }
 
         return new JsonResponse(['threadId' => $threadId, 'messages' => $messages, 'interrupts' => $hydrated['interrupts']]);
+    }
+
+    #[Route('/admin/api/ai/agent/attachments', name: 'masilia.ibexa_ai.agent.attachment_upload', methods: ['POST'])]
+    public function uploadAttachment(Request $request): JsonResponse
+    {
+        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile || !$file->isValid()) {
+            return new JsonResponse(ApiError::validation('No file was received.')->toArray(), Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $attachment = $this->attachments->store($file->getPathname(), $file->getClientOriginalName(), $this->userId());
+        } catch (AttachmentRejectedException $e) {
+            return new JsonResponse(ApiError::validation($e->getMessage())->toArray(), Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse($attachment->toArray());
+    }
+
+    #[Route('/admin/api/ai/agent/attachments/{id}', name: 'masilia.ibexa_ai.agent.attachment', methods: ['GET'])]
+    public function attachment(string $id): Response
+    {
+        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+        $attachment = AttachmentStore::isValidId($id) ? $this->attachments->find($id, $this->userId()) : null;
+        if ($attachment === null || !is_file($this->attachments->path($attachment))) {
+            return new JsonResponse(ApiError::notFound('Attachment not found')->toArray(), Response::HTTP_NOT_FOUND);
+        }
+
+        $response = new BinaryFileResponse($this->attachments->path($attachment));
+        // The type is the one the store found in the file, never one the client claimed.
+        $response->headers->set('Content-Type', $attachment->mime);
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Cache-Control', 'private, max-age=3600');
+
+        return $response;
     }
 
     #[Route('/admin/api/ai/agent/mentions', name: 'masilia.ibexa_ai.agent.mentions', methods: ['GET'])]

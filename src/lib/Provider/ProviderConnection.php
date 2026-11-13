@@ -17,6 +17,8 @@ final readonly class ProviderConnection
         public ?string $apiUrl = null,
         public float $temperature = 0.7,
         public int $maxTokens = 4096,
+        /** Whether the model can read images sent in a message. */
+        public bool $supportsVision = false,
     ) {
         if ($model === '') {
             throw new ProviderConfigurationException('A model identifier is required.');

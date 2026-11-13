@@ -202,6 +202,7 @@ final readonly class ProviderCatalog
         $model->setTemperature($temperature);
         $model->setMaxTokens($maxTokens);
         $model->setSupportsImage((bool) ($data['supportsImage'] ?? false));
+        $model->setSupportsVision((bool) ($data['supportsVision'] ?? false));
 
         $this->entities->persist($model);
         $this->entities->flush();
@@ -272,6 +273,7 @@ final readonly class ProviderCatalog
             'temperature' => $model->getTemperature(),
             'maxTokens' => $model->getMaxTokens(),
             'supportsImage' => $model->supportsImage(),
+            'supportsVision' => $model->supportsVision(),
         ];
     }
 }
