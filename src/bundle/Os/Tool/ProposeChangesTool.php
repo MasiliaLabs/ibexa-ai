@@ -229,6 +229,7 @@ final readonly class ProposeChangesTool implements ToolInterface, GatedToolInter
             $reference = References::parse($value);
             $parts[] = sprintf('%s: %s', $name, match (true) {
                 $reference !== null => sprintf('result of %s.%s', $reference[0], $reference[1]),
+                is_array($value) && array_is_list($value) => sprintf('%d item(s)', count($value)),
                 is_array($value) => implode('/', array_map('strval', array_slice(array_keys($value), 0, 5))),
                 default => (string) $value,
             });

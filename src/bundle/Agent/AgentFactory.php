@@ -6,9 +6,6 @@ namespace Masilia\Bundle\IbexaAi\Agent;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Masilia\Bundle\IbexaAi\Agent\Neuron\NeuronToolAdapter;
-use Masilia\Bundle\IbexaAi\Agent\Tool\Control\BrowseLocationTool;
-use Masilia\Bundle\IbexaAi\Agent\Tool\Control\ExploreSiteTool;
-use Masilia\Bundle\IbexaAi\Agent\Tool\Control\ProposePlanTool;
 use Masilia\Bundle\IbexaAi\Llm\ProviderResolver;
 use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
@@ -21,8 +18,9 @@ use PDO;
 /**
  * Builds the content agent for a siteaccess and a conversation thread.
  *
- * The model sees the site tools (explore_site, browse_location, propose_plan) and the four tools of the AI OS
- * (find_capabilities, describe_capability, run_capability, propose_changes); the other content tools are used internally and are not exposed.
+ * The model sees the four tools of the AI OS (find_capabilities, describe_capability, run_capability, propose_changes):
+ * everything else, including what the packages on the OS bring, is a capability found through them. The system prompt is
+ * the OS's text and the skills of those packages.
  */
 final readonly class AgentFactory
 {
@@ -30,13 +28,12 @@ final readonly class AgentFactory
         private ProviderResolver $resolver,
         private ProviderFactory $providers,
         private EntityManagerInterface $entities,
-        private ExploreSiteTool $explore,
-        private BrowseLocationTool $browse,
-        private ProposePlanTool $proposePlan,
         private FindCapabilitiesTool $findCapabilities,
         private DescribeCapabilityTool $describeCapability,
         private RunCapabilityTool $runCapability,
         private ProposeChangesTool $proposeChanges,
+        /** @var iterable<\Masilia\IbexaAi\Os\Skill> What the packages on the OS teach the assistant, added to its prompt */
+        private iterable $skills = [],
     ) {
     }
 
@@ -57,14 +54,11 @@ final readonly class AgentFactory
         $llm = $this->providers->create($this->resolver->resolveChat($siteaccess));
 
         $agent = new AiAssistantAgent($llm, [
-            new NeuronToolAdapter($this->explore),
-            new NeuronToolAdapter($this->browse),
-            new NeuronToolAdapter($this->proposePlan),
             new NeuronToolAdapter($this->findCapabilities),
             new NeuronToolAdapter($this->describeCapability),
             new NeuronToolAdapter($this->runCapability),
             new NeuronToolAdapter($this->proposeChanges),
-        ], $this->pdo());
+        ], $this->pdo(), AgentSystemPrompt::get($this->skills));
 
         return $agent->setThreadId($threadId);
     }

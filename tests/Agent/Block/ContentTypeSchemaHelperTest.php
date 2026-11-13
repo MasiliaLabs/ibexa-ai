@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Tests\Agent\Block;
 
 use Ibexa\Core\Repository\Values\ContentType\FieldDefinitionCollection;
-use Masilia\Bundle\IbexaAi\Agent\Block\ContentCatalog;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 final class ContentTypeSchemaHelperTest extends TestCase
 {
@@ -24,7 +22,7 @@ final class ContentTypeSchemaHelperTest extends TestCase
             ],
         ]);
 
-        $schema = $catalog->getContentTypeSchema('page');
+        $schema = $catalog->schema('page');
 
         self::assertNotNull($schema);
 

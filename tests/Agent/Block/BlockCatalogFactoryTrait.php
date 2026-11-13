@@ -9,8 +9,7 @@ use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentTypeGroup;
 use Ibexa\Core\Repository\Values\ContentType\ContentType as CoreContentType;
 use Ibexa\Core\Repository\Values\ContentType\FieldDefinition as CoreFieldDefinition;
 use Ibexa\Core\Repository\Values\ContentType\FieldDefinitionCollection;
-use Masilia\Bundle\IbexaAi\Agent\Block\BlockCatalog;
-use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas;
 
 /**
  * Test double built on Ibexa's own value object: only properties are set, no method is overridden,
@@ -33,6 +32,13 @@ final class FakeContentType extends CoreContentType
             'fieldDefinitions' => $fieldDefinitions,
         ]);
     }
+}
+
+/**
+ * Concrete subclass of the abstract NotFoundException for testing.
+ */
+final class TestNotFoundException extends \Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException
+{
 }
 
 /**
@@ -70,11 +76,9 @@ final class FakeFieldDefinition extends CoreFieldDefinition
 trait BlockCatalogFactoryTrait
 {
     /**
-     * Build a real {@see BlockCatalog} from a plain array of block definitions.
+     * Build a real {@see ContentTypeSchemas} from a plain array of content type definitions.
      *
-     * BlockCatalog is final, so tests cannot mock it. This helper creates a
-     * catalog backed by a stubbed ContentTypeService and an in-memory cache,
-     * which is enough for unit tests that only care about the catalog output.
+     * ContentTypeSchemas is final, so tests cannot mock it: it is backed by a stubbed ContentTypeService.
      *
      * Field definitions can be declared as:
      *   'field_id' => 'ibexa_string'
@@ -86,14 +90,14 @@ trait BlockCatalogFactoryTrait
      *     'required' => true,
      *   ]
      *
-     * @param array<string, array{name: string, fields: array<string, string|array{type: string, settings?: array<string, mixed>, validator?: array<string, mixed>, required?: bool}>}> $blocks
+     * @param array<string, array{name: string, fields: array<string, string|array{type: string, settings?: array<string, mixed>, validator?: array<string, mixed>, required?: bool}>}> $types
      */
-    private function createBlockCatalog(array $blocks): BlockCatalog
+    private function createBlockCatalog(array $types): ContentTypeSchemas
     {
         $contentTypes = [];
-        foreach ($blocks as $identifier => $block) {
+        foreach ($types as $identifier => $type) {
             $fieldDefinitions = [];
-            foreach ($block['fields'] as $fieldIdentifier => $fieldConfig) {
+            foreach ($type['fields'] as $fieldIdentifier => $fieldConfig) {
                 if (is_string($fieldConfig)) {
                     $fieldConfig = ['type' => $fieldConfig];
                 }
@@ -109,23 +113,17 @@ trait BlockCatalogFactoryTrait
                 );
             }
 
-            $contentTypes[] = new FakeContentType(
-                $identifier,
-                $block['name'],
-                new FieldDefinitionCollection($fieldDefinitions),
-            );
+            $contentTypes[$identifier] = new FakeContentType($identifier, $type['name'], new FieldDefinitionCollection($fieldDefinitions));
         }
 
-        $group = $this->createStub(ContentTypeGroup::class);
-
         $contentTypeService = $this->createStub(ContentTypeService::class);
-        $contentTypeService->method('loadContentTypeGroupByIdentifier')
-            ->with('Blocks')
-            ->willReturn($group);
-        $contentTypeService->method('loadContentTypes')
-            ->with($group)
-            ->willReturn($contentTypes);
+        $contentTypeService->method('loadContentTypeByIdentifier')->willReturnCallback(
+            static fn (string $identifier) => $contentTypes[$identifier] ?? throw new TestNotFoundException(),
+        );
+        $group = $this->createStub(ContentTypeGroup::class);
+        $contentTypeService->method('loadContentTypeGroups')->willReturn([$group]);
+        $contentTypeService->method('loadContentTypes')->willReturn(array_values($contentTypes));
 
-        return new BlockCatalog($contentTypeService, new ArrayAdapter());
+        return new ContentTypeSchemas($contentTypeService);
     }
 }

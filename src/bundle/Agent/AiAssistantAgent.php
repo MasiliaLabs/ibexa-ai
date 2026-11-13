@@ -33,6 +33,8 @@ class AiAssistantAgent extends Agent
         private readonly AIProviderInterface $llm,
         private readonly array $exposedTools,
         private readonly PDO $pdo,
+        /** The system prompt: the OS's own text and the fragments of the skills (see AgentSystemPrompt). */
+        private readonly string $systemPrompt = '',
     ) {
         parent::__construct();
     }
@@ -64,7 +66,7 @@ class AiAssistantAgent extends Agent
 
     protected function instructions(): SystemMessage|string
     {
-        $prompt = AgentSystemPrompt::get() . "\n\n" . ($this->vision
+        $prompt = ($this->systemPrompt !== '' ? $this->systemPrompt : AgentSystemPrompt::get()) . "\n\n" . ($this->vision
             ? "## Images\nYou can see the images attached to a message: they come with it."
             : "## Images\nYou cannot see images. An `<attachment-image …/>` in a message only tells you the name and size of the image the user attached: if asked what is in it, say you cannot see it.");
 

@@ -10,18 +10,15 @@ use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\Repository;
 use InvalidArgumentException;
 use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
-use Masilia\Bundle\IbexaAi\Agent\Block\BlockCatalog;
-use Masilia\Bundle\IbexaAi\Agent\Block\ContentCatalog;
+use Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemaSource;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages;
 use Masilia\IbexaAi\Suggestion\LanguageCode;
 use Masilia\Bundle\IbexaAi\Support\FieldType;
 
 /**
- * Validates and constructs a Plan from orchestrator tool arguments.
- *
- * The orchestrator LLM calls `propose_plan(...)` with raw arguments.
- * This worker validates the structure and returns a typed `Plan`.
+ * Validates and constructs a Plan from the arguments of a capability that writes content (content.create,
+ * content.create_folder, media.add_image…): it validates the structure and returns a typed `Plan`.
  *
  * Three-layer validation:
  *   1. Structural validation (Plan::validate()) — intent, title,
@@ -31,16 +28,11 @@ use Masilia\Bundle\IbexaAi\Support\FieldType;
  *   3. Required-field validation (validateRequiredFields()) — required
  *      fields are not empty.
  *
- * No default-block suggestion: the LLM is the source of truth for which
- * blocks to use. create_content plans with empty `blocks` are accepted and
- * produce content with no blocks — the LLM should always propose its own
- * layout based on the explore_site output.
  */
 final readonly class PlanBuilder
 {
     public function __construct(
-        private ?BlockCatalog   $blockCatalog = null,
-        private ?ContentCatalog $contentCatalog = null,
+        private ?ContentTypeSchemaSource $schemas = null,
         private ?Repository $repository = null,
         private ?SiteaccessLocationResolver $siteaccessResolver = null,
         private ?SiteLanguages $siteLanguages = null,
@@ -118,7 +110,7 @@ final readonly class PlanBuilder
         try {
             $parent = $this->repository->getLocationService()->loadLocation($plan->parentLocationId);
         } catch (NotFoundException) {
-            return sprintf('Parent location %d does not exist. Find the right location with explore_site or browse_location.', $plan->parentLocationId);
+            return sprintf('Parent location %d does not exist. Find the right location with tree.browse (or site.explore for a site).', $plan->parentLocationId);
         } catch (UnauthorizedException) {
             return sprintf('You are not allowed to create content under location %d.', $plan->parentLocationId);
         }
@@ -142,10 +134,8 @@ final readonly class PlanBuilder
 
         $writesContent = in_array($plan->intent, [
             Plan::INTENT_CREATE_CONTENT,
-            Plan::INTENT_CREATE_ITEMS,
             Plan::INTENT_UPDATE_CONTENT,
             Plan::INTENT_CREATE_FOLDER,
-            Plan::INTENT_CREATE_SITE_STRUCTURE,
             Plan::INTENT_ADD_IMAGE,
         ], true);
         if (!$writesContent) {
@@ -244,8 +234,7 @@ final readonly class PlanBuilder
 
     private function unknownContentType(string $identifier): string
     {
-        $known = array_keys($this->contentCatalog?->getAvailableContentTypes() ?? []);
-        sort($known);
+        $known = $this->schemas?->knownTypes() ?? [];
 
         return sprintf(
             'Content type "%s" does not exist.%s',
@@ -387,12 +376,10 @@ final readonly class PlanBuilder
     }
 
     /**
-     * Resolve a content type schema from BlockCatalog (block types) or
-     * ContentCatalog (standard types like page, article, folder, etc.).
+     * The schema of a content type, from the content model (null when there is no source, or no such type).
      */
     private function resolveContentTypeSchema(string $identifier): ?array
     {
-        return $this->blockCatalog?->getBlockSchema($identifier)
-            ?? $this->contentCatalog?->getContentTypeSchema($identifier);
+        return $this->schemas?->schema($identifier);
     }
 }

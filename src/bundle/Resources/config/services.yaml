@@ -17,7 +17,6 @@ services:
             $aiLogger: '@logger'
             $settings: '%ibexa_ai.connection%'
             $cachePool: '@cache.app'
-            $cache: '@cache.app'
             $domains: '%ibexa_ai.os.domains%'
             $attachmentsDirectory: '%kernel.project_dir%/var/ai-attachments'
 
@@ -95,6 +94,9 @@ services:
         arguments:
             $sources: !tagged_iterator masilia.ibexa_ai.tool
 
+    Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemaSource:
+        alias: Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas
+
     Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerRegistry:
         arguments:
             $transformers: !tagged_iterator masilia.ibexa_ai.field_value_transformer
@@ -113,7 +115,6 @@ services:
             - '../../Agent/DTO/'
             - '../../Agent/Worker/Plan.php'
             - '../../Agent/Worker/ExecutionResult.php'
-            - '../../Agent/Worker/ExplorationResult.php'
             - '../../Agent/Tool/ToolResult.php'
             - '../../Agent/Tool/ToolRegistry.php'
             - '../../Agent/Tool/FieldValueTransformerRegistry.php'
@@ -130,3 +131,5 @@ services:
 
     Masilia\Bundle\IbexaAi\Agent\AgentFactory:
         public: true
+        arguments:
+            $skills: !tagged_iterator masilia.ibexa_ai.skill

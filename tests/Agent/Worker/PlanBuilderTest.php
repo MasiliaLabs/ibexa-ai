@@ -84,101 +84,6 @@ final class PlanBuilderTest extends TestCase
         $builder->build(['intent' => 'fly_to_mars']);
     }
 
-    public function testBuildDoesNotInjectHardcodedLayoutsFromExploration(): void
-    {
-        $builder = new PlanBuilder();
-        $args = [
-            'intent' => 'create_content',
-            'content_type' => 'page',
-            'parent_location_id' => 42,
-            'fields' => ['title' => 'About Us'],
-        ];
-
-        $planFromBuild = $builder->build($args);
-
-        // build() never injects blocks — the LLM always proposes its own layout
-        self::assertSame([], $planFromBuild->blocks);
-    }
-
-    public function testBuildCreateItemsPlan(): void
-    {
-        $builder = new PlanBuilder();
-        $plan = $builder->build([
-            'intent' => 'create_items',
-            'content_id' => 200,
-            'items' => [
-                ['type' => 'card_item', 'fields' => ['icon' => 'star', 'title' => 'Hello']],
-                ['type' => 'card_item', 'fields' => ['icon' => 'check', 'title' => 'World']],
-            ],
-        ]);
-
-        self::assertSame('create_items', $plan->intent);
-        self::assertSame(200, $plan->contentId);
-        self::assertCount(2, $plan->items);
-        self::assertSame('card_item', $plan->items[0]['type']);
-        self::assertNull($plan->validate());
-    }
-
-    public function testBuildCreateItemsPlanWithLinkField(): void
-    {
-        $builder = new PlanBuilder();
-        $plan = $builder->build([
-            'intent' => 'create_items',
-            'content_id' => 200,
-            'link_field' => 'blocks',
-            'items' => [
-                ['type' => 'hero_banner', 'fields' => ['title' => 'Hero']],
-            ],
-        ]);
-
-        self::assertSame('create_items', $plan->intent);
-        self::assertSame('blocks', $plan->linkField);
-        self::assertNull($plan->validate());
-    }
-
-    public function testPlanLinkFieldRoundTripsThroughToArray(): void
-    {
-        $builder = new PlanBuilder();
-        $plan = $builder->build([
-            'intent' => 'create_items',
-            'content_id' => 200,
-            'link_field' => 'items',
-            'items' => [
-                ['type' => 'card_item', 'fields' => ['title' => 'X']],
-            ],
-        ]);
-
-        $array = $plan->toArray();
-        self::assertSame('items', $array['link_field']);
-
-        $restored = Plan::fromArray($array);
-        self::assertSame('items', $restored->linkField);
-    }
-
-    public function testBuildCreateItemsRejectsMissingContentId(): void
-    {
-        $builder = new PlanBuilder();
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('create_items requires content_id');
-
-        $builder->build([
-            'intent' => 'create_items',
-            'items' => [['type' => 'card_item', 'fields' => []]],
-        ]);
-    }
-
-    public function testBuildCreateItemsRejectsEmptyItems(): void
-    {
-        $builder = new PlanBuilder();
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('create_items requires non-empty items');
-
-        $builder->build([
-            'intent' => 'create_items',
-            'content_id' => 200,
-        ]);
-    }
-
     public function testSchemaValidationAcceptsCorrectMatrixColumns(): void
     {
         $catalog = $this->createBlockCatalog([
@@ -566,7 +471,7 @@ final class PlanBuilderTest extends TestCase
                 ],
             ],
         ]);
-        $builder = new PlanBuilder(contentCatalog: $contentCatalog);
+        $builder = new PlanBuilder(schemas: $contentCatalog);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Content type "page": required field "title" is empty');
@@ -592,7 +497,7 @@ final class PlanBuilderTest extends TestCase
                 ],
             ],
         ]);
-        $builder = new PlanBuilder(contentCatalog: $contentCatalog);
+        $builder = new PlanBuilder(schemas: $contentCatalog);
 
         $plan = $builder->build([
             'intent' => 'create_content',
@@ -602,39 +507,6 @@ final class PlanBuilderTest extends TestCase
         ]);
 
         self::assertSame('create_content', $plan->intent);
-    }
-
-    public function testContentCatalogFallsBackFromBlockCatalog(): void
-    {
-        // BlockCatalog doesn't know about 'page', ContentCatalog does
-        $blockCatalog = $this->createBlockCatalog([
-            'hero_banner' => [
-                'name' => 'Hero Banner',
-                'fields' => ['title' => 'ibexa_string'],
-            ],
-        ]);
-        $contentCatalog = $this->createContentCatalog([
-            'Content' => [
-                'page' => [
-                    'name' => 'Page',
-                    'fields' => [
-                        'title' => ['type' => 'ibexa_string', 'required' => true],
-                    ],
-                ],
-            ],
-        ]);
-        $builder = new PlanBuilder($blockCatalog, $contentCatalog);
-
-        // page is in ContentCatalog, not BlockCatalog — should still validate
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Content type "page": required field "title" is empty');
-
-        $builder->build([
-            'intent' => 'create_content',
-            'content_type' => 'page',
-            'parent_location_id' => 42,
-            'fields' => ['subtitle' => 'optional'],
-        ]);
     }
 
     public function testContentCatalogSkipsUnknownContentTypes(): void
@@ -647,7 +519,7 @@ final class PlanBuilderTest extends TestCase
                 ],
             ],
         ]);
-        $builder = new PlanBuilder(contentCatalog: $contentCatalog);
+        $builder = new PlanBuilder(schemas: $contentCatalog);
 
         // 'unknown_type' is not in any catalog — validation is skipped
         $plan = $builder->build([
