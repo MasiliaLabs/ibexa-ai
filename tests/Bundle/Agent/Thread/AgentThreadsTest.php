@@ -76,6 +76,28 @@ final class AgentThreadsTest extends TestCase
         self::assertNull($this->threads->latest(14, 'admin_mattcch'));
     }
 
+    public function testRenamingChangesTheTitleAndKeepsTheConversationWhereItWas(): void
+    {
+        $this->threads->claim('thread-aaaa-0001', 14, 'admin', 'First', $this->at('2026-11-13 10:00:00'));
+        $this->threads->claim('thread-bbbb-0002', 14, 'admin', 'Second', $this->at('2026-11-13 11:00:00'));
+
+        self::assertTrue($this->threads->rename('thread-aaaa-0001', 14, 'Site review'));
+
+        $list = $this->threads->list(14, 'admin');
+        self::assertSame(['thread-bbbb-0002', 'thread-aaaa-0001'], array_map(static fn ($t): string => $t->id, $list));
+        self::assertSame('Site review', $list[1]->title);
+        self::assertSame('2026-11-13T10:00:00+00:00', $list[1]->updatedAt, 'renaming is not using');
+    }
+
+    public function testAConversationOfAnotherUserOrNoneCannotBeRenamed(): void
+    {
+        $this->threads->claim('thread-aaaa-0001', 14, 'admin', 'Mine', $this->at('2026-11-13 10:00:00'));
+
+        self::assertFalse($this->threads->rename('thread-aaaa-0001', 15, 'Stolen'));
+        self::assertFalse($this->threads->rename('thread-zzzz-9999', 14, 'Nothing'));
+        self::assertSame('Mine', $this->threads->owned('thread-aaaa-0001', 14)?->title);
+    }
+
     public function testDeletingForgetsTheConversation(): void
     {
         $this->threads->claim('thread-aaaa-0001', 14, 'admin', 'A', $this->at('2026-11-13 10:00:00'));

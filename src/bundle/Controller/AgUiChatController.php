@@ -15,6 +15,7 @@ use Masilia\Bundle\IbexaAi\Agent\Stream\ReasoningFilteredAGUIAdapter;
 use Masilia\Bundle\IbexaAi\Agent\Thread\AgentThreads;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadAccessDeniedException;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadId;
+use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadTitle;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
@@ -219,6 +220,25 @@ final readonly class AgUiChatController
                 $this->threads->list($this->userId(), $this->currentSiteaccess()),
             ),
         ]);
+    }
+
+    #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_rename', methods: ['PATCH'])]
+    public function renameThread(string $threadId, Request $request): JsonResponse
+    {
+        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+
+        $input = $this->json($request);
+        $title = is_array($input) && is_string($input['title'] ?? null) ? ThreadTitle::fromUser($input['title']) : null;
+        if ($title === null) {
+            return new JsonResponse(ApiError::validation('A title is required')->toArray(), Response::HTTP_BAD_REQUEST);
+        }
+        if (!ThreadId::isValid($threadId) || !$this->threads->rename($threadId, $this->userId(), $title)) {
+            return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse(['id' => $threadId, 'title' => $title]);
     }
 
     #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_delete', methods: ['DELETE'])]

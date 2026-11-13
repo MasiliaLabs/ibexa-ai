@@ -29,6 +29,18 @@ final class ThreadTitleTest extends TestCase
         self::assertSame(ThreadTitle::DEFAULT, ThreadTitle::from(" \n\t "));
     }
 
+    public function testATypedTitleIsKeptOnOneLineAndCutAtTheLimit(): void
+    {
+        self::assertSame('Site review', ThreadTitle::fromUser("  Site \n review "));
+        self::assertSame(100, mb_strlen((string) ThreadTitle::fromUser(str_repeat('é', 300))));
+    }
+
+    public function testATypedTitleWithNothingInItIsNotAnAnswer(): void
+    {
+        self::assertNull(ThreadTitle::fromUser(" \n\t "));
+        self::assertNull(ThreadTitle::fromUser(''));
+    }
+
     #[DataProvider('ids')]
     public function testOnlyPlainIdentifiersAreAccepted(mixed $id, bool $valid): void
     {

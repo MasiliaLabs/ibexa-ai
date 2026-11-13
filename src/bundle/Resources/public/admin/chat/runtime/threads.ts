@@ -19,6 +19,20 @@ export async function deleteThread(id: string): Promise<void> {
     }
 }
 
+/** Gives a conversation a new title; returns the title the server kept (one line, cut at its limit). */
+export async function renameThread(id: string, title: string): Promise<string> {
+    const response = await fetch(`${THREADS_URL}/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ title }),
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    return ((await response.json()) as { title: string }).title;
+}
+
 /** The identifier of a new conversation: made up here, the server creates the conversation on its first message. */
 export function newThreadId(): string {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

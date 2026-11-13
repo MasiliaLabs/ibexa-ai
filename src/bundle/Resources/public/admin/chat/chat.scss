@@ -880,12 +880,12 @@ html {
         background: ibexa.$ibexa-color-light-300;
     }
 
-    .masilia-chat__history-delete {
+    .masilia-chat__history-action {
         opacity: 0;
     }
 
-    &:hover .masilia-chat__history-delete,
-    &:focus-within .masilia-chat__history-delete {
+    &:hover .masilia-chat__history-action,
+    &:focus-within .masilia-chat__history-action {
         opacity: 1;
     }
 }
@@ -931,4 +931,36 @@ html {
     justify-content: space-between;
     gap: calculateRem(8px);
     padding: calculateRem(6px) calculateRem(10px);
+}
+
+.masilia-chat__history-rename {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: calculateRem(8px);
+    padding: calculateRem(8px) calculateRem(10px);
+}
+
+.masilia-chat__history-input {
+    width: 100%;
+    padding: calculateRem(6px) calculateRem(10px);
+    border: 1px solid ibexa.$ibexa-color-primary;
+    border-radius: calculateRem(8px);
+    font: inherit;
+    outline: calculateRem(2px) solid ibexa.$ibexa-color-primary-100;
+}
+
+.masilia-chat__rename-save {
+    padding: calculateRem(4px) calculateRem(14px);
+    background: ibexa.$ibexa-color-primary;
+    border: 0;
+    border-radius: calculateRem(8px);
+    color: ibexa.$ibexa-color-white;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 }

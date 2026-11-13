@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { Button, Icon } from '../../shared/ids';
-import { fetchThreads } from '../runtime/threads';
+import { fetchThreads, renameThread } from '../runtime/threads';
 import { groupThreads, whenLabel } from '../runtime/threadsView';
 import type { ThreadSummary } from '../runtime/threadsView';
 import type { ChatRuntime } from '../runtime/types';
@@ -22,6 +22,8 @@ export function History({ chat, onDone }: HistoryProps) {
     const [loaded, setLoaded] = useState<Loaded>({ status: 'loading' });
     const [deleting, setDeleting] = useState<string | null>(null);
     const [failed, setFailed] = useState(false);
+    const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
+    const [renameFailed, setRenameFailed] = useState(false);
     const now = useMemo(() => new Date(), []);
 
     useEffect(() => {
@@ -47,6 +49,20 @@ export function History({ chat, onDone }: HistoryProps) {
         }
     };
 
+    const saveRename = async () => {
+        if (renaming === null || renaming.value.trim() === '') {
+            return;
+        }
+        setRenameFailed(false);
+        try {
+            const title = await renameThread(renaming.id, renaming.value);
+            setLoaded((state) => (state.status === 'ready' ? { status: 'ready', threads: state.threads.map((thread) => (thread.id === renaming.id ? { ...thread, title } : thread)) } : state));
+            setRenaming(null);
+        } catch {
+            setRenameFailed(true);
+        }
+    };
+
     return (
         <div className="masilia-chat__history">
             <div className="masilia-chat__history-new">
@@ -64,6 +80,7 @@ export function History({ chat, onDone }: HistoryProps) {
             </div>
 
             {failed ? <p className="masilia-chat__error" role="alert">The conversation could not be deleted. Try again.</p> : null}
+            {renameFailed ? <p className="masilia-chat__error" role="alert">The conversation could not be renamed. Try again.</p> : null}
 
             {loaded.status === 'loading' ? <p className="masilia-chat__history-note" role="status">Loading…</p> : null}
             {loaded.status === 'error' ? <p className="masilia-chat__error" role="alert">The history could not be loaded.</p> : null}
@@ -76,7 +93,38 @@ export function History({ chat, onDone }: HistoryProps) {
                           <ul className="masilia-chat__history-list">
                               {group.threads.map((thread) => (
                                   <li key={thread.id} className="masilia-chat__history-item">
-                                      {deleting === thread.id ? (
+                                      {renaming?.id === thread.id ? (
+                                          <form
+                                              className="masilia-chat__history-rename"
+                                              onSubmit={(event) => {
+                                                  event.preventDefault();
+                                                  void saveRename();
+                                              }}
+                                          >
+                                              <label className="visually-hidden" htmlFor={`rename-${thread.id}`}>Conversation title</label>
+                                              <input
+                                                  id={`rename-${thread.id}`}
+                                                  className="masilia-chat__history-input"
+                                                  value={renaming.value}
+                                                  maxLength={100}
+                                                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                                                  autoFocus
+                                                  onFocus={(event) => event.currentTarget.select()}
+                                                  onChange={(event) => setRenaming({ id: thread.id, value: event.target.value })}
+                                                  onKeyDown={(event) => {
+                                                      if (event.key === 'Escape') {
+                                                          // Cancels the edit, not the panel.
+                                                          event.preventDefault();
+                                                          setRenaming(null);
+                                                      }
+                                                  }}
+                                              />
+                                              <div className="masilia-chat__actions">
+                                                  <Button type="secondary" size="small" onClick={() => setRenaming(null)}>Cancel</Button>
+                                                  <button type="submit" className="masilia-chat__rename-save" disabled={renaming.value.trim() === ''}>Save</button>
+                                              </div>
+                                          </form>
+                                      ) : deleting === thread.id ? (
                                           <div className="masilia-chat__history-confirm" role="alertdialog" aria-label={`Delete ${thread.title}`}>
                                               <span>Delete this conversation?</span>
                                               <div className="masilia-chat__actions">
@@ -100,7 +148,19 @@ export function History({ chat, onDone }: HistoryProps) {
                                               </button>
                                               <button
                                                   type="button"
-                                                  className="masilia-chat__icon-button masilia-chat__history-delete"
+                                                  className="masilia-chat__icon-button masilia-chat__history-action"
+                                                  title="Rename this conversation"
+                                                  aria-label={`Rename conversation: ${thread.title}`}
+                                                  onClick={() => {
+                                                      setRenameFailed(false);
+                                                      setRenaming({ id: thread.id, value: thread.title });
+                                                  }}
+                                              >
+                                                  <Icon name="edit" size="small" />
+                                              </button>
+                                              <button
+                                                  type="button"
+                                                  className="masilia-chat__icon-button masilia-chat__history-action masilia-chat__history-delete"
                                                   title="Delete this conversation"
                                                   aria-label={`Delete conversation: ${thread.title}`}
                                                   onClick={() => setDeleting(thread.id)}

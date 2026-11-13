@@ -87,6 +87,20 @@ final readonly class AgentThreads
         return $this->list($userId, $siteaccess, 1)[0] ?? null;
     }
 
+    /**
+     * Gives the user's conversation a new title. It stays where it is in the history: renaming is not using.
+     * False when the user has no such conversation.
+     */
+    public function rename(string $id, int $userId, string $title): bool
+    {
+        if ($this->owned($id, $userId) === null) {
+            return false;
+        }
+        $this->connection->update(self::TABLE, ['title' => $title], ['id' => $id, 'user_id' => $userId]);
+
+        return true;
+    }
+
     /** Forgets the conversation of the user. False when there was none. */
     public function delete(string $id, int $userId): bool
     {
