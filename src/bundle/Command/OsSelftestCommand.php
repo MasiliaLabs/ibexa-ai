@@ -122,6 +122,8 @@ final class OsSelftestCommand extends Command
             $step('remove the extra location of A', 'location.remove', ['location_id' => $answers['added']['location_id'] ?? 0]);
             $this->domains($step, $answers, $a['content_id'], $stamp);
             $step('trash A', 'content.trash', ['content_id' => $a['content_id']]);
+            $step('delete A from the trash', 'trash.delete', ['content_id' => $a['content_id']]);
+            $step('it is no longer in the trash', 'trash.delete', ['content_id' => $a['content_id']], null, null, true);
         } finally {
             $this->removeStructures($stamp);
             // What was trashed (A, and what sat under it) is deleted from the trash first, then the rest for good.
@@ -204,8 +206,42 @@ final class OsSelftestCommand extends Command
         $step('A has no translation to switch to', 'localization.set_main_language', ['content_id' => $contentId, 'language_code' => 'tst-ZZ'], null, null, true);
         $step('A is not translated into another language', 'localization.translation.remove', ['content_id' => $contentId, 'language_code' => $this->repository->getContentService()->loadContentInfo((int) $contentId)->mainLanguageCode], null, null, true);
 
+        // Where A is now (the swap moved contents between locations).
+        $step('where A is', 'location.list', ['content_id' => $contentId], null, 'where');
+        $locationId = (int) ($answers['where']['locations'][0]['location_id'] ?? 0);
+        $path = '/selftest-' . $stamp;
+        $step('add a custom URL to A', 'url.alias.add', ['location_id' => $locationId, 'path' => $path, 'language_code' => 'eng-GB'], null, 'alias');
+        $step('the same URL cannot be added twice', 'url.alias.add', ['location_id' => $locationId, 'path' => $path, 'language_code' => 'eng-GB'], null, null, true);
+        $step('the URL is listed as custom', 'url.alias.list', ['location_id' => $locationId], static fn (array $d): ?string => array_filter($d['aliases'], static fn (array $a): bool => $a['custom'] && str_contains($a['path'], 'selftest-')) !== [] ? null : 'not listed');
+        $step('a system alias cannot be removed', 'url.alias.remove', ['alias_id' => $this->systemAliasId($locationId)], null, null, true);
+        $step('remove the custom URL', 'url.alias.remove', ['alias_id' => $answers['alias']['alias_id'] ?? 'none']);
+
+        $step('create a wildcard', 'url.wildcard.create', ['source_url' => '/selftest-old-' . $stamp . '/*', 'destination_url' => '/selftest-new-' . $stamp . '/{1}', 'forward' => true], null, 'wildcard');
+        $step('change the wildcard', 'url.wildcard.update', ['wildcard_id' => $answers['wildcard']['wildcard_id'] ?? 0, 'forward' => false]);
+        $step('the wildcard is listed, as a rewrite', 'url.wildcard.list', [], static fn (array $d): ?string => array_filter($d['wildcards'], static fn (array $w): bool => str_contains($w['source_url'], 'selftest-old-') && !$w['forward']) !== [] ? null : 'not listed as a rewrite');
+        $step('delete the wildcard', 'url.wildcard.delete', ['wildcard_id' => $answers['wildcard']['wildcard_id'] ?? 0]);
+        $step('list the links', 'url.link.list', ['limit' => 5]);
+
+        $step('the versions of A', 'content.version.load', ['content_id' => $contentId], static fn (array $d): ?string => count($d['versions']) >= 1 ? null : 'no version', 'versions');
+        $step('start a draft of A', 'content.draft.create', ['content_id' => $contentId], null, 'draft');
+        $step('read that draft', 'content.version.load', ['content_id' => $contentId, 'version_no' => $answers['draft']['version_no'] ?? 1]);
+        $step('a draft is not deleted as a version', 'content.version.delete', ['content_id' => $contentId, 'version_no' => $answers['draft']['version_no'] ?? 1], null, null, true);
+        $step('the published version is not deleted', 'content.version.delete', ['content_id' => $contentId, 'version_no' => 1], null, null, true);
+        $step('discard the draft', 'workspace.drafts.delete', ['content_id' => $contentId, 'version_no' => $answers['draft']['version_no'] ?? 1]);
+
         $step('list the bookmarks', 'workspace.bookmarks.list', []);
         $step('list the drafts', 'workspace.drafts.list', []);
+    }
+
+    /** The id of a system-generated alias of the location (those cannot be removed). */
+    private function systemAliasId(int $locationId): string
+    {
+        $aliases = $this->repository->getURLAliasService();
+        foreach ($aliases->listLocationAliases($this->repository->getLocationService()->loadLocation($locationId), false) as $alias) {
+            return $alias->id;
+        }
+
+        return 'none';
     }
 
     /** What the domains step made, removed whatever happened. */
@@ -217,6 +253,12 @@ final class OsSelftestCommand extends Command
             fn () => $this->repository->getObjectStateService()->deleteObjectStateGroup($this->repository->getObjectStateService()->loadObjectStateGroupByIdentifier($identifier)),
             fn () => $this->repository->getContentLanguageService()->deleteLanguage($this->repository->getContentLanguageService()->loadLanguage('tst-ZZ')),
         ];
+        $wildcards = $this->repository->getURLWildcardService();
+        foreach ($wildcards->loadAll(0, 500) as $wildcard) {
+            if (str_starts_with($wildcard->sourceUrl, '/selftest-old-' . $stamp)) {
+                $attempts[] = fn () => $wildcards->remove($wildcard);
+            }
+        }
         foreach ($attempts as $attempt) {
             try {
                 $attempt();
