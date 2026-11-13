@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Command;
 
-use Masilia\Bundle\IbexaAi\Os\Coverage\CoverageMatrix;
-use Masilia\IbexaAi\Os\CapabilityRegistry;
+use Masilia\Bundle\IbexaAi\Os\Coverage\CoverageReport;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Routing\RouterInterface;
 
 #[AsCommand(
     name: 'masilia:ai:os:coverage',
@@ -20,11 +18,8 @@ use Symfony\Component\Routing\RouterInterface;
 )]
 final class OsCoverageCommand extends Command
 {
-    private const FILE = __DIR__ . '/../Resources/config/os_coverage.yaml';
-
     public function __construct(
-        private readonly RouterInterface $router,
-        private readonly CapabilityRegistry $registry,
+        private readonly CoverageReport $report,
     ) {
         parent::__construct();
     }
@@ -39,58 +34,38 @@ final class OsCoverageCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-
-        $routes = array_values(array_filter(
-            array_keys($this->router->getRouteCollection()->all()),
-            static fn (string $name): bool => str_starts_with($name, 'ibexa.') && !str_starts_with($name, 'ibexa.rest.'),
-        ));
-        sort($routes);
-
-        $result = CoverageMatrix::fromFile(self::FILE)->classify($routes, fn (string $name): bool => $this->registry->get($name) !== null);
-
-        $areas = [];
-        foreach (['covered', 'planned', 'out_of_scope'] as $outcome) {
-            foreach (array_keys($result[$outcome]) as $route) {
-                $area = explode('.', $route)[1] ?? $route;
-                $areas[$area][$outcome] = ($areas[$area][$outcome] ?? 0) + 1;
-            }
-        }
-        foreach ($result['unmapped'] as $route) {
-            $area = explode('.', $route)[1] ?? $route;
-            $areas[$area]['unmapped'] = ($areas[$area]['unmapped'] ?? 0) + 1;
-        }
-        ksort($areas);
+        $report = $this->report->build();
 
         $io->table(
             ['Area', 'Covered', 'Planned', 'Out of scope', 'Unmapped'],
             array_map(
                 static fn (string $area, array $counts): array => [$area, $counts['covered'] ?? 0, $counts['planned'] ?? 0, $counts['out_of_scope'] ?? 0, $counts['unmapped'] ?? 0],
-                array_keys($areas),
-                $areas,
+                array_keys($report['areas']),
+                $report['areas'],
             ),
         );
         $io->writeln(sprintf(
             '%d admin routes: %d covered, %d planned, %d out of scope, %d unmapped.',
-            count($routes),
-            count($result['covered']),
-            count($result['planned']),
-            count($result['out_of_scope']),
-            count($result['unmapped']),
+            $report['routes'],
+            $report['covered'],
+            $report['planned'],
+            $report['out_of_scope'],
+            count($report['unmapped']),
         ));
 
-        if ($input->getOption('missing') && $result['planned'] !== []) {
+        if ($input->getOption('missing') && $report['planned_routes'] !== []) {
             $io->section('Capability not written yet');
-            $io->table(['Route', 'Capability'], array_map(null, array_keys($result['planned']), array_values($result['planned'])));
+            $io->table(['Route', 'Capability'], array_map(null, array_keys($report['planned_routes']), array_values($report['planned_routes'])));
         }
-        if ($result['unmapped'] !== []) {
+        if ($report['unmapped'] !== []) {
             $io->section('Unmapped: give each a capability or a reason in os_coverage.yaml');
-            $io->listing($result['unmapped']);
+            $io->listing($report['unmapped']);
         }
-        if ($result['stale'] !== [] && $output->isVerbose()) {
+        if ($report['stale'] !== [] && $output->isVerbose()) {
             $io->section('Entries that match no route (a bundle that is not installed?)');
-            $io->listing($result['stale']);
+            $io->listing($report['stale']);
         }
 
-        return $input->getOption('strict') && $result['unmapped'] !== [] ? Command::FAILURE : Command::SUCCESS;
+        return $input->getOption('strict') && $report['unmapped'] !== [] ? Command::FAILURE : Command::SUCCESS;
     }
 }

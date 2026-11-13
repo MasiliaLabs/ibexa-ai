@@ -1,0 +1,190 @@
+{% extends "@ibexadesign/ui/layout.html.twig" %}
+
+{% block body_class %}ibexa-ai-capabilities-view{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .ai-caps { max-width: 1100px; padding: 8px 0 40px; color: #333; font-size: 14px; }
+        .ai-caps h2 { margin: 32px 0 8px; font-size: 18px; }
+        .ai-caps h3 { margin: 0; font-size: 15px; }
+        .ai-caps p { margin: 4px 0 12px; }
+        .ai-caps code { color: inherit; }
+        .ai-caps .muted { color: #6b6b6b; }
+        .ai-caps .stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 8px; }
+        .ai-caps .stat { min-width: 140px; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 4px; background: #fff; }
+        .ai-caps .stat strong { display: block; font-size: 24px; line-height: 1.2; }
+        .ai-caps .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+        .ai-caps input[type=search] { min-width: 260px; padding: 6px 10px; border: 1px solid #c8c8c8; border-radius: 4px; }
+        .ai-caps .domain { margin: 16px 0; border: 1px solid #e0e0e0; border-radius: 4px; background: #fff; }
+        .ai-caps .domain > summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; cursor: pointer; }
+        .ai-caps .domain.is-off > summary { background: #f6f6f6; }
+        .ai-caps table { width: 100%; border-collapse: collapse; }
+        .ai-caps th, .ai-caps td { padding: 8px 16px; border-top: 1px solid #ececec; text-align: left; vertical-align: top; }
+        .ai-caps th { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b6b6b; }
+        .ai-caps tr.blocked td:not(.state) { color: #8a8a8a; }
+        .ai-caps td.when { white-space: nowrap; }
+        .ai-caps .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .ai-caps .risk-read { background: #e6f2ff; color: #0b4f8a; }
+        .ai-caps .risk-write { background: #fff3d6; color: #7a5200; }
+        .ai-caps .risk-destructive { background: #fde3e3; color: #a31515; }
+        .ai-caps .risk-access { background: #f3e0fa; color: #6b1f87; }
+        .ai-caps .pill-on { background: #def5e3; color: #17692b; }
+        .ai-caps .pill-off { background: #e8e8e8; color: #555; }
+        .ai-caps .ok { color: #17692b; }
+        .ai-caps .no { color: #a31515; }
+        .ai-caps .note { padding: 10px 14px; border-left: 3px solid #c8c8c8; background: #f6f6f6; }
+        .ai-caps [hidden] { display: none !important; }
+    </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+    {% include '@ibexadesign/ui/breadcrumbs.html.twig' with { items: [
+        { value: 'Admin' },
+        { value: 'What the assistant can do' }
+    ]} %}
+{% endblock %}
+
+{% block title %}What the assistant can do{% endblock %}
+
+{% block header %}
+    {% include '@ibexadesign/ui/page_title.html.twig' with { title: 'What the assistant can do' } %}
+{% endblock %}
+
+{% block content %}
+    {% set totals = overview.totals %}
+    <div class="ai-caps">
+        <p class="muted">
+            The assistant acts through capabilities: each one is a typed action on the content repository, run with the rights of whoever asks.
+            Reading runs at once; anything that changes something is shown on an approval card first, and recorded.
+        </p>
+
+        <div class="stats">
+            <div class="stat"><strong>{{ totals.capabilities }}</strong> capabilities</div>
+            <div class="stat"><strong>{{ totals.domains }}</strong> domains ({{ totals.enabled_domains }} on)</div>
+            <div class="stat"><strong>{{ totals.usable }}</strong> you can use</div>
+            {% if coverage %}
+                <div class="stat"><strong>{{ coverage.covered }} / {{ coverage.routes - coverage.out_of_scope }}</strong> admin actions covered</div>
+            {% endif %}
+        </div>
+
+        {% if overview.skills %}
+            <h2>Installed skills</h2>
+            <p class="muted">A skill teaches the assistant how sites are built here; it adds capabilities of its own.</p>
+            <ul>
+                {% for skill in overview.skills %}
+                    <li><strong>{{ skill.name }}</strong> <span class="muted">({{ skill.package }})</span></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <h2>Capabilities</h2>
+        <div class="tools">
+            <input type="search" id="ai-caps-filter" placeholder="Filter by name or words…" aria-label="Filter the capabilities">
+            <label><input type="checkbox" id="ai-caps-usable"> only what I can use</label>
+        </div>
+
+        {% for domain in overview.domains %}
+            <details class="domain {{ domain.enabled ? 'is-on' : 'is-off' }}" data-domain="{{ domain.name }}" {{ domain.enabled and not (domain.name == 'access') ? 'open' : '' }}>
+                <summary>
+                    <h3>{{ domain.name }}</h3>
+                    <span class="badge {{ domain.enabled ? 'pill-on' : 'pill-off' }}">{{ domain.enabled ? 'on' : 'off' }}</span>
+                    {% for risk, count in domain.risks %}
+                        <span class="badge risk-{{ risk }}">{{ count }} {{ risk }}</span>
+                    {% endfor %}
+                    <span class="muted">{{ domain.usable }} of {{ domain.capabilities|length }} usable by you · {{ domain.packages|join(', ') }}</span>
+                </summary>
+                {% if not domain.enabled %}
+                    <div class="note">
+                        This domain is turned off, so the assistant does not see it. Turn it on with
+                        <code>masilia_ibexa_ai.os.domains.{{ domain.name }}: true</code>.
+                    </div>
+                {% endif %}
+                <table>
+                    <thead><tr><th>Capability</th><th>Does</th><th>Risk</th><th>Needs</th><th>You</th></tr></thead>
+                    <tbody>
+                        {% for capability in domain.capabilities %}
+                            <tr class="{{ capability.usable ? '' : 'blocked' }}" data-usable="{{ capability.usable ? '1' : '0' }}" data-text="{{ (capability.name ~ ' ' ~ capability.summary)|lower }}">
+                                <td><code>{{ capability.name }}</code></td>
+                                <td>{{ capability.summary }}</td>
+                                <td><span class="badge risk-{{ capability.risk }}">{{ capability.risk }}</span></td>
+                                <td class="muted">{{ capability.requires ?: '—' }}</td>
+                                <td class="state">
+                                    {% if capability.usable %}
+                                        <span class="ok">yes</span>
+                                    {% else %}
+                                        <span class="no" title="{{ capability.denial }}">no</span>
+                                        <div class="muted">{{ capability.denial }}</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+        {% endfor %}
+
+        {% if coverage %}
+            <h2>Coverage of the admin</h2>
+            <p class="muted">
+                {{ coverage.routes }} admin screens and actions of Ibexa:
+                {{ coverage.covered }} have a capability, {{ coverage.out_of_scope }} are not actions of an administrator (screens, redirects, sign-in flows),
+                {{ coverage.planned }} are planned, {{ coverage.unmapped|length }} are unaccounted for.
+                Check it with <code>masilia:ai:os:coverage --strict</code>.
+            </p>
+            {% if coverage.unmapped %}
+                <div class="note"><strong>No answer yet</strong> (an Ibexa update or a new bundle added them):
+                    {{ coverage.unmapped|join(', ') }}
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if activity is not null %}
+            <h2>Latest activity</h2>
+            {% if activity %}
+                <table>
+                    <thead><tr><th>When (UTC)</th><th>Who</th><th>Capability</th><th>Risk</th><th>Result</th></tr></thead>
+                    <tbody>
+                        {% for row in activity %}
+                            <tr>
+                                <td class="muted when">{{ row.when }}</td>
+                                <td>{{ row.user }}</td>
+                                <td><code>{{ row.capability }}</code></td>
+                                <td><span class="badge risk-{{ row.risk }}">{{ row.risk }}</span></td>
+                                <td><span class="{{ row.success ? 'ok' : 'no' }}">{{ row.success ? 'done' : 'failed' }}</span> <span class="muted">{{ row.message }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="muted">Nothing yet: the assistant records every change it makes, and every failure.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (function () {
+            var filter = document.getElementById('ai-caps-filter');
+            var usable = document.getElementById('ai-caps-usable');
+            function apply() {
+                var words = filter.value.toLowerCase().split(/\s+/).filter(Boolean);
+                document.querySelectorAll('.ai-caps .domain').forEach(function (domain) {
+                    var shown = 0;
+                    domain.querySelectorAll('tbody tr').forEach(function (row) {
+                        var match = words.every(function (word) { return row.dataset.text.indexOf(word) !== -1; })
+                            && (!usable.checked || row.dataset.usable === '1');
+                        row.hidden = !match;
+                        shown += match ? 1 : 0;
+                    });
+                    domain.hidden = shown === 0;
+                    if (words.length > 0 && shown > 0) { domain.open = true; }
+                });
+            }
+            filter.addEventListener('input', apply);
+            usable.addEventListener('change', apply);
+        })();
+    </script>
+{% endblock %}
