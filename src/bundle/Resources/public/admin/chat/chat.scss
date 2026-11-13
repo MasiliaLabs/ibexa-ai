@@ -651,6 +651,7 @@ html {
 }
 
 .masilia-chat__composer-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: calculateRem(6px);
@@ -962,5 +963,83 @@ html {
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+}
+
+// ── Mentions ────────────────────────────────────────────────
+.masilia-chat__mentions {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + #{calculateRem(6px)});
+    left: 0;
+    z-index: 2;
+    max-height: calculateRem(260px);
+    background: ibexa.$ibexa-color-white;
+    border: 1px solid ibexa.$ibexa-color-light;
+    border-radius: calculateRem(12px);
+    box-shadow: 0 calculateRem(4px) calculateRem(16px) rgba(19, 28, 38, 0.14);
+    overflow-y: auto;
+}
+
+.masilia-chat__mentions-list {
+    margin: 0;
+    padding: calculateRem(4px);
+    list-style: none;
+}
+
+.masilia-chat__mentions-note {
+    margin: 0;
+    padding: calculateRem(10px) calculateRem(14px);
+    color: ibexa.$ibexa-color-dark-400;
+}
+
+.masilia-chat__mention-option {
+    display: flex;
+    align-items: center;
+    gap: calculateRem(8px);
+    padding: calculateRem(6px) calculateRem(10px);
+    border-radius: calculateRem(8px);
+    cursor: pointer;
+
+    svg {
+        flex: none;
+        fill: ibexa.$ibexa-color-primary;
+    }
+
+    &[aria-selected='true'] {
+        background: ibexa.$ibexa-color-primary-100;
+    }
+}
+
+.masilia-chat__mention-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.masilia-chat__mention-type {
+    flex: none;
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: ibexa.$ibexa-text-font-size-extra-small;
+}
+
+// A mention in a message sent: a link to the content.
+.masilia-chat__mention {
+    display: inline-block;
+    max-width: 100%;
+    padding: 0 calculateRem(6px);
+    background: ibexa.$ibexa-color-primary-100;
+    border-radius: calculateRem(6px);
+    color: ibexa.$ibexa-color-primary;
+    text-decoration: none;
+    vertical-align: bottom;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+        text-decoration: underline;
     }
 }

@@ -7,6 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Controller;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
+use Masilia\Bundle\IbexaAi\Agent\Mention\ContentMentions;
 use Masilia\Bundle\IbexaAi\Agent\PageContext;
 use Masilia\Bundle\IbexaAi\Agent\Stream\AgUiFrames;
 use Masilia\Bundle\IbexaAi\Agent\Stream\AlreadyDecidedException;
@@ -52,6 +53,7 @@ final readonly class AgUiChatController
         private SiteAccessServiceInterface $siteAccess,
         private AgentFactory $agents,
         private AgentThreads $threads,
+        private ContentMentions $mentions,
         private LoggerInterface $aiLogger,
     ) {
     }
@@ -205,6 +207,16 @@ final readonly class AgUiChatController
         }
 
         return new JsonResponse(['threadId' => $threadId, 'messages' => $messages, 'interrupts' => $hydrated['interrupts']]);
+    }
+
+    #[Route('/admin/api/ai/agent/mentions', name: 'masilia.ibexa_ai.agent.mentions', methods: ['GET'])]
+    public function mentions(Request $request): JsonResponse
+    {
+        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+        }
+
+        return new JsonResponse(['contents' => $this->mentions->search((string) $request->query->get('q', ''))]);
     }
 
     #[Route('/admin/api/ai/agent/threads', name: 'masilia.ibexa_ai.agent.threads', methods: ['GET'])]

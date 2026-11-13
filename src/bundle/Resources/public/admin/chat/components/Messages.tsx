@@ -2,6 +2,7 @@ import { ActionBarPrimitive, ErrorPrimitive, MessagePrimitive, useAuiState } fro
 import React, { useState } from 'react';
 
 import { Icon } from '../../shared/ids';
+import { mentionHref, splitMentions } from '../mentions';
 import { collectSources } from '../sources';
 import type { SourcePart } from '../sources';
 import { Markdown } from './Markdown';
@@ -11,7 +12,7 @@ export function UserMessage() {
     return (
         <MessagePrimitive.Root className="masilia-chat__message masilia-chat__message--user">
             <div className="masilia-chat__bubble">
-                <MessagePrimitive.Parts />
+                <MessagePrimitive.Parts components={{ Text: UserText }} />
             </div>
         </MessagePrimitive.Root>
     );
@@ -146,5 +147,22 @@ function Sources() {
                 ))}
             </ul>
         </section>
+    );
+}
+
+/** What the user wrote: a content they mentioned is a link that opens it. */
+function UserText({ text }: { text: string }) {
+    return (
+        <>
+            {splitMentions(text).map((piece, index) =>
+                piece.type === 'text' ? (
+                    <React.Fragment key={index}>{piece.text}</React.Fragment>
+                ) : (
+                    <a key={index} className="masilia-chat__mention" href={mentionHref(piece)} target="_blank" rel="noopener noreferrer" title={`Open ${piece.name} in a new tab`}>
+                        @{piece.name}
+                    </a>
+                ),
+            )}
+        </>
     );
 }

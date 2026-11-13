@@ -25,9 +25,12 @@ final class ThreadTitle
         return $line === '' ? null : rtrim(mb_substr($line, 0, self::MAX_USER));
     }
 
+    /** A mention in a message: @[Name](content:ID) or @[Name](content:ID/LOCATION). */
+    public const MENTION = '/@\[([^\]\n]+)\]\(content:\d+(?:\/\d+)?\)/u';
+
     public static function from(string $firstMessage): string
     {
-        $line = trim((string) preg_replace('/\s+/u', ' ', $firstMessage));
+        $line = trim((string) preg_replace('/\s+/u', ' ', (string) preg_replace(self::MENTION, '@$1', $firstMessage)));
         if ($line === '') {
             return self::DEFAULT;
         }
