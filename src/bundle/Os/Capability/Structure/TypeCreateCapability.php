@@ -4,12 +4,23 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Structure;
 
+use Ibexa\AdminUi\Service\MetaFieldType\MetaFieldDefinitionServiceInterface;
+use Ibexa\Contracts\Core\Repository\LanguageService;
+use Ibexa\Contracts\Core\Repository\Repository;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 
 final class TypeCreateCapability extends TypeCapability
 {
+    public function __construct(
+        Repository $repository,
+        private readonly MetaFieldDefinitionServiceInterface $metaFields,
+        private readonly LanguageService $languages,
+    ) {
+        parent::__construct($repository);
+    }
+
     public function name(): string
     {
         return 'structure.type.create';
@@ -92,6 +103,8 @@ final class TypeCreateCapability extends TypeCapability
             $definition->position = ($position + 1) * 10;
             $struct->addFieldDefinition($definition);
         }
+        // What the admin does when it creates a content type: the meta fields the installation asks for (none by default) come with it.
+        $this->metaFields->addMetaFieldDefinitions($struct, $this->languages->loadLanguage($lang));
 
         $this->repository->beginTransaction();
         try {

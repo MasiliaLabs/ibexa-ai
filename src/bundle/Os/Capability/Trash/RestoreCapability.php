@@ -29,7 +29,7 @@ final class RestoreCapability extends AbstractCapability
 
     public function description(): string
     {
-        return 'Restores the given contents from the trash (ids as trash.list gives them). Ids that are not in the trash are ignored.';
+        return 'Restores the given contents from the trash (ids as trash.list gives them) to where they were, or below parent_location_id when given (the admin offers it when the original parent is gone). Ids that are not in the trash are ignored.';
     }
 
     public function inputSchema(): array
@@ -37,7 +37,10 @@ final class RestoreCapability extends AbstractCapability
         return [
             'type' => 'object',
             'required' => ['content_ids'],
-            'properties' => ['content_ids' => ['type' => 'array', 'items' => ['type' => 'integer', 'minimum' => 1], 'description' => 'Content ids, as trash.list gives them']],
+            'properties' => [
+                'content_ids' => ['type' => 'array', 'items' => ['type' => 'integer', 'minimum' => 1], 'description' => 'Content ids, as trash.list gives them'],
+                'parent_location_id' => ['type' => 'integer', 'minimum' => 1, 'description' => 'Restore below this location instead of the original one'],
+            ],
         ];
     }
 
@@ -58,18 +61,40 @@ final class RestoreCapability extends AbstractCapability
 
     public function validate(array $arguments): ?string
     {
-        return $arguments['content_ids'] === [] ? 'trash.restore requires at least one content id (content_ids).' : null;
+        return $arguments['content_ids'] === [] ? 'trash.restore requires at least one content id (content_ids).' : $this->parentProblem($arguments);
     }
 
     public function preview(array $arguments): Preview
     {
-        return new Preview('Restore from the trash', [['Contents', implode(', ', array_map('strval', $arguments['content_ids']))]]);
+        $rows = [['Contents', implode(', ', array_map('strval', $arguments['content_ids']))]];
+        if (isset($arguments['parent_location_id'])) {
+            $rows[] = ['Below', 'location ' . (int) $arguments['parent_location_id']];
+        }
+
+        return new Preview('Restore from the trash', $rows);
     }
 
     public function execute(array $arguments): CapabilityResult
     {
-        $restored = $this->restorer->restore(array_values(array_map('intval', $arguments['content_ids'])));
+        $restored = $this->restorer->restore(array_values(array_map('intval', $arguments['content_ids'])), isset($arguments['parent_location_id']) ? (int) $arguments['parent_location_id'] : null);
 
         return CapabilityResult::ok(sprintf('Restored %d items', count($restored)), ['restored' => $restored, 'count' => count($restored)]);
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     */
+    private function parentProblem(array $arguments): ?string
+    {
+        if (!isset($arguments['parent_location_id'])) {
+            return null;
+        }
+        try {
+            $parent = $this->restorer->parentLocation((int) $arguments['parent_location_id']);
+        } catch (\Throwable) {
+            return sprintf('The location %d does not exist.', (int) $arguments['parent_location_id']);
+        }
+
+        return $parent->getContentInfo()->getContentType()->isContainer() ? null : 'Contents can only be restored below a container.';
     }
 }

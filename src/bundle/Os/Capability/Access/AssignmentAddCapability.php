@@ -64,6 +64,10 @@ final class AssignmentAddCapability extends AccessCapability
             } catch (\Throwable) {
                 return sprintf('There is no limitation "%s".', $arguments['limitation']['type']);
             }
+            // The admin form: a section or subtree limitation must name at least one section or subtree.
+            if ((array) ($arguments['limitation']['values'] ?? []) === []) {
+                return 'Define a subtree or section limitation: the limitation needs its values.';
+            }
         }
 
         return null;

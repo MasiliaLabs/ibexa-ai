@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Ibexa\Content\Trash;
 
 use Ibexa\Contracts\Core\Repository\Repository;
+use Ibexa\Contracts\Core\Repository\Values\Content\Location;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query;
 
 /**
@@ -30,19 +31,26 @@ class TrashRestorer
      * Restore trashed content items by their content IDs.
      *
      * @param int[] $contentIds
+     * @param int|null $newParentLocationId Restore below this location instead of the original one (the admin's option)
      * @return int[] IDs of restored content items
      */
-    public function restore(array $contentIds): array
+    public function restore(array $contentIds, ?int $newParentLocationId = null): array
     {
         $trashService = $this->repository->getTrashService();
+        $newParent = $newParentLocationId !== null ? $this->parentLocation($newParentLocationId) : null;
 
         $restored = [];
         foreach ($this->findTrashed($contentIds) as $trashed) {
-            $trashService->recover($trashed);
+            $trashService->recover($trashed, $newParent);
             $restored[] = $trashed->getContentId();
         }
 
         return $restored;
+    }
+
+    public function parentLocation(int $locationId): Location
+    {
+        return $this->repository->getLocationService()->loadLocation($locationId);
     }
 
     /**

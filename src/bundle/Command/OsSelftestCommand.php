@@ -249,6 +249,8 @@ final class OsSelftestCommand extends Command
 
             return 'the group is not listed';
         });
+        $step('a state that holds a content cannot be deleted', 'state.delete', ['group' => $section, 'state' => 'done_state'], null, null, true);
+        $step('set A back to the first state', 'state.set', ['content_id' => $contentId, 'group' => $section, 'state' => 'draft_state']);
         $step('delete the second state', 'state.delete', ['group' => $section, 'state' => 'done_state']);
         $step('delete the group', 'state.group.delete', ['group' => $section]);
 

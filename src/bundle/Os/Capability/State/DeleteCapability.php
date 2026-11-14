@@ -18,12 +18,12 @@ final class DeleteCapability extends RepositoryCapability
 
     public function summary(): string
     {
-        return 'Delete a state; its contents go to the default state of the group.';
+        return 'Delete a state that no content is in.';
     }
 
     public function description(): string
     {
-        return 'Deletes the state for good. The contents that had it get the default state of the group.';
+        return 'Deletes the state for good. Only a state that no content is in can be deleted (as in the admin): set its contents to another state first.';
     }
 
     public function inputSchema(): array
@@ -53,19 +53,21 @@ final class DeleteCapability extends RepositoryCapability
         } catch (\Throwable) {
             return sprintf('There is no group of states "%s": see state.list.', $arguments['group']);
         }
+        $service = $this->repository->getObjectStateService();
         try {
-            $service = $this->repository->getObjectStateService();
-            $service->loadObjectStateByIdentifier($service->loadObjectStateGroupByIdentifier((string) $arguments['group']), (string) $arguments['state']);
+            $state = $service->loadObjectStateByIdentifier($service->loadObjectStateGroupByIdentifier((string) $arguments['group']), (string) $arguments['state']);
         } catch (\Throwable) {
             return sprintf('There is no state "%s" in the group "%s": see state.list.', $arguments['state'], $arguments['group']);
         }
+        // The admin only offers to delete a state that no content is in.
+        $used = $service->getContentCount($state);
 
-        return null;
+        return $used > 0 ? sprintf('The state "%s" still holds %d content(s): set them to another state first (state.set).', $arguments['state'], $used) : null;
     }
 
     public function preview(array $arguments): Preview
     {
-        return new Preview('Delete a state', [['Group', (string) $arguments['group']], ['State', (string) $arguments['state']]], ['The state is deleted for good; its contents get the default state. This cannot be undone.']);
+        return new Preview('Delete a state', [['Group', (string) $arguments['group']], ['State', (string) $arguments['state']]], ['The state is deleted for good. This cannot be undone.']);
     }
 
     public function execute(array $arguments): CapabilityResult
