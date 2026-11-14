@@ -102,9 +102,14 @@ services:
     Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemaSource:
         alias: Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemas
 
+    Masilia\IbexaAi\Ibexa\Field\Input\RichTextInput:
+        arguments:
+            $markdown: '@?Ibexa\GraphQL\Mutation\InputHandler\FieldType\RichText\MarkdownRichTextConverter'
+
     Masilia\IbexaAi\Ibexa\Field\Input\FieldInputs:
         arguments:
             $adapters: !tagged_iterator masilia.ibexa_ai.field_input
+            $parser: '@?Ibexa\Rest\Input\FieldTypeParser'
 
     Masilia\IbexaAi\Ibexa\Field\Text\FieldTexts:
         arguments:

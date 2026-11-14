@@ -103,6 +103,10 @@ final class OsSelftestCommand extends Command
             $io->title('AI OS selftest');
             $step('create folder A', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest A $stamp"]], null, 'a');
             $step('create folder B', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest B $stamp"]], null, 'b');
+            $step('a folder with a Markdown description is written as rich text', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest MD $stamp", 'description' => "# Title\n\nSome **bold** words"]], null, 'md');
+            if (isset($answers['md']['content_id'])) {
+                $step('the Markdown became text of the field', 'content.load', ['content_id' => $answers['md']['content_id']], static fn (array $d): ?string => str_contains(json_encode($d['fields'] ?? [], JSON_UNESCAPED_UNICODE) ?: '', 'bold') ? null : 'the description has no "bold": ' . json_encode($d['fields'] ?? []));
+            }
             $a = $answers['a'] ?? [];
             $b = $answers['b'] ?? [];
             if (!isset($a['location_id'], $b['location_id'])) {

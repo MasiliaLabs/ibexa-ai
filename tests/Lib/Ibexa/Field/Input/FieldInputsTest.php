@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Lib\Ibexa\Field\Input;
 
-use Ibexa\Contracts\Core\Repository\FieldType;
-use Ibexa\Contracts\Core\Repository\FieldTypeService;
+use Ibexa\Rest\Input\FieldTypeParser;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
 use Masilia\IbexaAi\Ibexa\Field\Input\FieldInput;
 use Masilia\IbexaAi\Ibexa\Field\Input\FieldInputs;
@@ -26,36 +25,32 @@ final class FieldInputsTest extends TestCase
         $adapter = $this->createMock(FieldInput::class);
         $adapter->method('getFieldTypeIdentifier')->willReturn('ibexa_date');
         $adapter->method('transform')->willReturn('adapted');
-        $fieldTypes = $this->createMock(FieldTypeService::class);
-        $fieldTypes->expects(self::never())->method('getFieldType');
+        $fieldTypes = $this->createMock(FieldTypeParser::class);
+        $fieldTypes->expects(self::never())->method('parseValue');
 
         self::assertSame('adapted', (new FieldInputs([$adapter], $fieldTypes))->transform($this->definition('ibexa_date'), '2026-03-04'));
     }
 
-    public function testAnotherFieldTypeReadsItsOwnHash(): void
+    public function testAnotherFieldTypeReadsItsHashThroughTheRestParser(): void
     {
-        $type = $this->createMock(FieldType::class);
-        $type->expects(self::once())->method('fromHash')->with(['latitude' => 1.5])->willReturn('the value');
-        $fieldTypes = $this->createMock(FieldTypeService::class);
-        $fieldTypes->method('getFieldType')->with('acme_point')->willReturn($type);
+        $fieldTypes = $this->createMock(FieldTypeParser::class);
+        $fieldTypes->expects(self::once())->method('parseValue')->with('acme_point', ['latitude' => 1.5])->willReturn('the value');
 
         self::assertSame('the value', (new FieldInputs([], $fieldTypes))->transform($this->definition('acme_point'), ['latitude' => 1.5]));
     }
 
     public function testAHashTheFieldTypeRefusesIsHandedOverAsItIs(): void
     {
-        $type = $this->createMock(FieldType::class);
-        $type->method('fromHash')->willThrowException(new \TypeError('not a hash of mine'));
-        $fieldTypes = $this->createMock(FieldTypeService::class);
-        $fieldTypes->method('getFieldType')->willReturn($type);
+        $fieldTypes = $this->createMock(FieldTypeParser::class);
+        $fieldTypes->method('parseValue')->willThrowException(new \TypeError('not a hash of mine'));
 
         self::assertSame(['x' => 1], (new FieldInputs([], $fieldTypes))->transform($this->definition('acme_point'), ['x' => 1]));
     }
 
     public function testAScalarForAFieldTypeWithoutAdapterIsPassedThrough(): void
     {
-        $fieldTypes = $this->createMock(FieldTypeService::class);
-        $fieldTypes->expects(self::never())->method('getFieldType');
+        $fieldTypes = $this->createMock(FieldTypeParser::class);
+        $fieldTypes->expects(self::never())->method('parseValue');
 
         self::assertSame('Hello', (new FieldInputs([], $fieldTypes))->transform($this->definition('ibexa_string'), 'Hello'));
     }

@@ -6,6 +6,7 @@ namespace Masilia\IbexaAi\Ibexa\Field\Input;
 
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
 use Ibexa\Contracts\FieldTypeRichText\RichText\InputHandlerInterface;
+use Ibexa\Contracts\GraphQL\Mutation\InputHandler\FieldType\RichText\RichTextInputConverter;
 use Ibexa\FieldTypeRichText\FieldType\RichText\Value;
 use Masilia\IbexaAi\Ibexa\Field\Input\FieldInput;
 
@@ -16,6 +17,9 @@ use Masilia\IbexaAi\Ibexa\Field\Input\FieldInput;
  * (normalize → parse → validate → XSLT convert), and returns a Value
  * object with the resulting DocBook DOMDocument.
  *
+ * Text that is not HTML is read as Markdown by Ibexa's own converter (the one of its GraphQL mutations, when that
+ * bundle is there), which is what a model writes; without it, as plain text in a paragraph.
+ *
  * Returning a Value object (instead of a string) prevents double-processing
  * by acceptValue(), which would otherwise re-parse the XML string.
  */
@@ -25,6 +29,7 @@ readonly class RichTextInput implements FieldInput
 
     public function __construct(
         private InputHandlerInterface $inputHandler,
+        private ?RichTextInputConverter $markdown = null,
     ) {
     }
 
@@ -55,6 +60,9 @@ readonly class RichTextInput implements FieldInput
         }
 
         // HTML or plain text — wrap in XHTML5 edit namespace, let InputHandler convert to DocBook
+        if (!str_starts_with($trimmed, '<') && $this->markdown !== null) {
+            return new Value($this->markdown->convertToXml($value));
+        }
         if (!str_starts_with($trimmed, '<')) {
             // Plain text — wrap in <p> tags
             $value = sprintf('<p>%s</p>', htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));

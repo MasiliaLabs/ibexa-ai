@@ -15,6 +15,7 @@
         "doctrine/orm": "^2.20",
         "ibexa/admin-ui": "^5.0",
         "ibexa/core": "^5.0",
+        "ibexa/rest": "^5.0",
         "neuron-core/neuron-ai": "^4.1",
         "psr/cache": "^3.0",
         "psr/log": "^3.0",
@@ -32,6 +33,7 @@
     "require-dev": {
         "ibexa/fieldtype-matrix": "^5.0",
         "ibexa/fieldtype-richtext": "^5.0",
+        "ibexa/graphql": "^5.0",
         "novactive/ezseobundle": "^8.0",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5"
@@ -39,6 +41,7 @@
     "suggest": {
         "ibexa/fieldtype-matrix": "Reads and writes matrix fields",
         "ibexa/fieldtype-richtext": "Reads and writes rich text fields",
+        "ibexa/graphql": "Reads Markdown for rich text fields with its converter",
         "novactive/ezseobundle": "Reads and writes the SEO metas field (novaseometas)"
     },
     "autoload": {
