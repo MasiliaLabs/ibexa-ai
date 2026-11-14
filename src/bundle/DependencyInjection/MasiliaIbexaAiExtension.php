@@ -8,6 +8,8 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
+use Masilia\IbexaAi\Ibexa\Field\Input\NovaSeoMetasInput;
+use Novactive\Bundle\eZSEOBundle\Core\FieldType\Metas\Type;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 final class MasiliaIbexaAiExtension extends Extension implements PrependExtensionInterface
@@ -47,5 +49,10 @@ final class MasiliaIbexaAiExtension extends Extension implements PrependExtensio
         $container->setParameter('masilia_ibexa_ai.os_coverage_file', __DIR__ . '/../Resources/config/os_coverage.yaml');
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
+
+        // The Nova SEO field is only handled when its bundle is there.
+        if (!class_exists(Type::class)) {
+            $container->removeDefinition(NovaSeoMetasInput::class);
+        }
     }
 }

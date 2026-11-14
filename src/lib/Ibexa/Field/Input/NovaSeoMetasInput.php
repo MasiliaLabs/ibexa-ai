@@ -4,41 +4,22 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Ibexa\Field\Input;
 
-use Ibexa\Contracts\Core\Repository\Repository;
-use Ibexa\Contracts\Core\Repository\Values\Content\Field;
-use Ibexa\Contracts\Core\Repository\Values\Content\Query;
-use Ibexa\Contracts\Core\Repository\Values\Content\Query\Criterion;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
-use Ibexa\Contracts\Core\Variation\VariationHandler;
 use Masilia\IbexaAi\Ibexa\Field\Input\FieldInput;
-use Novactive\Bundle\eZSEOBundle\Core\FieldType\Metas\Value;
 use Novactive\Bundle\eZSEOBundle\Core\FieldType\Metas;
+use Novactive\Bundle\eZSEOBundle\Core\FieldType\Metas\Value;
 use Novactive\Bundle\eZSEOBundle\Core\Meta;
-use Psr\Log\LoggerInterface;
 
 /**
- * Converts LLM output into novaseometas Value for Ibexa.
+ * Converts what the model gives into a novaseometas Value: a JSON object with the meta names as keys and their content as values,
+ *   { "title": "Page Title", "description": "A description", "og:image": "/var/site/storage/images/logo.jpg" }
+ * Each one becomes a Meta of the field, as the editing form of Nova SEO stores it. The content of a meta is kept as it is given:
+ * choosing an image is the editor's, this does not search the library for one.
  *
- * The LLM outputs a JSON object with meta keys as keys and content as values:
- *   { "title": "Page Title", "description": "A description", "og:image": "search query" }
- *
- * For image keys (og:image, twitter:image), searches the media library via
- * fulltext, loads the matching image, generates a social_network_image variation,
- * and uses the variation URI as the meta content.
- *
- * For text and passthrough keys, creates Meta objects directly.
+ * Only registered when the Nova SEO bundle is installed (see MasiliaIbexaAiExtension).
  */
 readonly class NovaSeoMetasInput implements FieldInput
 {
-    private const IMAGE_KEYS = ['og:image', 'twitter:image'];
-
-    public function __construct(
-        private Repository $repository,
-        private VariationHandler $variationHandler,
-        private LoggerInterface $aiLogger,
-    ) {
-    }
-
     public function getFieldTypeIdentifier(): string
     {
         return Metas\Type::IDENTIFIER;
@@ -56,10 +37,6 @@ readonly class NovaSeoMetasInput implements FieldInput
                 continue;
             }
 
-            if (in_array($metaName, self::IMAGE_KEYS, true)) {
-                $metaContent = $this->resolveImageMeta(is_string($metaContent) ? $metaContent : '');
-            }
-
             $meta = new Meta();
             $meta->setName($metaName);
             $meta->setContent(is_string($metaContent) ? $metaContent : '');
@@ -68,62 +45,5 @@ readonly class NovaSeoMetasInput implements FieldInput
         }
 
         return new Value($metas);
-    }
-
-    /**
-     * Search the media library for an image matching the description,
-     * generate a social_network_image variation, and return its URI.
-     */
-    private function resolveImageMeta(string $description): string
-    {
-        if ($description === '') {
-            return '';
-        }
-
-        try {
-            $query = new Query([
-                'filter' => new Criterion\LogicalAnd([
-                    new Criterion\ContentTypeIdentifier('image'),
-                    new Criterion\Visibility(Criterion\Visibility::VISIBLE),
-                    new Criterion\FullText($description),
-                ]),
-                'limit' => 5,
-            ]);
-
-            $searchResult = $this->repository->getSearchService()->findContent($query);
-
-            foreach ($searchResult as $hit) {
-                $imageContent = $hit->valueObject;
-                $imageField = $imageContent->getFieldValue('image');
-
-                if ($imageField === null || $imageField->uri === null) {
-                    continue;
-                }
-
-                $field = new Field([
-                    'value' => $imageField,
-                    'fieldDefIdentifier' => 'image',
-                    'languageCode' => $imageContent->getContentInfo()->getMainLanguageCode(),
-                ]);
-
-                $variation = $this->variationHandler->getVariation(
-                    $field,
-                    $imageContent->getVersionInfo(),
-                    'social_network_image',
-                );
-
-                if ($variation->uri !== null && $variation->uri !== '') {
-                    return $variation->uri;
-                }
-            }
-        } catch (\Throwable $e) {
-            $this->aiLogger->warning(sprintf(
-                'Failed to resolve image for novaseometas "%s": %s',
-                $description,
-                $e->getMessage(),
-            ));
-        }
-
-        return '';
     }
 }
