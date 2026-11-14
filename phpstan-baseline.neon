@@ -1,0 +1,301 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between Masilia\\Bundle\\IbexaAi\\Entity\\AiModel\|null and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/bundle/Admin/ProviderTester.php
+
+		-
+			message: '#^Call to an undefined static method NeuronAI\\Agent\\Adapters\\AGUIAdapter\:\:reset\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/bundle/Agent/Stream/ReasoningFilteredAGUIAdapter.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/bundle/Agent/Tool/Content/LoadContentTool.php
+
+		-
+			message: '#^Method Masilia\\Bundle\\IbexaAi\\Agent\\Tool\\ContentCreator\:\:createAndPublish\(\) should return array\{content\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Content, location\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Location\|null\} but returns array\{\}\.$#'
+			identifier: return.type
+			count: 1
+			path: src/bundle/Agent/Tool/ContentCreator.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: src/bundle/Agent/Tool/Control/BrowseLocationTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between '''' and '''' will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: src/bundle/Agent/Tool/Control/BrowseLocationTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\{\} and array\{\} will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: src/bundle/Agent/Tool/Control/BrowseLocationTool.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: src/bundle/Agent/Tool/FieldValueTransformer/MatrixTransformer.php
+
+		-
+			message: '#^Instanceof between string and Ibexa\\FieldTypeRichText\\FieldType\\RichText\\Value will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: src/bundle/Agent/Tool/FieldValueTransformer/RichTextTransformer.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/bundle/Agent/Tool/Structural/TrashContentTool.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$tools$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/bundle/Agent/Tool/ToolRegistry.php
+
+		-
+			message: '#^Offset ''content'' on array\{content\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Content, location\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Location\|null\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/bundle/Agent/Worker/PlanExecutor.php
+
+		-
+			message: '#^Anonymous function has an unused use \$stamp\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: src/bundle/Command/OsSelftestCommand.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Controller/AdminSettingsController.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: src/bundle/Controller/AgUiChatController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Controller/AgUiChatController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Controller/SuggestionController.php
+
+		-
+			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiModel\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/bundle/Entity/AiModel.php
+
+		-
+			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiProvider\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/bundle/Entity/AiProvider.php
+
+		-
+			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$errorCode is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/bundle/Entity/AiRequestLog.php
+
+		-
+			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$finishReason is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/bundle/Entity/AiRequestLog.php
+
+		-
+			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/bundle/Entity/AiRequestLog.php
+
+		-
+			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$siteaccess is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/bundle/Entity/AiRequestLog.php
+
+		-
+			message: '#^Call to function property_exists\(\) with Ibexa\\Core\\FieldType\\Image\\Value and ''alternativeText'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/bundle/Field/Stringifier/FileStringifier.php
+
+		-
+			message: '#^Call to function property_exists\(\) with Ibexa\\Core\\FieldType\\Image\\Value and ''fileName'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/bundle/Field/Stringifier/FileStringifier.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Ibexa\\Core\\FieldType\\Image\\Value and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/bundle/Field/Stringifier/FileStringifier.php
+
+		-
+			message: '#^Instanceof between Ibexa\\FieldTypeMatrix\\FieldType\\Value and Ibexa\\FieldTypeMatrix\\FieldType\\Value will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/bundle/Field/Stringifier/MatrixStringifier.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>textContent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Field/Stringifier/RichTextStringifier.php
+
+		-
+			message: '#^Instanceof between mixed and Ibexa\\Core\\FieldType\\TextBlock\\Value will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: src/bundle/Ibexa/FieldValueReader.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>textContent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Ibexa/FieldValueReader.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Image/ImageGenerator.php
+
+		-
+			message: '#^Call to an undefined method NeuronAI\\Chat\\Messages\\Message\:\:stopReason\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/bundle/Llm/NeuronTextGenerator.php
+
+		-
+			message: '#^Instanceof between NeuronAI\\Providers\\ProviderResponse and NeuronAI\\Providers\\ProviderResponse will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/bundle/Llm/NeuronTextGenerator.php
+
+		-
+			message: '#^Parameter \#3 \$roleLimitation of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:assignRoleToUser\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\\RoleLimitation\|null, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/bundle/Os/Capability/Access/AssignmentAddCapability.php
+
+		-
+			message: '#^Parameter \#3 \$roleLimitation of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:assignRoleToUserGroup\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\\RoleLimitation\|null, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/bundle/Os/Capability/Access/AssignmentAddCapability.php
+
+		-
+			message: '#^Access to an undefined property Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy\:\:\$originalId\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/bundle/Os/Capability/Access/PolicyRemoveCapability.php
+
+		-
+			message: '#^Parameter \#2 \$policyDraft of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:removePolicyByRoleDraft\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\PolicyDraft, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/bundle/Os/Capability/Access/PolicyRemoveCapability.php
+
+		-
+			message: '#^Access to an undefined property Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy\:\:\$originalId\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/bundle/Os/Capability/Access/PolicyUpdateCapability.php
+
+		-
+			message: '#^Parameter \#2 \$policy of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:updatePolicyByRoleDraft\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\PolicyDraft, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/bundle/Os/Capability/Access/PolicyUpdateCapability.php
+
+		-
+			message: '#^Call to an undefined method Ibexa\\Contracts\\Core\\Repository\\Values\\User\\RoleAssignment\:\:getUser\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/bundle/Os/Capability/Access/RoleDescribeCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\ContentType\\ContentType\:\:\$isContainer\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Structure/TypeDescribeCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\ContentType\\ContentType\:\:\$isContainer\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Structure/TypeListCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$id\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Url/LinkListCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$isValid\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Url/LinkListCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$url\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Url/LinkListCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$id\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Url/LinkUpdateCapability.php
+
+		-
+			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$url\.$#'
+			identifier: property.protected
+			count: 1
+			path: src/bundle/Os/Capability/Url/LinkUpdateCapability.php
+
+		-
+			message: '#^Variable \$failure on left side of \?\?\= always exists and is always null\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/bundle/Os/Tool/ProposeChangesTool.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between non\-empty\-array\<mixed, mixed\> and array\{\} will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/lib/Os/SchemaCoercer.php
+
+		-
+			message: '#^Instanceof between Masilia\\IbexaAi\\Suggestion\\SiblingField and Masilia\\IbexaAi\\Suggestion\\SiblingField will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/lib/Suggestion/SuggestionRequest.php

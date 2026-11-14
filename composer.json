@@ -6,21 +6,40 @@
     "require": {
         "php": ">=8.3",
         "ext-curl": "*",
+        "ext-dom": "*",
+        "ext-intl": "*",
+        "ext-pdo": "*",
         "ext-sodium": "*",
+        "doctrine/doctrine-bundle": "^2.18",
+        "doctrine/doctrine-migrations-bundle": "^3.4",
+        "doctrine/orm": "^2.20",
+        "ibexa/admin-ui": "^5.0",
         "ibexa/core": "^5.0",
         "neuron-core/neuron-ai": "^4.1",
+        "psr/cache": "^3.0",
         "psr/log": "^3.0",
         "symfony/config": "^7.4",
+        "symfony/console": "^7.4",
         "symfony/dependency-injection": "^7.4",
-        "symfony/http-kernel": "^7.4",
+        "symfony/event-dispatcher": "^7.4",
         "symfony/framework-bundle": "^7.4",
         "symfony/http-client": "^7.4",
+        "symfony/http-foundation": "^7.4",
+        "symfony/http-kernel": "^7.4",
         "symfony/routing": "^7.4",
         "symfony/yaml": "^7.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "^11.5",
-        "phpstan/phpstan": "^2.1"
+        "ibexa/fieldtype-matrix": "^5.0",
+        "ibexa/fieldtype-richtext": "^5.0",
+        "novactive/ezseobundle": "^8.0",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
+    },
+    "suggest": {
+        "ibexa/fieldtype-matrix": "Reads and writes matrix fields",
+        "ibexa/fieldtype-richtext": "Reads and writes rich text fields",
+        "novactive/ezseobundle": "Reads and writes the SEO metas field (novaseometas)"
     },
     "autoload": {
         "psr-4": {
@@ -35,8 +54,11 @@
     },
     "scripts": {
         "phpunit": "phpunit",
-        "phpstan": "phpstan analyse",
-        "test": ["@phpunit", "@phpstan"]
+        "phpstan": "phpstan analyse --memory-limit=1G",
+        "test": [
+            "@phpunit",
+            "@phpstan"
+        ]
     },
     "config": {
         "sort-packages": true
