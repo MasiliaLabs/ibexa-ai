@@ -96,16 +96,22 @@ final class SiteUrlsTest extends TestCase
         self::assertSame([], $this->urls(['shop'], 'admin', $router)->forLocation($this->location()));
     }
 
-    public function testTheAdminAddressIsOnTheAdminOfTheSiteOfTheFront(): void
+    public function testTheAdminAddressIsOnTheAdminTheUserIsIn(): void
     {
-        $urls = $this->urls([], 'admin', $this->router());
+        $shop = $this->urls([], 'admin_shop', $this->router())->adminUrl($this->location(), 'blog');
+        $global = $this->urls([], 'admin', $this->router())->adminUrl($this->location(), 'shop');
 
-        $shop = $urls->adminUrl($this->location(), 'shop');
-        $blog = $urls->adminUrl($this->location(), 'blog');
-
-        self::assertSame('admin_shop', $shop['siteaccess'] ?? null, 'the admin dedicated to the shop, though the user is in the global one');
+        self::assertSame('admin_shop', $shop['siteaccess'] ?? null);
         self::assertSame('https://admin_shop.example.org/ibexa.content.view', $shop['url'] ?? null);
-        self::assertSame('admin', $blog['siteaccess'] ?? null, 'the blog shares the global admin');
+        self::assertSame('admin', $global['siteaccess'] ?? null, 'the global admin stays the global admin, whatever the site of the page');
+    }
+
+    public function testOutsideAnAdminTheAdminOfTheSiteOfTheFrontIsUsed(): void
+    {
+        $urls = $this->urls([], 'blog', $this->router());
+
+        self::assertSame('admin_shop', $urls->adminUrl($this->location(), 'shop')['siteaccess'] ?? null);
+        self::assertSame('admin', $urls->adminUrl($this->location(), 'blog')['siteaccess'] ?? null);
     }
 
     public function testTheAdminAddressUsesTheContentAndLocationIds(): void

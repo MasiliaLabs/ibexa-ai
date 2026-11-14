@@ -21,9 +21,9 @@ use Throwable;
  * location, same repository, language served), without the admin siteaccesses. The address is the router's, asked for a siteaccess:
  * its host, its language or path prefix, and without the path of the site's root, which the system alias lacks.
  *
- * Which admin goes with which site is read from the configuration: a siteaccess and the admin dedicated to it share the domain of
- * their session cookie (the contributor logs in once, on the admin of the site). A user in such an admin only gets the sites of that
- * domain; in the global admin, every site.
+ * The admin is the one the user is in. A siteaccess and the admin dedicated to it share the domain of their session cookie (the
+ * contributor logs in once, on the admin of the site): a user in such an admin only gets the sites of that domain; in the global
+ * admin, every site. The languages of a site are its child siteaccesses (one per language), each given its own address.
  */
 readonly class SiteUrls
 {
@@ -47,12 +47,12 @@ readonly class SiteUrls
      *
      * @return list<array{siteaccess: string, url: string}>
      */
-    public function forLocation(Location $location, ?string $siteaccess = null, ?string $language = null): array
+    public function forLocation(Location $location, ?string $siteaccess = null): array
     {
         if ($siteaccess !== null) {
             $names = [$siteaccess];
         } else {
-            $names = array_values(array_map(static fn ($candidate): string => $candidate->name, $this->sites->getSiteAccessesListForLocation($location, null, $language)));
+            $names = array_values(array_map(static fn ($candidate): string => $candidate->name, $this->sites->getSiteAccessesListForLocation($location)));
             $names = $this->ofTheCurrentAdmin($names);
         }
 
@@ -73,8 +73,8 @@ readonly class SiteUrls
     }
 
     /**
-     * The address of the location in the admin that goes with a front siteaccess: the admin dedicated to its site, else the one the
-     * user is in, else any admin.
+     * The address of the location in the admin the user is in (the admin siteaccess of their session); outside an admin, in the one
+     * that goes with the front siteaccess.
      *
      * @return array{siteaccess: string, url: string}|null
      */
@@ -110,28 +110,27 @@ readonly class SiteUrls
         return array_values(array_filter($names, fn (string $name): bool => $this->domain($name) === $domain));
     }
 
+    /** The admin the user is in; outside an admin (a command), the admin that shares the session domain of the front. */
     private function adminFor(?string $front): ?string
     {
         $current = $this->siteAccesses->getCurrent()?->name;
-        $admins = [];
+        if ($current !== null && $this->isAdmin($current)) {
+            return $current;
+        }
+
+        $domain = $front !== null ? $this->domain($front) : null;
+        $first = null;
         foreach ($this->siteAccesses->getAll() as $candidate) {
-            if ($this->isAdmin($candidate->name)) {
-                $admins[] = $candidate->name;
+            if (!$this->isAdmin($candidate->name)) {
+                continue;
             }
-        }
-        // The one the user is in comes first.
-        usort($admins, static fn (string $a, string $b): int => [$a !== $current, $a] <=> [$b !== $current, $b]);
-
-        if ($front !== null) {
-            $domain = $this->domain($front);
-            foreach ($admins as $admin) {
-                if ($domain !== null && $this->domain($admin) === $domain) {
-                    return $admin;
-                }
+            $first ??= $candidate->name;
+            if ($domain !== null && $this->domain($candidate->name) === $domain) {
+                return $candidate->name;
             }
         }
 
-        return $current !== null && $this->isAdmin($current) ? $current : ($admins[0] ?? null);
+        return $first;
     }
 
     private function isAdmin(string $siteaccess): bool
