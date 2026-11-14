@@ -9,6 +9,7 @@ use Ibexa\Contracts\Core\Repository\Exceptions\BadStateException;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentType;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentTypeDraft;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinitionCreateStruct;
+use Masilia\Bundle\IbexaAi\Ibexa\Field\FieldValueShapes;
 use Masilia\Bundle\IbexaAi\Os\Capability\RepositoryCapability;
 use Throwable;
 
@@ -137,6 +138,8 @@ abstract class TypeCapability extends RepositoryCapability
      */
     protected static function describeField(\Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition $field): array
     {
+        $shape = FieldValueShapes::for($field);
+
         return [
             'identifier' => $field->identifier,
             'field_type' => $field->fieldTypeIdentifier,
@@ -146,6 +149,6 @@ abstract class TypeCapability extends RepositoryCapability
             'searchable' => $field->isSearchable,
             'position' => $field->position,
             'settings' => $field->getFieldSettings(),
-        ];
+        ] + ($shape === null ? [] : ['value' => $shape['schema'], 'example' => $shape['example']]);
     }
 }

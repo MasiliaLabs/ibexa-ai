@@ -190,4 +190,13 @@ final class FieldSchemasTest extends TestCase
         self::assertSame(['Dark', 'Light', 'Auto'], $info['options']);
         self::assertArrayNotHasKey('minLength', $info);
     }
+
+    public function testTheSchemaOfAContentTypeStaysLeanForTheCataloguesOfThePackagesOnTheOs(): void
+    {
+        $info = $this->getSchemaForField(['type' => 'ibexa_string']);
+
+        // What to give for a field (its value schema and an example) is read with structure.type.describe, not repeated for every block type.
+        self::assertArrayNotHasKey('value', $info);
+        self::assertArrayNotHasKey('example', $info);
+    }
 }
