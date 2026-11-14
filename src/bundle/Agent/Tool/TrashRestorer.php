@@ -8,7 +8,7 @@ use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query;
 
 /**
- * Shared trash restoration logic used by both UndoLastTool and
+ * Shared trash restoration logic used by
  * RestoreContentTool.
  *
  * The trash cannot be searched by content id: the criterion is not implemented for the trash by the

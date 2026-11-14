@@ -11,12 +11,14 @@ use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolName;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
 use Masilia\Bundle\IbexaAi\Support\AiConstants;
-use Masilia\Bundle\IbexaAi\Support\ContentTypeId;
-use Masilia\Bundle\IbexaAi\Support\FieldId;
 use Psr\Log\LoggerInterface;
 
 readonly class CreateFolderTool implements ToolInterface
 {
+    /** The folder of a stock Ibexa repository: its content type and the field that holds its name. */
+    private const FOLDER_TYPE = 'folder';
+    private const NAME_FIELD = 'name';
+
     public function __construct(
         private Repository $repository,
         private ContentCreator $contentCreator,
@@ -64,9 +66,9 @@ readonly class CreateFolderTool implements ToolInterface
                 ?? $this->repository->getContentLanguageService()->getDefaultLanguageCode();
 
             $result = $this->contentCreator->createAndPublish(
-                ContentTypeId::FOLDER,
+                self::FOLDER_TYPE,
                 [(int) $params['parent_location_id']],
-                [FieldId::NAME => $params['name']],
+                [self::NAME_FIELD => $params['name']],
                 $languageCode,
             );
 

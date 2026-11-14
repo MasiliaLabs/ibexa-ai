@@ -16,7 +16,6 @@ services:
         bind:
             $aiLogger: '@logger'
             $settings: '%ibexa_ai.connection%'
-            $cachePool: '@cache.app'
             $domains: '%ibexa_ai.os.domains%'
             $attachmentsDirectory: '%kernel.project_dir%/var/ai-attachments'
 

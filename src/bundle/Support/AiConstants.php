@@ -4,42 +4,15 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Support;
 
+/** Values of a stock Ibexa repository that the tools fall back to. */
 final class AiConstants
 {
-    public const MAX_SIBLING_CHARS = 1000;
-
-    public const MAX_CURRENT_VALUE_CHARS = 4000;
-
-    public const MAX_ALT_TEXT_CHARS = 125;
-
-    public const DEFAULT_SITEACCESS = 'default';
-
     public const DEFAULT_LANGUAGE_CODE = 'eng-GB';
 
     public const MEDIA_ROOT_LOCATION_ID = 43;
 
     public const ROOT_LOCATION_ID = 2;
 
+    /** Read by masilia/ibexa-ai-craft only, and it names a configuration that no longer exists: it goes with the rework of that package. */
     public const CONFIG_NAMESPACE = 'masilia_ai_assistant';
-
-    /**
-     * Truncate a string to a maximum length, appending '...' if truncated.
-     */
-    public static function truncate(string $value, int $maxChars): string
-    {
-        if (mb_strlen($value) <= $maxChars) {
-            return $value;
-        }
-
-        return mb_substr($value, 0, $maxChars) . '...';
-    }
-
-    /**
-     * Scrub a string value for safe inclusion in LLM prompts.
-     * Collapses newlines into spaces and escapes double quotes.
-     */
-    public static function scrubForPrompt(string $value): string
-    {
-        return str_replace(['"', "\n", "\r"], ['\\"', ' ', ''], $value);
-    }
 }
