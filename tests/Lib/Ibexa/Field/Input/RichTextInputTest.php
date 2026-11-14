@@ -47,6 +47,16 @@ final class RichTextInputTest extends TestCase
         self::assertInstanceOf(Value::class, $value);
     }
 
+    public function testMarkdownWithAStrayTagGoesThroughTheValidatingHandlerToo(): void
+    {
+        $markdown = $this->createMock(RichTextInputConverter::class);
+        $markdown->expects(self::never())->method('convertToXml');
+        $handler = $this->createMock(InputHandlerInterface::class);
+        $handler->expects(self::once())->method('fromString')->willReturn($this->docbook('mixed'));
+
+        self::assertInstanceOf(Value::class, (new RichTextInput($handler, $markdown))->transform($this->createMock(FieldDefinition::class), "first<br>second"));
+    }
+
     public function testWithoutTheMarkdownConverterPlainTextIsAParagraph(): void
     {
         $handler = $this->createMock(InputHandlerInterface::class);

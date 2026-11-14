@@ -17,7 +17,7 @@ use Masilia\IbexaAi\Ibexa\Field\Input\FieldInput;
  * (normalize → parse → validate → XSLT convert), and returns a Value
  * object with the resulting DocBook DOMDocument.
  *
- * Text that is not HTML is read as Markdown by Ibexa's own converter (the one of its GraphQL mutations, when that
+ * Text without any tag is read as Markdown by Ibexa's own converter (the one of its GraphQL mutations, when that
  * bundle is there), which is what a model writes; without it, as plain text in a paragraph.
  *
  * Returning a Value object (instead of a string) prevents double-processing
@@ -60,7 +60,9 @@ readonly class RichTextInput implements FieldInput
         }
 
         // HTML or plain text — wrap in XHTML5 edit namespace, let InputHandler convert to DocBook
-        if (!str_starts_with($trimmed, '<') && $this->markdown !== null) {
+        // Markdown only for text without any tag: Ibexa's converter does not validate, so a stray <br> would break it, while HTML
+        // goes through the validating InputHandler as the editing form's does.
+        if (!str_contains($value, '<') && $this->markdown !== null) {
             return new Value($this->markdown->convertToXml($value));
         }
         if (!str_starts_with($trimmed, '<')) {

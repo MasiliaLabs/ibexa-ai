@@ -105,7 +105,7 @@ final class OsSelftestCommand extends Command
             $step('create folder B', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest B $stamp"]], null, 'b');
             $step('a folder with a Markdown description is written as rich text', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest MD $stamp", 'description' => "# Title\n\nSome **bold** words"]], null, 'md');
             if (isset($answers['md']['content_id'])) {
-                $step('the Markdown became text of the field', 'content.load', ['content_id' => $answers['md']['content_id']], static fn (array $d): ?string => str_contains(json_encode($d['fields'] ?? [], JSON_UNESCAPED_UNICODE) ?: '', 'bold') ? null : 'the description has no "bold": ' . json_encode($d['fields'] ?? []));
+                $step('the Markdown became text of the field', 'content.load', ['content_id' => $answers['md']['content_id']], static fn (array $d): ?string => (($text = json_encode($d['fields'] ?? [], JSON_UNESCAPED_UNICODE) ?: '') !== '' && str_contains($text, 'bold') && !str_contains($text, '**') && !str_contains($text, '# Title')) ? null : 'the Markdown was not converted: ' . json_encode($d['fields'] ?? []));
             }
             $a = $answers['a'] ?? [];
             $b = $answers['b'] ?? [];
