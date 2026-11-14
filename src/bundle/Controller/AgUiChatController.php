@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Masilia\Contracts\IbexaAi\Http\ApiRequest;
-use Masilia\Contracts\IbexaAi\Security\Access;
-use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
+use Ibexa\Contracts\AdminUi\Controller\Controller;
+use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Core\MVC\Symfony\Security\Authorization\Attribute;
+use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
+use Masilia\Contracts\IbexaAi\Http\CsrfProtectedController;
 use Masilia\IbexaAi\Os\Neuron\OsAgentFactory;
 use Masilia\IbexaAi\Chat\ChatRun;
 use Masilia\IbexaAi\Chat\Refusal;
@@ -34,38 +36,42 @@ use Throwable;
 /**
  * The content agent over the AG-UI protocol (https://docs.ag-ui.com), for AG-UI clients such as assistant-ui.
  *
- * POST /admin/api/ai/agent/agui        a RunAgentInput: a new user message, or `resume` entries answering the
+ * POST /api/ai/agent/agui        a RunAgentInput: a new user message, or `resume` entries answering the
  *                                      change that awaits a decision. Streams AG-UI events.
- * GET  /admin/api/ai/agent/agui/state  the stored conversation and its pending interrupts, to restore a page.
- * DELETE /admin/api/ai/agent/conversation  forgets the conversation of the current user.
+ * GET  /api/ai/agent/agui/state  the stored conversation and its pending interrupts, to restore a page.
+ * DELETE /api/ai/agent/conversation  forgets the conversation of the current user.
  *
  * The conversation is the server's: the thread belongs to the current user and siteaccess, the client only
  * sends its last message or its decision.
  */
-#[RequiresAccess(Access::Administrator)]
-final readonly class AgUiChatController
+final class AgUiChatController extends Controller implements CsrfProtectedController
 {
     public function __construct(
-        private ApiRequest $api,
-        private OsAgentFactory $agents,
-        private AgentThreads $threads,
-        private ContentMentions $mentions,
-        private AttachmentStore $attachments,
-        private ChatRun $chat,
-        private LoggerInterface $aiLogger,
+        private readonly PermissionResolver $permissions,
+        private readonly SiteAccessServiceInterface $siteAccess,
+        private readonly OsAgentFactory $agents,
+        private readonly AgentThreads $threads,
+        private readonly ContentMentions $mentions,
+        private readonly AttachmentStore $attachments,
+        private readonly ChatRun $chat,
+        private readonly LoggerInterface $aiLogger,
     ) {
     }
 
-    #[Route('/admin/api/ai/agent/agui', name: 'masilia.ibexa_ai.agent.agui', methods: ['POST'])]
+    /** The chat is the administrators': it acts on the site with their rights, and what it does is shown to them first. */
+    public function performAccessCheck(): void
+    {
+        parent::performAccessCheck();
+        $this->denyAccessUnlessGranted(new Attribute('setup', 'administrate'));
+    }
+
+    #[Route('/api/ai/agent/agui', name: 'masilia.ibexa_ai.agent.agui', methods: ['POST'], options: ['expose' => true])]
     public function run(Request $request): Response
     {
-        $input = $this->api->json($request);
-        if ($input === null) {
-            return new JsonResponse(ApiError::validation('Invalid JSON payload')->toArray(), Response::HTTP_BAD_REQUEST);
-        }
+        $input = $request->getPayload()->all();
 
         try {
-            $run = $this->chat->start($input, $this->api->userId(), $this->api->siteaccess());
+            $run = $this->chat->start($input, $this->userId(), $this->siteaccess());
         } catch (RunRefused $refused) {
             return new JsonResponse($refused->error->toArray(), match ($refused->reason) {
                 Refusal::Invalid => Response::HTTP_BAD_REQUEST,
@@ -82,19 +88,19 @@ final readonly class AgUiChatController
         }, Response::HTTP_OK, $run->headers);
     }
 
-    #[Route('/admin/api/ai/agent/agui/state', name: 'masilia.ibexa_ai.agent.agui_state', methods: ['GET'])]
+    #[Route('/api/ai/agent/agui/state', name: 'masilia.ibexa_ai.agent.agui_state', methods: ['GET'], options: ['expose' => true])]
     public function state(Request $request): JsonResponse
     {
         // Without an id: the conversation the user was last in, if any (the widget opens on it).
         $requested = $request->query->get('threadId');
         if ($requested === null) {
-            $latest = $this->threads->latest($this->api->userId(), $this->api->siteaccess());
+            $latest = $this->threads->latest($this->userId(), $this->siteaccess());
             if ($latest === null) {
                 return new JsonResponse(['threadId' => null, 'messages' => [], 'interrupts' => []]);
             }
             $requested = $latest->id;
         }
-        if (!ThreadId::isValid($requested) || $this->threads->owned($requested, $this->api->userId()) === null) {
+        if (!ThreadId::isValid($requested) || $this->threads->owned($requested, $this->userId()) === null) {
             return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
 
@@ -102,7 +108,7 @@ final readonly class AgUiChatController
         $empty = ['threadId' => $threadId, 'messages' => [], 'interrupts' => []];
 
         try {
-            $agent = $this->agents->create($this->api->siteaccess(), $threadId);
+            $agent = $this->agents->create($this->siteaccess(), $threadId);
             $stored = iterator_to_array($this->agents->messages($threadId)->loadAll($threadId, 200), false);
             $hydrated = (new ReasoningFilteredAGUIAdapter($threadId))->hydrate($stored, $agent->inspect());
         } catch (ProviderConfigurationException) {
@@ -136,7 +142,7 @@ final readonly class AgUiChatController
         return new JsonResponse(['threadId' => $threadId, 'messages' => $messages, 'interrupts' => $hydrated['interrupts']]);
     }
 
-    #[Route('/admin/api/ai/agent/attachments', name: 'masilia.ibexa_ai.agent.attachment_upload', methods: ['POST'])]
+    #[Route('/api/ai/agent/attachments', name: 'masilia.ibexa_ai.agent.attachment_upload', methods: ['POST'], options: ['expose' => true])]
     public function uploadAttachment(Request $request): JsonResponse
     {
         $file = $request->files->get('file');
@@ -145,7 +151,7 @@ final readonly class AgUiChatController
         }
 
         try {
-            $attachment = $this->attachments->store($file->getPathname(), $file->getClientOriginalName(), $this->api->userId());
+            $attachment = $this->attachments->store($file->getPathname(), $file->getClientOriginalName(), $this->userId());
         } catch (AttachmentRejectedException $e) {
             return new JsonResponse(ApiError::validation($e->getMessage())->toArray(), Response::HTTP_BAD_REQUEST);
         }
@@ -153,10 +159,10 @@ final readonly class AgUiChatController
         return new JsonResponse($attachment->toArray());
     }
 
-    #[Route('/admin/api/ai/agent/attachments/{id}', name: 'masilia.ibexa_ai.agent.attachment', methods: ['GET'])]
+    #[Route('/api/ai/agent/attachments/{id}', name: 'masilia.ibexa_ai.agent.attachment', methods: ['GET'], options: ['expose' => true])]
     public function attachment(string $id): Response
     {
-        $attachment = AttachmentStore::isValidId($id) ? $this->attachments->find($id, $this->api->userId()) : null;
+        $attachment = AttachmentStore::isValidId($id) ? $this->attachments->find($id, $this->userId()) : null;
         if ($attachment === null || !is_file($this->attachments->path($attachment))) {
             return new JsonResponse(ApiError::notFound('Attachment not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
@@ -170,49 +176,59 @@ final readonly class AgUiChatController
         return $response;
     }
 
-    #[Route('/admin/api/ai/agent/mentions', name: 'masilia.ibexa_ai.agent.mentions', methods: ['GET'])]
+    #[Route('/api/ai/agent/mentions', name: 'masilia.ibexa_ai.agent.mentions', methods: ['GET'], options: ['expose' => true])]
     public function mentions(Request $request): JsonResponse
     {
         return new JsonResponse(['contents' => $this->mentions->search((string) $request->query->get('q', ''))]);
     }
 
-    #[Route('/admin/api/ai/agent/threads', name: 'masilia.ibexa_ai.agent.threads', methods: ['GET'])]
+    #[Route('/api/ai/agent/threads', name: 'masilia.ibexa_ai.agent.threads', methods: ['GET'], options: ['expose' => true])]
     public function threads(): JsonResponse
     {
         return new JsonResponse([
             'threads' => array_map(
                 static fn ($thread): array => $thread->toArray(),
-                $this->threads->list($this->api->userId(), $this->api->siteaccess()),
+                $this->threads->list($this->userId(), $this->siteaccess()),
             ),
         ]);
     }
 
-    #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_rename', methods: ['PATCH'])]
+    #[Route('/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_rename', methods: ['PATCH'], options: ['expose' => true])]
     public function renameThread(string $threadId, Request $request): JsonResponse
     {
-        $input = $this->api->json($request);
-        $title = is_array($input) && is_string($input['title'] ?? null) ? ThreadTitle::fromUser($input['title']) : null;
+        $input = $request->getPayload()->all();
+        $title = is_string($input['title'] ?? null) ? ThreadTitle::fromUser($input['title']) : null;
         if ($title === null) {
             return new JsonResponse(ApiError::validation('A title is required')->toArray(), Response::HTTP_BAD_REQUEST);
         }
-        if (!ThreadId::isValid($threadId) || !$this->threads->rename($threadId, $this->api->userId(), $title)) {
+        if (!ThreadId::isValid($threadId) || !$this->threads->rename($threadId, $this->userId(), $title)) {
             return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
 
         return new JsonResponse(['id' => $threadId, 'title' => $title]);
     }
 
-    #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_delete', methods: ['DELETE'])]
+    #[Route('/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_delete', methods: ['DELETE'], options: ['expose' => true])]
     public function deleteThread(string $threadId): JsonResponse
     {
-        if (!ThreadId::isValid($threadId) || $this->threads->owned($threadId, $this->api->userId()) === null) {
+        if (!ThreadId::isValid($threadId) || $this->threads->owned($threadId, $this->userId()) === null) {
             return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
 
         $this->agents->messages($threadId)->clear($threadId);
         $this->agents->forgetWorkflow($threadId);
-        $this->threads->delete($threadId, $this->api->userId());
+        $this->threads->delete($threadId, $this->userId());
 
         return new JsonResponse(['success' => true]);
+    }
+
+    private function siteaccess(): string
+    {
+        return $this->siteAccess->getCurrent()->name;
+    }
+
+    private function userId(): int
+    {
+        return (int) $this->permissions->getCurrentUserReference()->getUserId();
     }
 }

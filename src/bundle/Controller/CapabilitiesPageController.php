@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Masilia\Contracts\IbexaAi\Security\Access;
-use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Core\MVC\Symfony\Security\Authorization\Attribute;
 use Ibexa\Contracts\Core\Repository\UserService;
 use Masilia\IbexaAi\Os\CapabilityOverview;
 use Masilia\IbexaAi\Os\Audit\AuditLog;
 use Masilia\IbexaAi\Os\Coverage\CoverageReport;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Ibexa\Contracts\AdminUi\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Throwable;
@@ -19,10 +18,9 @@ use Throwable;
  * "What the assistant can do": the capabilities by domain, what the current user may use, the coverage of the admin and the
  * latest things the assistant did. Reading it needs the permission to use the assistant; the activity needs setup/administrate.
  */
-final class CapabilitiesPageController extends AbstractController
+final class CapabilitiesPageController extends Controller
 {
     public function __construct(
-        private readonly PermissionResolver $permissions,
         private readonly CapabilityOverview $overview,
         private readonly CoverageReport $coverage,
         private readonly AuditLog $audit,
@@ -30,14 +28,16 @@ final class CapabilitiesPageController extends AbstractController
     ) {
     }
 
-    #[Route('/admin/ai/capabilities', name: 'masilia.ibexa_ai.admin.capabilities_page', methods: ['GET'])]
+    public function performAccessCheck(): void
+    {
+        parent::performAccessCheck();
+        $this->denyAccessUnlessGranted(new Attribute('masilia_ai', 'use'));
+    }
+
+    #[Route('/ai/capabilities', name: 'masilia.ibexa_ai.admin.capabilities_page', methods: ['GET'])]
     public function page(): Response
     {
-        if (!$this->permissions->hasAccess(...Access::Assistant->policy())) {
-            throw $this->createAccessDeniedException('You do not have permission to use the AI assistant.');
-        }
-
-        $isAdministrator = (bool) $this->permissions->hasAccess(...Access::Administrator->policy());
+        $isAdministrator = $this->isGranted(new Attribute('setup', 'administrate'));
 
         return $this->render('@ibexadesign/ai_settings/capabilities.html.twig', [
             'overview' => $this->overview->build(),

@@ -88,11 +88,6 @@ services:
     Masilia\Contracts\IbexaAi\Observability\UsageRecorder:
         alias: Masilia\IbexaAi\Observability\ModelCallRecorder
 
-    Masilia\Bundle\IbexaAi\Http\:
-        resource: '../../Http/'
-    Masilia\Contracts\IbexaAi\Http\ApiRequest:
-        alias: Masilia\Bundle\IbexaAi\Http\SymfonyApiRequest
-
     Masilia\Bundle\IbexaAi\Controller\:
         resource: '../../Controller/'
         public: true

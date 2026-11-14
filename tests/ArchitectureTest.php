@@ -18,7 +18,7 @@ final class ArchitectureTest extends TestCase
     private const SRC = __DIR__ . '/../src';
 
     /** What a bundle may hold: the integration, nothing else. */
-    private const BUNDLE_MAY_HOLD = ['Command', 'Controller', 'DependencyInjection', 'EventListener', 'Http', 'Migrations', 'Resources', 'Security', 'MasiliaIbexaAiBundle.php'];
+    private const BUNDLE_MAY_HOLD = ['Command', 'Controller', 'DependencyInjection', 'EventListener', 'Migrations', 'Resources', 'Security', 'MasiliaIbexaAiBundle.php'];
 
     /** What the lib may not name: the bundle, and the parts of Symfony that wire or serve an application. */
     private const LIB_MAY_NOT_USE = [

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Controller;
 
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
-use Masilia\Contracts\IbexaAi\Http\ApiRequest;
-use Masilia\Contracts\IbexaAi\Security\Access;
-use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
+use Ibexa\Contracts\AdminUi\Controller\Controller;
+use Ibexa\Core\MVC\Symfony\Security\Authorization\Attribute;
+use Masilia\Contracts\IbexaAi\Http\CsrfProtectedController;
 use Masilia\IbexaAi\Provider\HealthChecker;
 use Masilia\IbexaAi\Provider\ProviderCatalog;
 use Masilia\IbexaAi\Provider\ProviderTester;
@@ -20,22 +20,26 @@ use Symfony\Component\Routing\Attribute\Route;
 use Throwable;
 
 /**
- * Admin API behind the AI settings dashboard and the usage tab. Every route requires setup/administrate.
+ * Admin API behind the AI settings dashboard and the usage tab. Every route requires setup/administrate, and its writes the CSRF token of the admin.
  */
-#[RequiresAccess(Access::Administrator)]
-final readonly class AdminSettingsController
+final class AdminSettingsController extends Controller implements CsrfProtectedController
 {
     public function __construct(
-        private ApiRequest $api,
-        private SiteAccessServiceInterface $siteAccess,
-        private ProviderCatalog $catalog,
-        private ProviderTester $tester,
-        private HealthChecker $health,
-        private UsageReport $usage,
+        private readonly SiteAccessServiceInterface $siteAccess,
+        private readonly ProviderCatalog $catalog,
+        private readonly ProviderTester $tester,
+        private readonly HealthChecker $health,
+        private readonly UsageReport $usage,
     ) {
     }
 
-    #[Route('/admin/ai/settings/api/data', name: 'masilia.ibexa_ai.admin.data', methods: ['GET'])]
+    public function performAccessCheck(): void
+    {
+        parent::performAccessCheck();
+        $this->denyAccessUnlessGranted(new Attribute('setup', 'administrate'));
+    }
+
+    #[Route('/ai/settings/api/data', name: 'masilia.ibexa_ai.admin.data', methods: ['GET'], options: ['expose' => true])]
     public function data(): JsonResponse
     {
         $siteaccesses = [];
@@ -46,56 +50,50 @@ final readonly class AdminSettingsController
 
         return new JsonResponse($this->catalog->snapshot() + [
             'siteaccesses' => $siteaccesses,
-            'currentSiteaccess' => $this->api->siteaccess(),
+            'currentSiteaccess' => $this->siteAccess->getCurrent()->name,
         ]);
     }
 
-    #[Route('/admin/ai/settings/api/provider', name: 'masilia.ibexa_ai.admin.provider_save', methods: ['POST'])]
+    #[Route('/ai/settings/api/provider', name: 'masilia.ibexa_ai.admin.provider_save', methods: ['POST'], options: ['expose' => true])]
     public function saveProvider(Request $request): JsonResponse
     {
         return $this->apply($request, fn (array $data) => $this->catalog->saveProvider($data));
     }
 
-    #[Route('/admin/ai/settings/api/provider/{id}', name: 'masilia.ibexa_ai.admin.provider_delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/ai/settings/api/provider/{id}', name: 'masilia.ibexa_ai.admin.provider_delete', requirements: ['id' => '\d+'], methods: ['DELETE'], options: ['expose' => true])]
     public function deleteProvider(int $id): JsonResponse
     {
         return $this->mutate(fn () => $this->catalog->deleteProvider($id));
     }
 
-    #[Route('/admin/ai/settings/api/provider/{id}/siteaccesses', name: 'masilia.ibexa_ai.admin.provider_siteaccesses', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/ai/settings/api/provider/{id}/siteaccesses', name: 'masilia.ibexa_ai.admin.provider_siteaccesses', requirements: ['id' => '\d+'], methods: ['PUT'], options: ['expose' => true])]
     public function setSiteaccesses(int $id, Request $request): JsonResponse
     {
-        $data = $this->api->json($request);
-        if ($data === null || !isset($data['siteaccesses']) || !is_array($data['siteaccesses'])) {
+        $data = $request->getPayload()->all();
+        if (!isset($data['siteaccesses']) || !is_array($data['siteaccesses'])) {
             return $this->error('siteaccesses array is required', Response::HTTP_BAD_REQUEST);
         }
 
         return $this->mutate(fn () => $this->catalog->setSiteaccesses($id, $data['siteaccesses']));
     }
 
-    #[Route('/admin/ai/settings/api/provider/{id}/chat-model', name: 'masilia.ibexa_ai.admin.chat_model', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/ai/settings/api/provider/{id}/chat-model', name: 'masilia.ibexa_ai.admin.chat_model', requirements: ['id' => '\d+'], methods: ['PUT'], options: ['expose' => true])]
     public function setChatModel(int $id, Request $request): JsonResponse
     {
-        $data = $this->api->json($request);
-        if ($data === null) {
-            return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
-        }
+        $data = $request->getPayload()->all();
 
         return $this->mutate(fn () => $this->catalog->setActiveChatModel($id, isset($data['modelId']) ? (int) $data['modelId'] : null));
     }
 
-    #[Route('/admin/ai/settings/api/provider/{id}/image-model', name: 'masilia.ibexa_ai.admin.image_model', requirements: ['id' => '\d+'], methods: ['PUT'])]
+    #[Route('/ai/settings/api/provider/{id}/image-model', name: 'masilia.ibexa_ai.admin.image_model', requirements: ['id' => '\d+'], methods: ['PUT'], options: ['expose' => true])]
     public function setImageModel(int $id, Request $request): JsonResponse
     {
-        $data = $this->api->json($request);
-        if ($data === null) {
-            return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
-        }
+        $data = $request->getPayload()->all();
 
         return $this->mutate(fn () => $this->catalog->setActiveImageModel($id, isset($data['modelId']) ? (int) $data['modelId'] : null));
     }
 
-    #[Route('/admin/ai/settings/api/provider/{id}/test', name: 'masilia.ibexa_ai.admin.provider_test', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[Route('/ai/settings/api/provider/{id}/test', name: 'masilia.ibexa_ai.admin.provider_test', requirements: ['id' => '\d+'], methods: ['POST'], options: ['expose' => true])]
     public function testProvider(int $id, Request $request): JsonResponse
     {
         try {
@@ -107,25 +105,25 @@ final readonly class AdminSettingsController
         return new JsonResponse($result, $result['success'] ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);
     }
 
-    #[Route('/admin/ai/settings/api/model', name: 'masilia.ibexa_ai.admin.model_save', methods: ['POST'])]
+    #[Route('/ai/settings/api/model', name: 'masilia.ibexa_ai.admin.model_save', methods: ['POST'], options: ['expose' => true])]
     public function saveModel(Request $request): JsonResponse
     {
         return $this->apply($request, fn (array $data) => $this->catalog->saveModel($data));
     }
 
-    #[Route('/admin/ai/settings/api/model/{id}', name: 'masilia.ibexa_ai.admin.model_delete', requirements: ['id' => '\d+'], methods: ['DELETE'])]
+    #[Route('/ai/settings/api/model/{id}', name: 'masilia.ibexa_ai.admin.model_delete', requirements: ['id' => '\d+'], methods: ['DELETE'], options: ['expose' => true])]
     public function deleteModel(int $id): JsonResponse
     {
         return $this->mutate(fn () => $this->catalog->deleteModel($id));
     }
 
-    #[Route('/admin/ai/settings/api/health', name: 'masilia.ibexa_ai.admin.health', methods: ['GET'])]
+    #[Route('/ai/settings/api/health', name: 'masilia.ibexa_ai.admin.health', methods: ['GET'], options: ['expose' => true])]
     public function healthCheck(): JsonResponse
     {
-        return new JsonResponse($this->health->check($this->api->siteaccess()));
+        return new JsonResponse($this->health->check($this->siteAccess->getCurrent()->name));
     }
 
-    #[Route('/admin/ai/usage/api/data', name: 'masilia.ibexa_ai.admin.usage', methods: ['GET'])]
+    #[Route('/ai/usage/api/data', name: 'masilia.ibexa_ai.admin.usage', methods: ['GET'], options: ['expose' => true])]
     public function usageData(): JsonResponse
     {
         return new JsonResponse($this->usage->data());
@@ -136,10 +134,7 @@ final readonly class AdminSettingsController
      */
     private function apply(Request $request, callable $write): JsonResponse
     {
-        $data = $this->api->json($request);
-        if ($data === null) {
-            return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
-        }
+        $data = $request->getPayload()->all();
 
         return $this->mutate(fn () => $write($data));
     }

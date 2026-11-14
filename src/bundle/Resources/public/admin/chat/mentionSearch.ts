@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { route } from '../shared/admin';
+
 export interface MentionHit {
     contentId: number;
     locationId: number | null;
@@ -9,7 +11,6 @@ export interface MentionHit {
 
 export type MentionSearch = { status: 'idle' | 'loading' | 'error'; items: MentionHit[] } | { status: 'ready'; items: MentionHit[] };
 
-const URL = '/admin/api/ai/agent/mentions';
 const DEBOUNCE = 180;
 
 /**
@@ -29,7 +30,7 @@ export function useMentionSearch(query: string | null): MentionSearch {
         const controller = new AbortController();
         setState((previous) => ({ status: 'loading', items: previous.items }));
         const timer = window.setTimeout(() => {
-            fetch(`${URL}?q=${encodeURIComponent(query)}`, { headers: { Accept: 'application/json' }, signal: controller.signal })
+            fetch(route('masilia.ibexa_ai.agent.mentions', { q: query }), { headers: { Accept: 'application/json' }, signal: controller.signal })
                 .then((response) => (response.ok ? (response.json() as Promise<{ contents: MentionHit[] }>) : Promise.reject(new Error(`HTTP ${response.status}`))))
                 .then((body) => setState({ status: 'ready', items: body.contents }))
                 .catch((error: unknown) => {

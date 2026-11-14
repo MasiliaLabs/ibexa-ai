@@ -1,10 +1,13 @@
 import type { ThreadSummary } from './threadsView';
 
-const THREADS_URL = '/admin/api/ai/agent/threads';
+import { adminHeaders, route } from '../../shared/admin';
+
+const threadsUrl = (): string => route('masilia.ibexa_ai.agent.threads');
+const threadUrl = (id: string): string => route('masilia.ibexa_ai.agent.thread_delete', { threadId: id });
 
 /** The user's conversations on this siteaccess, the most recently used first. */
 export async function fetchThreads(): Promise<ThreadSummary[]> {
-    const response = await fetch(THREADS_URL, { headers: { Accept: 'application/json' } });
+    const response = await fetch(threadsUrl(), { headers: { Accept: 'application/json' } });
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
     }
@@ -13,7 +16,7 @@ export async function fetchThreads(): Promise<ThreadSummary[]> {
 }
 
 export async function deleteThread(id: string): Promise<void> {
-    const response = await fetch(`${THREADS_URL}/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const response = await fetch(threadUrl(id), { method: 'DELETE', headers: adminHeaders() });
     if (!response.ok && response.status !== 404) {
         throw new Error(`HTTP ${response.status}`);
     }
@@ -21,9 +24,9 @@ export async function deleteThread(id: string): Promise<void> {
 
 /** Gives a conversation a new title; returns the title the server kept (one line, cut at its limit). */
 export async function renameThread(id: string, title: string): Promise<string> {
-    const response = await fetch(`${THREADS_URL}/${encodeURIComponent(id)}`, {
+    const response = await fetch(threadUrl(id), {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: adminHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }),
         body: JSON.stringify({ title }),
     });
     if (!response.ok) {

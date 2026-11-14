@@ -8,12 +8,11 @@ import { notify } from '../../shared/notify';
 import { runContext } from './pageContext';
 import { sharesPage } from './sharePage';
 import { isStaleDecision, withInterrupts, withPendingCalls } from './pending';
+import { adminHeaders, route } from '../../shared/admin';
 import type { Wire } from './pending';
 import { deleteThread, newThreadId } from './threads';
 import type { ChatRuntime } from './types';
 
-const RUN_URL = '/admin/api/ai/agent/agui';
-const STATE_URL = '/admin/api/ai/agent/agui/state';
 
 interface AgUiState {
     threadId: string | null;
@@ -32,7 +31,7 @@ interface Loaded {
  * one the user was last in.
  */
 async function loadConversation(threadId: string | null): Promise<Loaded> {
-    const url = threadId === null ? STATE_URL : `${STATE_URL}?threadId=${encodeURIComponent(threadId)}`;
+    const url = route('masilia.ibexa_ai.agent.agui_state', threadId === null ? {} : { threadId });
     const response = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!response.ok) {
         // A conversation that has no message yet is not known to the server: it is empty.
@@ -59,7 +58,7 @@ export function useAguiRuntime(): ChatRuntime {
     // The conversation in use. A new one is made up here: the server creates it on its first message.
     const current = useRef<string>(newThreadId());
     const [threadId, setThreadId] = useState<string | null>(null);
-    const [agent] = useState(() => new HttpAgent({ url: RUN_URL, threadId: current.current }));
+    const [agent] = useState(() => new HttpAgent({ url: route('masilia.ibexa_ai.agent.agui'), headers: adminHeaders(), threadId: current.current }));
 
     const use = (id: string): void => {
         current.current = id;

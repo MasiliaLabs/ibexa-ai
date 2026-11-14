@@ -1,3 +1,4 @@
+import { adminHeaders, route } from '../shared/admin';
 import type { Health, Snapshot, TestResult, Usage } from './types';
 
 /** Outcome of a call: HTTP errors are values, not exceptions, so a screen always has a message to show. */
@@ -7,20 +8,18 @@ export type ApiResult<T> =
 
 export type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-const BASE = '/admin/ai/settings/api';
-
 export const routes = {
-    data: `${BASE}/data`,
-    health: `${BASE}/health`,
-    usage: '/admin/ai/usage/api/data',
-    provider: `${BASE}/provider`,
-    providerById: (id: number) => `${BASE}/provider/${id}`,
-    siteaccesses: (id: number) => `${BASE}/provider/${id}/siteaccesses`,
-    chatModel: (id: number) => `${BASE}/provider/${id}/chat-model`,
-    imageModel: (id: number) => `${BASE}/provider/${id}/image-model`,
-    test: (id: number) => `${BASE}/provider/${id}/test?stream=1`,
-    model: `${BASE}/model`,
-    modelById: (id: number) => `${BASE}/model/${id}`,
+    data: () => route('masilia.ibexa_ai.admin.data'),
+    health: () => route('masilia.ibexa_ai.admin.health'),
+    usage: () => route('masilia.ibexa_ai.admin.usage'),
+    provider: () => route('masilia.ibexa_ai.admin.provider_save'),
+    providerById: (id: number) => route('masilia.ibexa_ai.admin.provider_delete', { id }),
+    siteaccesses: (id: number) => route('masilia.ibexa_ai.admin.provider_siteaccesses', { id }),
+    chatModel: (id: number) => route('masilia.ibexa_ai.admin.chat_model', { id }),
+    imageModel: (id: number) => route('masilia.ibexa_ai.admin.image_model', { id }),
+    test: (id: number) => `${route('masilia.ibexa_ai.admin.provider_test', { id })}?stream=1`,
+    model: () => route('masilia.ibexa_ai.admin.model_save'),
+    modelById: (id: number) => route('masilia.ibexa_ai.admin.model_delete', { id }),
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -84,7 +83,7 @@ export function cleanProviderMessage(message: string): string {
 export async function request<T>(url: string, init?: RequestInit, fetcher: Fetcher = (u, i) => fetch(u, i)): Promise<ApiResult<T>> {
     let response: Response;
     try {
-        response = await fetcher(url, { ...init, headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...init?.headers } });
+        response = await fetcher(url, { ...init, headers: adminHeaders({ Accept: 'application/json', ...(init?.headers as Record<string, string> | undefined) }) });
     } catch {
         return { ok: false, status: 0, message: 'Network error. Check your connection and try again.', body: null };
     }
@@ -108,10 +107,10 @@ function send(method: string, payload: unknown): RequestInit {
 }
 
 export const api = {
-    snapshot: () => request<Snapshot>(routes.data),
-    health: () => request<Health>(routes.health),
-    usage: () => request<Usage>(routes.usage),
-    saveProvider: (payload: unknown) => request<{ success: true }>(routes.provider, send('POST', payload)),
+    snapshot: () => request<Snapshot>(routes.data()),
+    health: () => request<Health>(routes.health()),
+    usage: () => request<Usage>(routes.usage()),
+    saveProvider: (payload: unknown) => request<{ success: true }>(routes.provider(), send('POST', payload)),
     deleteProvider: (id: number) => request<{ success: true }>(routes.providerById(id), { method: 'DELETE' }),
     setSiteaccesses: (id: number, siteaccesses: string[]) =>
         request<{ success: true }>(routes.siteaccesses(id), send('PUT', { siteaccesses })),
@@ -119,7 +118,7 @@ export const api = {
         request<{ success: true }>(routes.chatModel(id), send('PUT', { modelId })),
     setImageModel: (id: number, modelId: number | null) =>
         request<{ success: true }>(routes.imageModel(id), send('PUT', { modelId })),
-    saveModel: (payload: unknown) => request<{ success: true }>(routes.model, send('POST', payload)),
+    saveModel: (payload: unknown) => request<{ success: true }>(routes.model(), send('POST', payload)),
     deleteModel: (id: number) => request<{ success: true }>(routes.modelById(id), { method: 'DELETE' }),
     /** The test endpoint answers 400 with a result body when the connection fails: that body is the result. */
     testProvider: async (id: number): Promise<TestResult> => {

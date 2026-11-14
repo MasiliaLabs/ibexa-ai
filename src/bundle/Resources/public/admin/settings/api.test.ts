@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { beforeEach, test } from 'node:test';
 
 import { api, cleanProviderMessage, messageFromBody, request } from './api';
 import type { Fetcher } from './api';
+import { installRouting } from '../shared/testing';
+
+beforeEach(installRouting);
+(globalThis as { document?: unknown }).document = { querySelector: () => ({ content: 'token-of-the-page' }) };
 
 const answer = (status: number, body: unknown): Fetcher => async () =>
     new Response(body === undefined ? '' : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -99,7 +103,7 @@ test('a successful connection test is returned as is', async () => {
     }
 });
 
-test('every request says it comes from the admin interface, whatever the caller adds', async () => {
+test('every request carries the CSRF token of the admin, whatever the caller adds', async () => {
     const seen: Array<Record<string, string>> = [];
     const fetcher: Fetcher = async (_url, init) => {
         seen.push(init?.headers as Record<string, string>);
@@ -110,7 +114,7 @@ test('every request says it comes from the admin interface, whatever the caller 
     await request('/x', { method: 'DELETE' }, fetcher);
     await request('/x', { method: 'POST', headers: { 'Content-Type': 'application/json' } }, fetcher);
 
-    assert.equal(seen[0]['X-Requested-With'], 'XMLHttpRequest', 'a DELETE has no JSON body to tell it from a forged one');
-    assert.equal(seen[1]['X-Requested-With'], 'XMLHttpRequest');
+    assert.equal(seen[0]['X-CSRF-Token'], 'token-of-the-page', 'a DELETE has no JSON body to tell it from a forged one');
+    assert.equal(seen[1]['X-CSRF-Token'], 'token-of-the-page');
     assert.equal(seen[1]['Content-Type'], 'application/json', 'what the caller sets is kept');
 });
