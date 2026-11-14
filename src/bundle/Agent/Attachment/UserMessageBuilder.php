@@ -13,7 +13,7 @@ use NeuronAI\Chat\Messages\UserMessage;
  * The user's message for the agent. The text keeps the tags of the images it names, so that the conversation shows
  * them and the agent can refer to them. When the model reads images, the images the user owns go with the message.
  */
-final readonly class UserMessageBuilder
+readonly class UserMessageBuilder
 {
     public function __construct(private AttachmentStore $attachments)
     {

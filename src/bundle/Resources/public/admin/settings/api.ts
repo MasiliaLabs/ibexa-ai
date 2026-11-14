@@ -84,7 +84,7 @@ export function cleanProviderMessage(message: string): string {
 export async function request<T>(url: string, init?: RequestInit, fetcher: Fetcher = (u, i) => fetch(u, i)): Promise<ApiResult<T>> {
     let response: Response;
     try {
-        response = await fetcher(url, { ...init, headers: { Accept: 'application/json', ...init?.headers } });
+        response = await fetcher(url, { ...init, headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...init?.headers } });
     } catch {
         return { ok: false, status: 0, message: 'Network error. Check your connection and try again.', body: null };
     }

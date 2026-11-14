@@ -98,3 +98,19 @@ test('a successful connection test is returned as is', async () => {
         globalThis.fetch = original;
     }
 });
+
+test('every request says it comes from the admin interface, whatever the caller adds', async () => {
+    const seen: Array<Record<string, string>> = [];
+    const fetcher: Fetcher = async (_url, init) => {
+        seen.push(init?.headers as Record<string, string>);
+
+        return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    };
+
+    await request('/x', { method: 'DELETE' }, fetcher);
+    await request('/x', { method: 'POST', headers: { 'Content-Type': 'application/json' } }, fetcher);
+
+    assert.equal(seen[0]['X-Requested-With'], 'XMLHttpRequest', 'a DELETE has no JSON body to tell it from a forged one');
+    assert.equal(seen[1]['X-Requested-With'], 'XMLHttpRequest');
+    assert.equal(seen[1]['Content-Type'], 'application/json', 'what the caller sets is kept');
+});

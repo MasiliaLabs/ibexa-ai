@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
+use Masilia\Bundle\IbexaAi\Http\ApiRequest;
+use Masilia\Bundle\IbexaAi\Security\Access;
+use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Admin\HealthChecker;
 use Masilia\Bundle\IbexaAi\Admin\ProviderCatalog;
 use Masilia\Bundle\IbexaAi\Admin\ProviderTester;
@@ -20,10 +22,11 @@ use Throwable;
 /**
  * Admin API behind the AI settings dashboard and the usage tab. Every route requires setup/administrate.
  */
+#[RequiresAccess(Access::Administrator)]
 final readonly class AdminSettingsController
 {
     public function __construct(
-        private PermissionResolver $permissions,
+        private ApiRequest $api,
         private SiteAccessServiceInterface $siteAccess,
         private ProviderCatalog $catalog,
         private ProviderTester $tester,
@@ -35,10 +38,6 @@ final readonly class AdminSettingsController
     #[Route('/admin/ai/settings/api/data', name: 'masilia.ibexa_ai.admin.data', methods: ['GET'])]
     public function data(): JsonResponse
     {
-        if ($denied = $this->denyUnlessAdministrator()) {
-            return $denied;
-        }
-
         $siteaccesses = [];
         foreach ($this->siteAccess->getAll() as $siteAccess) {
             $siteaccesses[] = $siteAccess->name;
@@ -47,7 +46,7 @@ final readonly class AdminSettingsController
 
         return new JsonResponse($this->catalog->snapshot() + [
             'siteaccesses' => $siteaccesses,
-            'currentSiteaccess' => $this->currentSiteaccess(),
+            'currentSiteaccess' => $this->api->siteaccess(),
         ]);
     }
 
@@ -66,7 +65,7 @@ final readonly class AdminSettingsController
     #[Route('/admin/ai/settings/api/provider/{id}/siteaccesses', name: 'masilia.ibexa_ai.admin.provider_siteaccesses', requirements: ['id' => '\d+'], methods: ['PUT'])]
     public function setSiteaccesses(int $id, Request $request): JsonResponse
     {
-        $data = $this->json($request);
+        $data = $this->api->json($request);
         if ($data === null || !isset($data['siteaccesses']) || !is_array($data['siteaccesses'])) {
             return $this->error('siteaccesses array is required', Response::HTTP_BAD_REQUEST);
         }
@@ -77,7 +76,7 @@ final readonly class AdminSettingsController
     #[Route('/admin/ai/settings/api/provider/{id}/chat-model', name: 'masilia.ibexa_ai.admin.chat_model', requirements: ['id' => '\d+'], methods: ['PUT'])]
     public function setChatModel(int $id, Request $request): JsonResponse
     {
-        $data = $this->json($request);
+        $data = $this->api->json($request);
         if ($data === null) {
             return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
         }
@@ -88,7 +87,7 @@ final readonly class AdminSettingsController
     #[Route('/admin/ai/settings/api/provider/{id}/image-model', name: 'masilia.ibexa_ai.admin.image_model', requirements: ['id' => '\d+'], methods: ['PUT'])]
     public function setImageModel(int $id, Request $request): JsonResponse
     {
-        $data = $this->json($request);
+        $data = $this->api->json($request);
         if ($data === null) {
             return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
         }
@@ -99,10 +98,6 @@ final readonly class AdminSettingsController
     #[Route('/admin/ai/settings/api/provider/{id}/test', name: 'masilia.ibexa_ai.admin.provider_test', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function testProvider(int $id, Request $request): JsonResponse
     {
-        if ($denied = $this->denyUnlessAdministrator()) {
-            return $denied;
-        }
-
         try {
             $result = $this->tester->test($id, $request->query->getBoolean('stream'));
         } catch (\InvalidArgumentException $e) {
@@ -127,20 +122,12 @@ final readonly class AdminSettingsController
     #[Route('/admin/ai/settings/api/health', name: 'masilia.ibexa_ai.admin.health', methods: ['GET'])]
     public function healthCheck(): JsonResponse
     {
-        if ($denied = $this->denyUnlessAdministrator()) {
-            return $denied;
-        }
-
-        return new JsonResponse($this->health->check($this->currentSiteaccess()));
+        return new JsonResponse($this->health->check($this->api->siteaccess()));
     }
 
     #[Route('/admin/ai/usage/api/data', name: 'masilia.ibexa_ai.admin.usage', methods: ['GET'])]
     public function usageData(): JsonResponse
     {
-        if ($denied = $this->denyUnlessAdministrator()) {
-            return $denied;
-        }
-
         return new JsonResponse($this->usage->data());
     }
 
@@ -149,7 +136,7 @@ final readonly class AdminSettingsController
      */
     private function apply(Request $request, callable $write): JsonResponse
     {
-        $data = $this->json($request);
+        $data = $this->api->json($request);
         if ($data === null) {
             return $this->error('Invalid JSON payload', Response::HTTP_BAD_REQUEST);
         }
@@ -159,10 +146,6 @@ final readonly class AdminSettingsController
 
     private function mutate(callable $write): JsonResponse
     {
-        if ($denied = $this->denyUnlessAdministrator()) {
-            return $denied;
-        }
-
         try {
             $write();
         } catch (\InvalidArgumentException $e) {
@@ -176,36 +159,8 @@ final readonly class AdminSettingsController
         return new JsonResponse(['success' => true]);
     }
 
-    private function denyUnlessAdministrator(): ?JsonResponse
-    {
-        if ($this->permissions->hasAccess('setup', 'administrate')) {
-            return null;
-        }
-
-        return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function json(Request $request): ?array
-    {
-        try {
-            $decoded = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return null;
-        }
-
-        return is_array($decoded) ? $decoded : null;
-    }
-
     private function error(string $message, int $status): JsonResponse
     {
         return new JsonResponse(ApiError::validation($message)->toArray(), $status);
-    }
-
-    private function currentSiteaccess(): string
-    {
-        return $this->siteAccess->getCurrent()?->name ?? 'default';
     }
 }

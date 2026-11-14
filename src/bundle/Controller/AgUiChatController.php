@@ -4,30 +4,22 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Ibexa\Contracts\Core\Repository\PermissionResolver;
-use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
+use Masilia\Bundle\IbexaAi\Http\ApiRequest;
+use Masilia\Bundle\IbexaAi\Security\Access;
+use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
+use Masilia\Bundle\IbexaAi\Agent\ChatRun;
+use Masilia\Bundle\IbexaAi\Agent\RunRefused;
 use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentRejectedException;
 use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
-use Masilia\Bundle\IbexaAi\Agent\Attachment\UserMessageBuilder;
 use Masilia\Bundle\IbexaAi\Agent\Mention\ContentMentions;
-use Masilia\Bundle\IbexaAi\Agent\PageContext;
-use Masilia\Bundle\IbexaAi\Agent\Stream\AgUiFrames;
-use Masilia\Bundle\IbexaAi\Agent\Stream\AlreadyDecidedException;
-use Masilia\Bundle\IbexaAi\Agent\Stream\DecisionPendingException;
 use Masilia\Bundle\IbexaAi\Agent\Stream\ReasoningFilteredAGUIAdapter;
 use Masilia\Bundle\IbexaAi\Agent\Thread\AgentThreads;
-use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
-use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadAccessDeniedException;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadId;
 use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadTitle;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
-use NeuronAI\Agent\Frontend\AGUIInputTranslator;
-use NeuronAI\Exceptions\InputTranslationException;
-use NeuronAI\Workflow\Streaming\ProtocolEvent;
-use NeuronAI\Workflow\Streaming\SSEEncoder;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -49,22 +41,16 @@ use Throwable;
  * The conversation is the server's: the thread belongs to the current user and siteaccess, the client only
  * sends its last message or its decision.
  */
+#[RequiresAccess(Access::Administrator)]
 final readonly class AgUiChatController
 {
-    /** What one message can carry, attached documents included. */
-    private const MAX_MESSAGE = 400000;
-
-    private const GENERIC_ERROR = 'The AI agent is currently unavailable. Please try again later or contact an administrator.';
-
     public function __construct(
-        private PermissionResolver $permissions,
-        private SiteAccessServiceInterface $siteAccess,
+        private ApiRequest $api,
         private AgentFactory $agents,
         private AgentThreads $threads,
         private ContentMentions $mentions,
         private AttachmentStore $attachments,
-        private UserMessageBuilder $messages,
-        private RunContext $runContext,
+        private ChatRun $chat,
         private LoggerInterface $aiLogger,
     ) {
     }
@@ -72,130 +58,38 @@ final readonly class AgUiChatController
     #[Route('/admin/api/ai/agent/agui', name: 'masilia.ibexa_ai.agent.agui', methods: ['POST'])]
     public function run(Request $request): Response
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
-        $input = $this->json($request);
+        $input = $this->api->json($request);
         if ($input === null) {
             return new JsonResponse(ApiError::validation('Invalid JSON payload')->toArray(), Response::HTTP_BAD_REQUEST);
         }
 
-        $threadId = $input['threadId'] ?? null;
-        if (!ThreadId::isValid($threadId)) {
-            return new JsonResponse(ApiError::validation('Missing or invalid threadId')->toArray(), Response::HTTP_BAD_REQUEST);
-        }
-        $message = $this->lastUserText($input);
-        if (mb_strlen($message) > self::MAX_MESSAGE) {
-            return new JsonResponse(ApiError::validation('The message is too long.')->toArray(), Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
-        }
         try {
-            $this->threads->claim($threadId, $this->userId(), $this->currentSiteaccess(), $message);
-        } catch (ThreadAccessDeniedException) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
+            $run = $this->chat->start($input, $this->api->userId(), $this->api->siteaccess());
+        } catch (RunRefused $refused) {
+            return new JsonResponse($refused->error->toArray(), $refused->status);
         }
 
-        try {
-            $adapter = new ReasoningFilteredAGUIAdapter(
-                threadId: $threadId,
-                runId: isset($input['runId']) ? (string) $input['runId'] : null,
-                messages: is_array($input['messages'] ?? null) ? array_values($input['messages']) : [],
-                state: is_array($input['state'] ?? null) ? $input['state'] : [],
-            );
-        } catch (InputTranslationException $e) {
-            $this->aiLogger->info('[AI Agent] AG-UI input refused: {message}', ['message' => $e->getMessage()]);
-
-            return new JsonResponse(ApiError::validation('The conversation sent by the client is not valid.')->toArray(), Response::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $agent = $this->agents->create($this->currentSiteaccess(), $threadId);
-            $agent->setStreamAdapter(static fn () => $adapter);
-            $this->runContext->begin($threadId, $this->currentSiteaccess());
-            $agent->withPageContext(PageContext::fromAgUiContext($input['context'] ?? null));
-            $vision = $this->agents->supportsVision($this->currentSiteaccess());
-            $agent->withVision($vision);
-
-            if (is_array($input['resume'] ?? null) && $input['resume'] !== []) {
-                try {
-                    $events = $agent->submitInputs($input, new AGUIInputTranslator())->events();
-                } catch (InputTranslationException $e) {
-                    // A decision for a run that is no longer waiting: decided in another window.
-                    $this->aiLogger->info('[AI Agent] AG-UI decision refused: {message}', ['message' => $e->getMessage()]);
-                    throw new AlreadyDecidedException($e->getMessage(), 0, $e);
-                }
-            } else {
-                $text = $this->lastUserText($input);
-                if ($text === '') {
-                    return new JsonResponse(ApiError::validation('Missing required field: a user message or resume')->toArray(), Response::HTTP_BAD_REQUEST);
-                }
-                // A suspended run cannot take a new message: the pending change must be decided first.
-                if ($agent->pendingApprovals() !== []) {
-                    throw new DecisionPendingException('A change is waiting for a decision.');
-                }
-                $events = $agent->stream($this->messages->build($text, $vision, $this->userId()));
-            }
-        } catch (Throwable $e) {
-            if (!$e instanceof AlreadyDecidedException && !$e instanceof DecisionPendingException && !$e instanceof ProviderConfigurationException) {
-                $this->aiLogger->error('[AI Agent] AG-UI run could not start: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
-            }
-
-            return $this->failedRun($adapter, $e);
-        }
-
-        $headers = $adapter->getHeaders() + ['X-Accel-Buffering' => 'no'];
-
-        return new StreamedResponse(function () use ($events): void {
-            $closed = false;
-            try {
-                foreach (AgUiFrames::encode($events) as $frame) {
-                    echo $frame;
-                    flush();
-                    $closed = $closed || str_contains($frame, '"type":"RUN_ERROR"') || str_contains($frame, '"type":"RUN_FINISHED"');
-                }
-            } catch (Throwable $e) {
-                $this->aiLogger->error('[AI Agent] AG-UI run failed: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
-                // The adapter closes the run for the failures it sees (and the exception then reaches here too): a
-                // second terminal event would break the protocol, so only an unclosed run gets one.
-                if (!$closed) {
-                    echo SSEEncoder::frame(new ProtocolEvent('RUN_ERROR', ['message' => self::GENERIC_ERROR, 'code' => 'service_error']));
-                    flush();
-                }
-            }
-        }, Response::HTTP_OK, $headers);
-    }
-
-    /**
-     * A run that cannot start, told the way AG-UI tells any failed run, so the client shows the message as it
-     * shows every other one.
-     */
-    private function failedRun(ReasoningFilteredAGUIAdapter $adapter, Throwable $failure): StreamedResponse
-    {
-        return new StreamedResponse(static function () use ($adapter, $failure): void {
-            foreach ([...$adapter->start(), ...$adapter->error($failure)] as $event) {
-                echo SSEEncoder::frame($event);
+        return new StreamedResponse(static function () use ($run): void {
+            foreach ($run->frames as $frame) {
+                echo $frame;
                 flush();
             }
-        }, Response::HTTP_OK, $adapter->getHeaders() + ['X-Accel-Buffering' => 'no']);
+        }, Response::HTTP_OK, $run->headers);
     }
 
     #[Route('/admin/api/ai/agent/agui/state', name: 'masilia.ibexa_ai.agent.agui_state', methods: ['GET'])]
     public function state(Request $request): JsonResponse
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
         // Without an id: the conversation the user was last in, if any (the widget opens on it).
         $requested = $request->query->get('threadId');
         if ($requested === null) {
-            $latest = $this->threads->latest($this->userId(), $this->currentSiteaccess());
+            $latest = $this->threads->latest($this->api->userId(), $this->api->siteaccess());
             if ($latest === null) {
                 return new JsonResponse(['threadId' => null, 'messages' => [], 'interrupts' => []]);
             }
             $requested = $latest->id;
         }
-        if (!ThreadId::isValid($requested) || $this->threads->owned($requested, $this->userId()) === null) {
+        if (!ThreadId::isValid($requested) || $this->threads->owned($requested, $this->api->userId()) === null) {
             return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
 
@@ -203,7 +97,7 @@ final readonly class AgUiChatController
         $empty = ['threadId' => $threadId, 'messages' => [], 'interrupts' => []];
 
         try {
-            $agent = $this->agents->create($this->currentSiteaccess(), $threadId);
+            $agent = $this->agents->create($this->api->siteaccess(), $threadId);
             $stored = iterator_to_array($this->agents->messages($threadId)->loadAll($threadId, 200), false);
             $hydrated = (new ReasoningFilteredAGUIAdapter($threadId))->hydrate($stored, $agent->inspect());
         } catch (ProviderConfigurationException) {
@@ -240,17 +134,13 @@ final readonly class AgUiChatController
     #[Route('/admin/api/ai/agent/attachments', name: 'masilia.ibexa_ai.agent.attachment_upload', methods: ['POST'])]
     public function uploadAttachment(Request $request): JsonResponse
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
         $file = $request->files->get('file');
         if (!$file instanceof UploadedFile || !$file->isValid()) {
             return new JsonResponse(ApiError::validation('No file was received.')->toArray(), Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            $attachment = $this->attachments->store($file->getPathname(), $file->getClientOriginalName(), $this->userId());
+            $attachment = $this->attachments->store($file->getPathname(), $file->getClientOriginalName(), $this->api->userId());
         } catch (AttachmentRejectedException $e) {
             return new JsonResponse(ApiError::validation($e->getMessage())->toArray(), Response::HTTP_BAD_REQUEST);
         }
@@ -261,10 +151,7 @@ final readonly class AgUiChatController
     #[Route('/admin/api/ai/agent/attachments/{id}', name: 'masilia.ibexa_ai.agent.attachment', methods: ['GET'])]
     public function attachment(string $id): Response
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-        $attachment = AttachmentStore::isValidId($id) ? $this->attachments->find($id, $this->userId()) : null;
+        $attachment = AttachmentStore::isValidId($id) ? $this->attachments->find($id, $this->api->userId()) : null;
         if ($attachment === null || !is_file($this->attachments->path($attachment))) {
             return new JsonResponse(ApiError::notFound('Attachment not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
@@ -281,24 +168,16 @@ final readonly class AgUiChatController
     #[Route('/admin/api/ai/agent/mentions', name: 'masilia.ibexa_ai.agent.mentions', methods: ['GET'])]
     public function mentions(Request $request): JsonResponse
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
         return new JsonResponse(['contents' => $this->mentions->search((string) $request->query->get('q', ''))]);
     }
 
     #[Route('/admin/api/ai/agent/threads', name: 'masilia.ibexa_ai.agent.threads', methods: ['GET'])]
     public function threads(): JsonResponse
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
         return new JsonResponse([
             'threads' => array_map(
                 static fn ($thread): array => $thread->toArray(),
-                $this->threads->list($this->userId(), $this->currentSiteaccess()),
+                $this->threads->list($this->api->userId(), $this->api->siteaccess()),
             ),
         ]);
     }
@@ -306,16 +185,12 @@ final readonly class AgUiChatController
     #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_rename', methods: ['PATCH'])]
     public function renameThread(string $threadId, Request $request): JsonResponse
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
-        $input = $this->json($request);
+        $input = $this->api->json($request);
         $title = is_array($input) && is_string($input['title'] ?? null) ? ThreadTitle::fromUser($input['title']) : null;
         if ($title === null) {
             return new JsonResponse(ApiError::validation('A title is required')->toArray(), Response::HTTP_BAD_REQUEST);
         }
-        if (!ThreadId::isValid($threadId) || !$this->threads->rename($threadId, $this->userId(), $title)) {
+        if (!ThreadId::isValid($threadId) || !$this->threads->rename($threadId, $this->api->userId(), $title)) {
             return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
 
@@ -325,69 +200,14 @@ final readonly class AgUiChatController
     #[Route('/admin/api/ai/agent/threads/{threadId}', name: 'masilia.ibexa_ai.agent.thread_delete', methods: ['DELETE'])]
     public function deleteThread(string $threadId): JsonResponse
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-        if (!ThreadId::isValid($threadId) || $this->threads->owned($threadId, $this->userId()) === null) {
+        if (!ThreadId::isValid($threadId) || $this->threads->owned($threadId, $this->api->userId()) === null) {
             return new JsonResponse(ApiError::notFound('Conversation not found')->toArray(), Response::HTTP_NOT_FOUND);
         }
 
         $this->agents->messages($threadId)->clear($threadId);
         $this->agents->forgetWorkflow($threadId);
-        $this->threads->delete($threadId, $this->userId());
+        $this->threads->delete($threadId, $this->api->userId());
 
         return new JsonResponse(['success' => true]);
-    }
-
-    /**
-     * @param array<string, mixed> $input
-     */
-    private function lastUserText(array $input): string
-    {
-        $messages = is_array($input['messages'] ?? null) ? $input['messages'] : [];
-        for ($i = count($messages) - 1; $i >= 0; --$i) {
-            $message = $messages[$i];
-            if (!is_array($message) || ($message['role'] ?? null) !== 'user') {
-                continue;
-            }
-            $content = $message['content'] ?? '';
-            if (is_string($content)) {
-                return trim($content);
-            }
-            $text = '';
-            foreach (is_array($content) ? $content : [] as $part) {
-                if (is_array($part) && ($part['type'] ?? null) === 'text' && is_string($part['text'] ?? null)) {
-                    $text .= $part['text'];
-                }
-            }
-
-            return trim($text);
-        }
-
-        return '';
-    }
-
-    private function userId(): int
-    {
-        return (int) $this->permissions->getCurrentUserReference()->getUserId();
-    }
-
-    private function currentSiteaccess(): string
-    {
-        return $this->siteAccess->getCurrent()?->name ?? 'default';
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function json(Request $request): ?array
-    {
-        try {
-            $decoded = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return null;
-        }
-
-        return is_array($decoded) ? $decoded : null;
     }
 }

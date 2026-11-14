@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
+use Masilia\Bundle\IbexaAi\Security\Access;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +23,7 @@ final class AdminPageController extends AbstractController
     #[Route('/admin/ai/settings', name: 'masilia.ibexa_ai.admin.settings_page', methods: ['GET'])]
     public function settings(): Response
     {
-        if (!$this->permissions->hasAccess('setup', 'administrate')) {
+        if (!$this->permissions->hasAccess(...Access::Administrator->policy())) {
             throw $this->createAccessDeniedException('You do not have permission to access AI settings.');
         }
 

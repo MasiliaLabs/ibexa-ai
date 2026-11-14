@@ -16,7 +16,7 @@ use Masilia\Bundle\IbexaAi\Agent\DTO\AgentThread;
  *
  * Every read and write is for one user: a conversation of someone else is not found, and cannot be claimed.
  */
-final readonly class AgentThreads
+readonly class AgentThreads
 {
     public const TABLE = 'app_ai_agent_thread';
     private const FORMAT = 'Y-m-d H:i:s';

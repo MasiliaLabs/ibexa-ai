@@ -22,7 +22,7 @@ use PDO;
  * everything else, including what the packages on the OS bring, is a capability found through them. The system prompt is
  * the OS's text and the skills of those packages.
  */
-final readonly class AgentFactory
+readonly class AgentFactory
 {
     public function __construct(
         private ProviderResolver $resolver,

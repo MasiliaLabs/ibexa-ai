@@ -31,30 +31,6 @@ parameters:
 			path: src/bundle/Command/OsSelftestCommand.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/bundle/Controller/AdminSettingsController.php
-
-		-
-			message: '#^Negated boolean expression is always true\.$#'
-			identifier: booleanNot.alwaysTrue
-			count: 1
-			path: src/bundle/Controller/AgUiChatController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/bundle/Controller/AgUiChatController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: src/bundle/Controller/SuggestionController.php
-
-		-
 			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiModel\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
@@ -119,6 +95,12 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: src/bundle/Field/Stringifier/RichTextStringifier.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/bundle/Http/ApiRequest.php
 
 		-
 			message: '#^Instanceof between mixed and Ibexa\\Core\\FieldType\\TextBlock\\Value will always evaluate to false\.$#'

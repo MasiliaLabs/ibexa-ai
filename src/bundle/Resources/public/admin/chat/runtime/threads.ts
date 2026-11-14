@@ -13,7 +13,7 @@ export async function fetchThreads(): Promise<ThreadSummary[]> {
 }
 
 export async function deleteThread(id: string): Promise<void> {
-    const response = await fetch(`${THREADS_URL}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const response = await fetch(`${THREADS_URL}/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
     if (!response.ok && response.status !== 404) {
         throw new Error(`HTTP ${response.status}`);
     }

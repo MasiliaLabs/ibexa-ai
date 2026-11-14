@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
+use Masilia\Bundle\IbexaAi\Security\Access;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\UserService;
 use Masilia\Bundle\IbexaAi\Admin\CapabilityOverview;
@@ -32,11 +33,11 @@ final class CapabilitiesPageController extends AbstractController
     #[Route('/admin/ai/capabilities', name: 'masilia.ibexa_ai.admin.capabilities_page', methods: ['GET'])]
     public function page(): Response
     {
-        if (!$this->permissions->hasAccess('masilia_ai', 'use')) {
+        if (!$this->permissions->hasAccess(...Access::Assistant->policy())) {
             throw $this->createAccessDeniedException('You do not have permission to use the AI assistant.');
         }
 
-        $isAdministrator = (bool) $this->permissions->hasAccess('setup', 'administrate');
+        $isAdministrator = (bool) $this->permissions->hasAccess(...Access::Administrator->policy());
 
         return $this->render('@ibexadesign/ai_settings/capabilities.html.twig', [
             'overview' => $this->overview->build(),

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Masilia\Bundle\IbexaAi\Http\ApiRequest;
+use Masilia\Bundle\IbexaAi\Security\Access;
+use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Ibexa\ContentContextReader;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Suggestion\PromptText;
@@ -27,21 +29,18 @@ final readonly class ImageController
     private const GENERIC_ERROR = 'The AI image generation service is currently unavailable. Please try again later or contact an administrator.';
 
     public function __construct(
-        private PermissionResolver $permissions,
+        private ApiRequest $api,
         private ImageGenerator $images,
         private ContentContextReader $contents,
         private LoggerInterface $aiLogger,
     ) {
     }
 
+    #[RequiresAccess(Access::ContentEditor)]
     #[Route('/admin/api/ai/generate-image', name: 'masilia.ibexa_ai.generate_image', methods: ['POST'])]
     public function generate(Request $request): JsonResponse
     {
-        if (!$this->permissions->hasAccess('content', 'edit')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
-        $payload = json_decode($request->getContent(), true);
+        $payload = $this->api->json($request);
         if (!is_array($payload)) {
             return new JsonResponse(ApiError::validation('Invalid JSON payload')->toArray(), Response::HTTP_BAD_REQUEST);
         }

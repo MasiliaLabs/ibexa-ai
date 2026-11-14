@@ -71,6 +71,7 @@ services:
 
     Masilia\Bundle\IbexaAi\Security\:
         resource: '../../Security/'
+        exclude: ['../../Security/Access.php', '../../Security/RequiresAccess.php']
 
     Masilia\Bundle\IbexaAi\Command\:
         resource: '../../Command/'
@@ -81,6 +82,9 @@ services:
 
     Masilia\Bundle\IbexaAi\Observability\:
         resource: '../../Observability/'
+
+    Masilia\Bundle\IbexaAi\Http\:
+        resource: '../../Http/'
 
     Masilia\Bundle\IbexaAi\Controller\:
         resource: '../../Controller/'
@@ -110,6 +114,8 @@ services:
             - '../../Agent/AiAssistantAgent.php'
             - '../../Agent/AgentFactory.php'
             - '../../Agent/AgentSystemPrompt.php'
+            - '../../Agent/RunRefused.php'
+            - '../../Agent/StartedRun.php'
             - '../../Agent/Neuron/'
             - '../../Agent/DTO/'
             - '../../Agent/Tool/ToolResult.php'

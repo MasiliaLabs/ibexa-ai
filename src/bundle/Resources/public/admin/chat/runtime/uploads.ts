@@ -15,7 +15,7 @@ export async function uploadImage(file: File): Promise<ImageAttachment> {
     const form = new FormData();
     form.append('file', file);
 
-    const response = await fetch(URL_BASE, { method: 'POST', body: form, headers: { Accept: 'application/json' } });
+    const response = await fetch(URL_BASE, { method: 'POST', body: form, headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
     const body = (await response.json().catch(() => null)) as { id?: string; name?: string; size?: number; width?: number; height?: number; error?: { message?: string } } | null;
     if (!response.ok || body === null || typeof body.id !== 'string') {
         throw new Error(body?.error?.message ?? `The image could not be sent (HTTP ${response.status}).`);

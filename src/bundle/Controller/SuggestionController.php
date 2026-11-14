@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Ibexa\Contracts\Core\Repository\PermissionResolver;
-use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Locale;
+use Masilia\Bundle\IbexaAi\Http\ApiRequest;
+use Masilia\Bundle\IbexaAi\Security\Access;
+use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Ibexa\ContentContextReader;
 use Masilia\Bundle\IbexaAi\Ibexa\SuggestionRequestFactory;
 use Masilia\Bundle\IbexaAi\Llm\TextGeneratorFactory;
@@ -41,11 +42,10 @@ final readonly class SuggestionController
     private const GENERIC_OUTPUT_ERROR = 'The AI model returned an unusable answer. Please try again.';
 
     public function __construct(
-        private PermissionResolver $permissions,
+        private ApiRequest $api,
         private ContentContextReader $contents,
         private SuggestionRequestFactory $requests,
         private TextGeneratorFactory $generators,
-        private SiteAccessServiceInterface $siteAccess,
         private LoggerInterface $aiLogger,
         private SseEncoder $sse = new SseEncoder(),
     ) {
@@ -64,13 +64,10 @@ final readonly class SuggestionController
         ]]);
     }
 
+    #[RequiresAccess(Access::ContentEditor)]
     #[Route('/admin/api/ai/languages/{contentId}', name: 'masilia.ibexa_ai.languages', requirements: ['contentId' => '\d+'], methods: ['GET'])]
     public function languages(int $contentId): JsonResponse
     {
-        if (!$this->permissions->hasAccess('content', 'edit')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
         $content = $this->contents->load($contentId, 'for language list');
         if ($content === null) {
             return new JsonResponse(['languages' => []]);
@@ -88,17 +85,14 @@ final readonly class SuggestionController
         return new JsonResponse(['languages' => $languages]);
     }
 
+    #[RequiresAccess(Access::ContentEditor)]
     #[Route('/admin/api/ai/suggest', name: 'masilia.ibexa_ai.suggest', methods: ['POST'])]
     public function suggest(Request $request): JsonResponse
     {
-        if (!$this->permissions->hasAccess('content', 'edit')) {
-            return new JsonResponse(ApiError::accessDenied()->toArray(), Response::HTTP_FORBIDDEN);
-        }
-
         try {
             $payload = SuggestionPayload::fromArray($this->decode($request));
             $suggestionRequest = $this->requests->build($payload);
-            $suggestion = new SuggestionService($this->generators->create($this->currentSiteaccess()))->suggest($suggestionRequest);
+            $suggestion = (new SuggestionService($this->generators->create($this->api->siteaccess())))->suggest($suggestionRequest);
         } catch (Throwable $e) {
             [$error, $status] = $this->errorFor($e);
 
@@ -111,19 +105,16 @@ final readonly class SuggestionController
         ]);
     }
 
+    #[RequiresAccess(Access::ContentEditor)]
     #[Route('/admin/api/ai/suggest/stream', name: 'masilia.ibexa_ai.suggest_stream', methods: ['POST'])]
     public function suggestStream(Request $request): StreamedResponse
     {
         $headers = ['Content-Type' => 'text/event-stream', 'Cache-Control' => 'no-cache', 'X-Accel-Buffering' => 'no'];
 
-        if (!$this->permissions->hasAccess('content', 'edit')) {
-            return $this->streamError(ApiError::accessDenied(), Response::HTTP_FORBIDDEN, $headers);
-        }
-
         try {
             $payload = SuggestionPayload::fromArray($this->decode($request));
             $suggestionRequest = $this->requests->build($payload);
-            $service = new SuggestionService($this->generators->create($this->currentSiteaccess()));
+            $service = new SuggestionService($this->generators->create($this->api->siteaccess()));
             $format = $suggestionRequest->outputFormat()->value;
         } catch (Throwable $e) {
             [$error, $status] = $this->errorFor($e);
@@ -150,28 +141,13 @@ final readonly class SuggestionController
         }, Response::HTTP_OK, $headers);
     }
 
-    private function currentSiteaccess(): string
-    {
-        return $this->siteAccess->getCurrent()?->name ?? 'default';
-    }
-
     /**
      * @return array<string, mixed>
      * @throws InvalidSuggestionRequestException
      */
     private function decode(Request $request): array
     {
-        try {
-            $decoded = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw new InvalidSuggestionRequestException('Invalid JSON payload');
-        }
-
-        if (!is_array($decoded)) {
-            throw new InvalidSuggestionRequestException('Invalid JSON payload');
-        }
-
-        return $decoded;
+        return $this->api->json($request) ?? throw new InvalidSuggestionRequestException('Invalid JSON payload');
     }
 
     /**
