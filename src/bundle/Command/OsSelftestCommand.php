@@ -148,6 +148,9 @@ final class OsSelftestCommand extends Command
                 $scenario->run($context);
             }
             $step('trash A', 'content.trash', ['content_id' => $a['content_id']]);
+            $step('restore A from the trash', 'trash.restore', ['content_ids' => [$a['content_id']]], static fn (array $d): ?string => ($d['count'] ?? 0) === 1 ? null : 'A was not restored');
+            $step('A has its location back after the restore', 'location.list', ['content_id' => $a['content_id']], static fn (array $d): ?string => ($d['locations'] ?? []) !== [] ? null : 'A has no location after the restore');
+            $step('trash A again', 'content.trash', ['content_id' => $a['content_id']]);
             $step('delete A from the trash', 'trash.delete', ['content_id' => $a['content_id']]);
             $step('it is no longer in the trash', 'trash.delete', ['content_id' => $a['content_id']], null, null, true);
         } finally {

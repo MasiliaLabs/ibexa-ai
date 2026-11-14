@@ -18,5 +18,4 @@ final class ToolName
     public const LOAD_CONTENT = 'load_content';
     public const CREATE_FOLDER = 'create_folder';
     public const TRASH_CONTENT = 'trash_content';
-    public const RESTORE_CONTENT = 'restore_content';
 }

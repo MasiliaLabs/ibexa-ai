@@ -233,24 +233,6 @@ final class PlanExecutorTest extends TestCase
         self::assertTrue($result->success);
     }
 
-    public function testExecuteRestoreContentSuccess(): void
-    {
-        $registry = $this->makeRegistry([
-            ToolName::RESTORE_CONTENT => ToolResult::ok('Restored', [
-                'restored' => [99, 100],
-                'count' => 2,
-            ]),
-        ]);
-
-        $executor = new PlanExecutor($registry, new NullLogger());
-        $result = $executor->execute(new Plan(
-            intent: Plan::INTENT_RESTORE_CONTENT,
-            fields: ['content_ids' => [99, 100]],
-        ));
-
-        self::assertTrue($result->success);
-    }
-
     public function testExecuteReturnsToolUnavailableWhenToolMissing(): void
     {
         $registry = $this->makeRegistry([]);

@@ -9,13 +9,13 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Query;
 
 /**
  * Shared trash restoration logic used by
- * RestoreContentTool.
+ * RestoreCapability.
  *
  * The trash cannot be searched by content id: the criterion is not implemented for the trash by the
  * search engines this project uses (it throws NotImplementedException), and a trashed content no longer
  * has a main location to load the trash item from. So the trash is read page by page and filtered here.
  */
-final class TrashRestorer
+class TrashRestorer
 {
     private const PAGE_SIZE = 100;
     /** Upper bound of trash items looked at, so a huge trash cannot make one call run for long. */

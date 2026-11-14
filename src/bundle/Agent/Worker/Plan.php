@@ -13,7 +13,6 @@ final readonly class Plan
     public const INTENT_UPDATE_CONTENT = 'update_content';
     public const INTENT_CREATE_FOLDER = 'create_folder';
     public const INTENT_TRASH_CONTENT = 'trash_content';
-    public const INTENT_RESTORE_CONTENT = 'restore_content';
     public const INTENT_ADD_IMAGE = 'add_image';
 
     public const INTENTS = [
@@ -21,7 +20,6 @@ final readonly class Plan
         self::INTENT_UPDATE_CONTENT,
         self::INTENT_CREATE_FOLDER,
         self::INTENT_TRASH_CONTENT,
-        self::INTENT_RESTORE_CONTENT,
         self::INTENT_ADD_IMAGE,
     ];
 
@@ -70,7 +68,7 @@ final readonly class Plan
             self::INTENT_CREATE_CONTENT => $this->validateCreateContent(),
             self::INTENT_UPDATE_CONTENT => $this->validateUpdateContent(),
             self::INTENT_CREATE_FOLDER => $this->validateCreateFolder(),
-            self::INTENT_TRASH_CONTENT, self::INTENT_RESTORE_CONTENT => $this->validateContentRef(),
+            self::INTENT_TRASH_CONTENT => $this->validateContentRef(),
             self::INTENT_ADD_IMAGE => $this->validateAddImage(),
         };
     }
@@ -126,7 +124,7 @@ final readonly class Plan
     private function validateContentRef(): ?string
     {
         if ($this->contentId === null && $this->fields === []) {
-            return 'trash/restore requires contentId or content_ids';
+            return 'trash requires contentId or content_ids';
         }
         return null;
     }

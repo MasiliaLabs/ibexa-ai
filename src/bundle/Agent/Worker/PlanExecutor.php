@@ -45,7 +45,6 @@ final readonly class PlanExecutor
                 Plan::INTENT_UPDATE_CONTENT => $this->updateContent($plan),
                 Plan::INTENT_CREATE_FOLDER => $this->createFolder($plan),
                 Plan::INTENT_TRASH_CONTENT => $this->trashContent($plan),
-                Plan::INTENT_RESTORE_CONTENT => $this->restoreContent($plan),
                 Plan::INTENT_ADD_IMAGE => $this->addImage($plan),
                 default => ExecutionResult::fail(sprintf('Unknown intent: %s', $plan->intent), 'UNKNOWN_INTENT'),
             };
@@ -174,21 +173,6 @@ final readonly class PlanExecutor
             return ExecutionResult::fail('trash_content tool not available', 'TOOL_UNAVAILABLE');
         }
         $result = $tool->execute(['content_id' => $plan->contentId]);
-
-        return $this->toExecutionResult($result, 'content');
-    }
-
-    private function restoreContent(Plan $plan): ExecutionResult
-    {
-        $tool = $this->toolRegistry->get(ToolName::RESTORE_CONTENT);
-        if ($tool === null) {
-            return ExecutionResult::fail('restore_content tool not available', 'TOOL_UNAVAILABLE');
-        }
-        $ids = $plan->contentId !== null
-            ? [$plan->contentId]
-            : array_values(array_map('intval', $plan->fields['content_ids'] ?? []));
-
-        $result = $tool->execute(['content_ids' => $ids]);
 
         return $this->toExecutionResult($result, 'content');
     }

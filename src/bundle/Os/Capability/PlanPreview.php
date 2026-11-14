@@ -17,7 +17,6 @@ final class PlanPreview
         Plan::INTENT_CREATE_FOLDER => 'Create a folder',
         Plan::INTENT_ADD_IMAGE => 'Add an image to the media library',
         Plan::INTENT_TRASH_CONTENT => 'Move to the trash',
-        Plan::INTENT_RESTORE_CONTENT => 'Restore from the trash',
         Plan::INTENT_UPDATE_CONTENT => 'Update content',
     ];
 
