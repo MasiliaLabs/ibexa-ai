@@ -122,6 +122,7 @@ services:
     Masilia\IbexaAi\Chat\:
         resource: '../../../lib/Chat/'
         exclude:
+            - '../../../lib/Chat/ChatAccessConfig.php'
             - '../../../lib/Chat/Refusal.php'
             - '../../../lib/Chat/RunRefused.php'
             - '../../../lib/Chat/StartedRun.php'
