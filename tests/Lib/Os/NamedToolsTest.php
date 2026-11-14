@@ -35,13 +35,31 @@ final class NamedToolsTest extends TestCase
         self::assertSame($named, OsAgentFactory::isNamedIn($text, $capability));
     }
 
-    public function testWhatWasFoundAtAnEarlierTurnStaysFoundForTheWholeConversation(): void
+    use EveryCapability;
+
+    public function testTheCapabilitiesThePromptNamesAreTheOnesExposed(): void
     {
-        $middleware = new ConversationToolSearch([], 8);
-        $messages = [new UserMessage('first'), new UserMessage('second')];
+        $skill = new class() implements \Masilia\Contracts\IbexaAi\Os\Skill {
+            public function name(): string { return 'craft'; }
+            public function instructions(): string { return 'Read `site.explore`, then call `url.alias.list` and site__conventions.'; }
+        };
+        $prompt = \Masilia\IbexaAi\Os\Neuron\OsSystemPrompt::get([$skill]);
 
-        $turn = (new ReflectionMethod($middleware, 'currentTurn'))->invoke($middleware, $messages);
+        $named = [];
+        foreach (self::capabilities() as [$class]) {
+            $name = $this->make($class)->name();
+            if (OsAgentFactory::isNamedIn($prompt, $name)) {
+                $named[] = $name;
+            }
+        }
 
-        self::assertSame($messages, $turn, 'every message counts, not only those after the last user message');
+        // What the core prompt and the skill name, and nothing else (url.wildcard.create is in the pool, in no text).
+        self::assertContains('structure.type.describe', $named);
+        self::assertContains('relations.list', $named);
+        self::assertContains('content.trash', $named);
+        self::assertContains('url.alias.list', $named, 'named by a skill, with its dots');
+        self::assertNotContains('url.wildcard.create', $named);
+        self::assertNotContains('content.create_folder', $named);
+        self::assertLessThan(30, count($named), 'a handful of tools, not the whole pool: ' . implode(', ', $named));
     }
 }

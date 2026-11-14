@@ -196,4 +196,31 @@ final class OsAgentTest extends TestCase
         self::assertStringContainsString('Call budget reached', end($answers));
         self::assertStringContainsString('"success":false', end($answers), 'in the answer the chat reads');
     }
+
+    public function testAToolFoundAtAnEarlierTurnIsStillCallableAtTheNextOne(): void
+    {
+        $permissions = $this->createMock(PermissionResolver::class);
+        $permissions->method('hasAccess')->willReturn(true);
+        $permissions->method('getCurrentUserReference')->willReturn(new UserReference(14));
+        $registry = new CapabilityRegistry([$this->capability('content.look', 'Look at a content.', Risk::READ)]);
+        $access = new CapabilityAccess($permissions, []);
+        $runner = new CapabilityRunner($registry, $access, new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger());
+        $tools = (new CapabilityToolPool($registry, $access, $runner))->forCurrentUser();
+
+        $model = new FakeAIProvider(
+            new ToolCallMessage('I look for it.', [new ToolCall('tool_search', 'call-1', ['query' => 'look content'])]),
+            new AssistantMessage('Found it.'),
+            // The next turn: a new message of the user, and the model calls the tool it found before, without searching again.
+            new ToolCallMessage('I look.', [new ToolCall('content__look', 'call-2', ['id' => 5])]),
+            new AssistantMessage('Looked.'),
+        );
+        $agent = $this->agent($model, $tools)->setThreadId('thread-aaaa-0004');
+
+        $agent->chat(new UserMessage('Find how to look at a content'));
+        self::assertSame([], $this->ran);
+        $state = $agent->chat(new UserMessage('Now look at the content 5'));
+
+        self::assertSame(['content.look'], $this->ran, 'the tool found at the first turn ran at the second');
+        self::assertSame('Looked.', $state->getResponse()?->message()->getContent());
+    }
 }
