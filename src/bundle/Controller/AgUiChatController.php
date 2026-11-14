@@ -9,6 +9,7 @@ use Masilia\Contracts\IbexaAi\Security\Access;
 use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use Masilia\IbexaAi\Os\Neuron\OsAgentFactory;
 use Masilia\IbexaAi\Chat\ChatRun;
+use Masilia\IbexaAi\Chat\Refusal;
 use Masilia\IbexaAi\Chat\RunRefused;
 use Masilia\IbexaAi\Chat\Attachment\AttachmentRejectedException;
 use Masilia\IbexaAi\Chat\Attachment\AttachmentStore;
@@ -66,7 +67,11 @@ final readonly class AgUiChatController
         try {
             $run = $this->chat->start($input, $this->api->userId(), $this->api->siteaccess());
         } catch (RunRefused $refused) {
-            return new JsonResponse($refused->error->toArray(), $refused->status);
+            return new JsonResponse($refused->error->toArray(), match ($refused->reason) {
+                Refusal::Invalid => Response::HTTP_BAD_REQUEST,
+                Refusal::TooLong => Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
+                Refusal::Forbidden => Response::HTTP_FORBIDDEN,
+            });
         }
 
         return new StreamedResponse(static function () use ($run): void {

@@ -22,7 +22,6 @@ use NeuronAI\Exceptions\InputTranslationException;
 use NeuronAI\Workflow\Streaming\ProtocolEvent;
 use NeuronAI\Workflow\Streaming\SSEEncoder;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
@@ -63,12 +62,12 @@ final readonly class ChatRun
         }
         $message = self::lastUserText($input);
         if (mb_strlen($message) > self::MAX_MESSAGE) {
-            throw new RunRefused(ApiError::validation('The message is too long.'), Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+            throw new RunRefused(ApiError::validation('The message is too long.'), Refusal::TooLong);
         }
         try {
             $this->threads->claim($threadId, $userId, $siteaccess, $message);
         } catch (ThreadAccessDeniedException) {
-            throw new RunRefused(ApiError::accessDenied(), Response::HTTP_FORBIDDEN);
+            throw new RunRefused(ApiError::accessDenied(), Refusal::Forbidden);
         }
 
         try {

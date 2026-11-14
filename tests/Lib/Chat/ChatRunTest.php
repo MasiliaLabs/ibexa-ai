@@ -7,6 +7,7 @@ namespace Masilia\IbexaAi\Tests\Lib\Chat;
 use Masilia\IbexaAi\Os\Neuron\OsAgentFactory;
 use Masilia\IbexaAi\Chat\Attachment\UserMessageBuilder;
 use Masilia\IbexaAi\Chat\ChatRun;
+use Masilia\IbexaAi\Chat\Refusal;
 use Masilia\IbexaAi\Chat\RunRefused;
 use Masilia\IbexaAi\Chat\Thread\AgentThreads;
 use Masilia\IbexaAi\Chat\Thread\ThreadAccessDeniedException;
@@ -63,7 +64,7 @@ final class ChatRunTest extends TestCase
 
         foreach ([['messages' => []], $this->input('Hello', 'short'), $this->input('Hello', '../../etc/passwd')] as $input) {
             $refused = $this->refusedWith(static fn () => $chat->start($input, 14, 'site'));
-            self::assertSame(400, $refused->status);
+            self::assertSame(Refusal::Invalid, $refused->reason);
             self::assertSame('Missing or invalid threadId', $refused->getMessage());
         }
     }
@@ -75,7 +76,7 @@ final class ChatRunTest extends TestCase
 
         $refused = $this->refusedWith(fn () => $chat->start($this->input(str_repeat('a', ChatRun::MAX_MESSAGE + 1)), 14, 'site'));
 
-        self::assertSame(413, $refused->status);
+        self::assertSame(Refusal::TooLong, $refused->reason);
     }
 
     public function testAThreadOfSomeoneElseIsRefusedWith403(): void
@@ -86,7 +87,7 @@ final class ChatRunTest extends TestCase
 
         $refused = $this->refusedWith(fn () => $chat->start($this->input(), 14, 'site'));
 
-        self::assertSame(403, $refused->status);
+        self::assertSame(Refusal::Forbidden, $refused->reason);
         self::assertSame('ACCESS_DENIED', $refused->error->code);
     }
 
