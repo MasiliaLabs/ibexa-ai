@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Localization;
 
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater;
+use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Bundle\IbexaAi\Os\Capability\RepositoryCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
@@ -18,7 +18,7 @@ use Throwable;
  */
 final class TranslationAddCapability extends RepositoryCapability
 {
-    public function __construct(Repository $repository, private readonly ContentUpdater $updater)
+    public function __construct(Repository $repository, private readonly ContentWriter $writer)
     {
         parent::__construct($repository);
     }
@@ -114,7 +114,7 @@ final class TranslationAddCapability extends RepositoryCapability
 
     public function execute(array $arguments): CapabilityResult
     {
-        $content = $this->updater->update((int) $arguments['content_id'], (array) $arguments['fields'], (string) $arguments['language_code']);
+        $content = $this->writer->update((int) $arguments['content_id'], (array) $arguments['fields'], (string) $arguments['language_code']);
 
         return CapabilityResult::ok(
             sprintf('"%s" now has a "%s" translation', $content->getName(), $arguments['language_code']),

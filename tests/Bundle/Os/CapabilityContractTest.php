@@ -49,11 +49,7 @@ final class CapabilityContractTest extends TestCase
                 $arguments[] = [];
                 continue;
             }
-            // A final class cannot be mocked: those the capabilities take are built, bare.
-            $arguments[] = match ($type) {
-                \Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater::class => new \Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater($this->createMock(\Ibexa\Contracts\Core\Repository\Repository::class), new \Masilia\Bundle\IbexaAi\Ibexa\Field\Input\FieldInputs([])),
-                default => $this->createMock($type),
-            };
+            $arguments[] = $this->createMock($type);
         }
 
         return new $class(...$arguments);

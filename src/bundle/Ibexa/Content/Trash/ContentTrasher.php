@@ -10,7 +10,7 @@ use Ibexa\AdminUi\Specification\Content\ContentHaveUniqueRelation;
 use Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo;
 use Ibexa\Contracts\Core\Repository\Values\Content\Relation;
 use Ibexa\Contracts\Core\Repository\Values\Content\RelationType;
-use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater;
+use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -23,7 +23,7 @@ readonly class ContentTrasher
 {
     public function __construct(
         private Repository $repository,
-        private ContentUpdater $contentUpdater,
+        private ContentWriter $writer,
         private LoggerInterface $aiLogger,
     ) {
     }
@@ -114,7 +114,7 @@ readonly class ContentTrasher
                 }
 
                 if ($attributes !== []) {
-                    $this->contentUpdater->update($sourceContentId, $attributes, $languageCode);
+                    $this->writer->update($sourceContentId, $attributes, $languageCode);
                     $updated[] = sprintf('%d:%s', $sourceContentId, $sourceContent->getContentInfo()->getName());
                 }
             } catch (Throwable $e) {

@@ -15,7 +15,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Location;
 use Ibexa\Core\Repository\Values\Content\Relation;
 use Ibexa\Core\FieldType\Relation\Value as ObjectRelationValue;
 use Ibexa\Core\FieldType\RelationList\Value as ObjectRelationListValue;
-use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater;
+use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\ContentTrasher;
 use Psr\Log\AbstractLogger;
 use Stringable;
@@ -88,7 +88,7 @@ final class ContentTrasherTest extends TestCase
         $repository->method('getTrashService')->willReturn($trash);
         $repository->method('getContentLanguageService')->willReturn($languages);
 
-        $updater = $this->createMock(ContentUpdater::class);
+        $updater = $this->createMock(ContentWriter::class);
         $updater->expects(self::once())->method('update')->with(77, ['blocks' => [9]], 'eng-GB');
 
         $trashed = (new ContentTrasher($repository, $updater, $logger = new RecordingLogger()))->trash(1353);
@@ -120,7 +120,7 @@ final class ContentTrasherTest extends TestCase
         $repository->method('getTrashService')->willReturn($this->createMock(TrashService::class));
         $repository->method('getContentLanguageService')->willReturn($languages);
 
-        $updater = $this->createMock(ContentUpdater::class);
+        $updater = $this->createMock(ContentWriter::class);
         $updater->expects(self::once())->method('update')->with(88, ['image' => null], 'eng-GB');
 
         (new ContentTrasher($repository, $updater, $logger = new RecordingLogger()))->trash(1353);
