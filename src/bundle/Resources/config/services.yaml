@@ -40,12 +40,13 @@ services:
         alias: Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver
     Masilia\Bundle\IbexaAi\Content\:
         resource: '../../Content/'
-    Masilia\Bundle\IbexaAi\Admin\:
-        resource: '../../Admin/'
+    Masilia\Bundle\IbexaAi\Provider\:
+        resource: '../../Provider/'
 
     # The AI OS: capabilities (tagged), their registry, access, audit and the three tools the model sees.
     Masilia\Bundle\IbexaAi\Os\:
         resource: '../../Os/'
+        exclude: ['../../Os/Neuron/OsAgent.php', '../../Os/Neuron/OsSystemPrompt.php']
 
     Masilia\IbexaAi\Os\CapabilityRegistry:
         arguments:
@@ -98,16 +99,17 @@ services:
         arguments:
             $stringifiers: !tagged_iterator masilia.ibexa_ai.stringifier
 
+    Masilia\Bundle\IbexaAi\Chat\:
+        resource: '../../Chat/'
+        exclude:
+            - '../../Chat/RunRefused.php'
+            - '../../Chat/StartedRun.php'
+            - '../../Chat/DTO/'
+
     Masilia\Bundle\IbexaAi\Agent\:
         resource: '../../Agent/'
         exclude:
-            - '../../Agent/AiAssistantAgent.php'
-            - '../../Agent/AgentFactory.php'
-            - '../../Agent/AgentSystemPrompt.php'
-            - '../../Agent/RunRefused.php'
-            - '../../Agent/StartedRun.php'
             - '../../Agent/Neuron/'
-            - '../../Agent/DTO/'
             - '../../Agent/Tool/ToolResult.php'
             - '../../Agent/Tool/FieldValueTransformerRegistry.php'
 
@@ -121,7 +123,7 @@ services:
     Masilia\Bundle\IbexaAi\Field\Stringifier\:
         resource: '../../Field/Stringifier/'
 
-    Masilia\Bundle\IbexaAi\Agent\AgentFactory:
+    Masilia\Bundle\IbexaAi\Os\Neuron\OsAgentFactory:
         public: true
         arguments:
             $skills: !tagged_iterator masilia.ibexa_ai.skill

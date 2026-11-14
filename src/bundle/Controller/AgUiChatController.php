@@ -7,16 +7,16 @@ namespace Masilia\Bundle\IbexaAi\Controller;
 use Masilia\Bundle\IbexaAi\Http\ApiRequest;
 use Masilia\Bundle\IbexaAi\Security\Access;
 use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
-use Masilia\Bundle\IbexaAi\Agent\AgentFactory;
-use Masilia\Bundle\IbexaAi\Agent\ChatRun;
-use Masilia\Bundle\IbexaAi\Agent\RunRefused;
-use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentRejectedException;
-use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
-use Masilia\Bundle\IbexaAi\Agent\Mention\ContentMentions;
-use Masilia\Bundle\IbexaAi\Agent\Stream\ReasoningFilteredAGUIAdapter;
-use Masilia\Bundle\IbexaAi\Agent\Thread\AgentThreads;
-use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadId;
-use Masilia\Bundle\IbexaAi\Agent\Thread\ThreadTitle;
+use Masilia\Bundle\IbexaAi\Os\Neuron\OsAgentFactory;
+use Masilia\Bundle\IbexaAi\Chat\ChatRun;
+use Masilia\Bundle\IbexaAi\Chat\RunRefused;
+use Masilia\Bundle\IbexaAi\Chat\Attachment\AttachmentRejectedException;
+use Masilia\Bundle\IbexaAi\Chat\Attachment\AttachmentStore;
+use Masilia\Bundle\IbexaAi\Chat\Mention\ContentMentions;
+use Masilia\Bundle\IbexaAi\Chat\Stream\ReasoningFilteredAGUIAdapter;
+use Masilia\Bundle\IbexaAi\Chat\Thread\AgentThreads;
+use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadId;
+use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadTitle;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
@@ -46,7 +46,7 @@ final readonly class AgUiChatController
 {
     public function __construct(
         private ApiRequest $api,
-        private AgentFactory $agents,
+        private OsAgentFactory $agents,
         private AgentThreads $threads,
         private ContentMentions $mentions,
         private AttachmentStore $attachments,

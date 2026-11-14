@@ -14,7 +14,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Language;
 use Ibexa\Core\Base\Exceptions\NotFoundException;
 use Ibexa\Core\Repository\Values\Content\Location;
 use Ibexa\Core\Repository\Values\User\UserReference;
-use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
+use Masilia\Bundle\IbexaAi\Chat\Attachment\AttachmentStore;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages;
 use Masilia\Bundle\IbexaAi\Content\EnabledLanguages;
 use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;

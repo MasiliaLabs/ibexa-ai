@@ -7,7 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Controller;
 use Masilia\Bundle\IbexaAi\Security\Access;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\UserService;
-use Masilia\Bundle\IbexaAi\Admin\CapabilityOverview;
+use Masilia\Bundle\IbexaAi\Os\CapabilityOverview;
 use Masilia\Bundle\IbexaAi\Os\Audit\AuditLog;
 use Masilia\Bundle\IbexaAi\Os\Coverage\CoverageReport;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

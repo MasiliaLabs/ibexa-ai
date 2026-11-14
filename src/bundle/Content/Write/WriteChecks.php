@@ -8,7 +8,7 @@ use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
 use Ibexa\Contracts\Core\Repository\Exceptions\UnauthorizedException;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Agent\Attachment\AttachmentStore;
+use Masilia\Bundle\IbexaAi\Chat\Attachment\AttachmentStore;
 use Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages;
 use Masilia\Contracts\IbexaAi\Content\ContentTypeSchemas;
 use Masilia\Contracts\IbexaAi\Content\Languages;

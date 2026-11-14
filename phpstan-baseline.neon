@@ -4,13 +4,13 @@ parameters:
 			message: '#^Strict comparison using \=\=\= between Masilia\\Bundle\\IbexaAi\\Entity\\AiModel\|null and false will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1
-			path: src/bundle/Admin/ProviderTester.php
+			path: src/bundle/Provider/ProviderTester.php
 
 		-
 			message: '#^Call to an undefined static method NeuronAI\\Agent\\Adapters\\AGUIAdapter\:\:reset\(\)\.$#'
 			identifier: staticMethod.notFound
 			count: 1
-			path: src/bundle/Agent/Stream/ReasoningFilteredAGUIAdapter.php
+			path: src/bundle/Chat/Stream/ReasoningFilteredAGUIAdapter.php
 
 		-
 			message: '#^Ternary operator condition is always true\.$#'
