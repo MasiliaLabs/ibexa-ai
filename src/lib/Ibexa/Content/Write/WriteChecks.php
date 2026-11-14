@@ -161,6 +161,36 @@ readonly class WriteChecks
             : null;
     }
 
+    /**
+     * The user's role lets them create a content of this type under the parent (the limitations of content/create: a subtree, a
+     * section, a type). Said before the card is shown, so that the user is not asked to approve what Ibexa will refuse.
+     */
+    public function mayCreate(string $type, int $parentLocationId): ?string
+    {
+        try {
+            $contentType = $this->repository->getContentTypeService()->loadContentTypeByIdentifier($type);
+            $struct = $this->repository->getContentService()->newContentCreateStruct($contentType, $this->repository->getContentLanguageService()->getDefaultLanguageCode());
+            $target = $this->repository->getLocationService()->newLocationCreateStruct($parentLocationId);
+            $allowed = $this->permissions->canUser('content', 'create', $struct, [$target]);
+        } catch (Throwable) {
+            return null; // what cannot be asked is left to the repository, which refuses at the write
+        }
+
+        return $allowed ? null : sprintf('Your role does not let you create a "%s" under location %d.', $type, $parentLocationId);
+    }
+
+    /** The user's role lets them edit the content. */
+    public function mayEdit(int $contentId): ?string
+    {
+        try {
+            $allowed = $this->permissions->canUser('content', 'edit', $this->repository->getContentService()->loadContentInfo($contentId));
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $allowed ? null : sprintf('Your role does not let you edit the content %d.', $contentId);
+    }
+
     /** The content exists. */
     public function content(int $contentId): ?string
     {

@@ -162,4 +162,38 @@ final class WriteChecksTest extends TestCase
         self::assertSame('Content 5 is a user: use access.user.update (the admin has a user form for it), not a content change.', $checks->notAUser(5, 'access.user.update'));
         self::assertNull($checks->notAUser(6, 'access.user.update'), 'a content that is not there is for the other checks to say');
     }
+
+    /** @return array{WriteChecks, \Ibexa\Contracts\Core\Repository\ContentService&\PHPUnit\Framework\MockObject\MockObject} */
+    private function checksFor(bool $allowed): WriteChecks
+    {
+        $contents = $this->createMock(\Ibexa\Contracts\Core\Repository\ContentService::class);
+        $contents->method('newContentCreateStruct')->willReturn(new \Ibexa\Core\Repository\Values\Content\ContentCreateStruct(['mainLanguageCode' => 'eng-GB']));
+        $contents->method('loadContentInfo')->willReturn($this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo::class));
+        $types = $this->createMock(\Ibexa\Contracts\Core\Repository\ContentTypeService::class);
+        $locations = $this->createMock(\Ibexa\Contracts\Core\Repository\LocationService::class);
+        $locations->method('newLocationCreateStruct')->willReturn(new \Ibexa\Contracts\Core\Repository\Values\Content\LocationCreateStruct(['parentLocationId' => 2]));
+        $languages = $this->createMock(LanguageService::class);
+        $languages->method('getDefaultLanguageCode')->willReturn('eng-GB');
+        $repository = $this->createMock(Repository::class);
+        $repository->method('getContentService')->willReturn($contents);
+        $repository->method('getContentTypeService')->willReturn($types);
+        $repository->method('getLocationService')->willReturn($locations);
+        $repository->method('getContentLanguageService')->willReturn($languages);
+        $permissions = $this->createMock(PermissionResolver::class);
+        $permissions->method('canUser')->willReturn($allowed);
+
+        return new WriteChecks($this->createBlockCatalog([]), $repository, $this->createMock(SiteLocations::class), $this->createMock(SiteLanguages::class), new EnabledLanguages($languages), $this->emptyStore(), $permissions, $this->config());
+    }
+
+    public function testACreationTheRoleDoesNotAllowIsSaidBeforeTheCard(): void
+    {
+        self::assertNull($this->checksFor(true)->mayCreate('folder', 2));
+        self::assertStringContainsString('does not let you create a "folder" under location 2', (string) $this->checksFor(false)->mayCreate('folder', 2));
+    }
+
+    public function testAnEditTheRoleDoesNotAllowIsSaidBeforeTheCard(): void
+    {
+        self::assertNull($this->checksFor(true)->mayEdit(9));
+        self::assertStringContainsString('does not let you edit the content 9', (string) $this->checksFor(false)->mayEdit(9));
+    }
 }

@@ -103,6 +103,9 @@ final class UpdateCapability extends AbstractCapability
         if (($problem = $this->checks->notAUser($id, 'access.user.update')) !== null) {
             return $problem;
         }
+        if (($problem = $this->checks->mayEdit($id)) !== null) {
+            return $problem;
+        }
         if (isset($arguments['language']) && $this->languages->resolve((string) $arguments['language']) === null) {
             return sprintf('Language "%s" does not exist. Use a language code such as "eng-GB" or "fre-FR".', $arguments['language']);
         }

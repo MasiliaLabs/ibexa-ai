@@ -74,6 +74,7 @@ trait WriteFixtures
 
         $permissions = $this->createMock(PermissionResolver::class);
         $permissions->method('getCurrentUserReference')->willReturn(new UserReference($userId));
+        $permissions->method('canUser')->willReturn(true);
 
         return new WriteChecks(
             $this->createBlockCatalog($types),

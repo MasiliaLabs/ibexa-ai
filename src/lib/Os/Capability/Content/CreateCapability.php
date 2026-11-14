@@ -83,7 +83,8 @@ final class CreateCapability extends AbstractCapability
 
         $problem = $this->checks->notAUserType($type)
             ?? $this->checks->contentType($type, $fields)
-            ?? $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null);
+            ?? $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null)
+            ?? $this->checks->mayCreate($type, (int) $arguments['parent_location_id']);
         if ($problem !== null) {
             return $problem;
         }
