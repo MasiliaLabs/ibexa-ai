@@ -4,7 +4,7 @@ services:
             tags: ['masilia.ibexa_ai.tool']
         Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerInterface:
             tags: ['masilia.ibexa_ai.field_value_transformer']
-        Masilia\IbexaAi\Os\Capability:
+        Masilia\Contracts\IbexaAi\Os\Capability:
             tags: ['masilia.ibexa_ai.capability']
         Masilia\Bundle\IbexaAi\Field\FieldValueStringifierInterface:
             tags: ['masilia.ibexa_ai.stringifier']
@@ -29,8 +29,24 @@ services:
     Masilia\Bundle\IbexaAi\Image\:
         resource: '../../Image/'
 
+    # The public API (Masilia\Contracts\IbexaAi): what other packages type-hint.
+    Masilia\Contracts\IbexaAi\Image\ImageGenerator:
+        alias: Masilia\Bundle\IbexaAi\Image\ProviderImageGenerator
+    Masilia\Contracts\IbexaAi\Content\ContentWriter:
+        alias: Masilia\Bundle\IbexaAi\Content\Write\RepositoryContentWriter
+    Masilia\Contracts\IbexaAi\Content\ContentTypeSchemas:
+        alias: Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas
+    Masilia\Contracts\IbexaAi\Site\SiteLocations:
+        alias: Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver
+    Masilia\Bundle\IbexaAi\Content\:
+        resource: '../../Content/'
+    # The names of 0.5, for the packages that still type-hint them (gone in 1.0).
     Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface:
-        alias: Masilia\Bundle\IbexaAi\Image\ImageGenerator
+        alias: Masilia\Contracts\IbexaAi\Image\ImageGenerator
+        deprecated:
+            package: masilia/ibexa-ai
+            version: '0.6'
+            message: 'The "%alias_id%" service is deprecated, type-hint Masilia\Contracts\IbexaAi\Image\ImageGenerator instead.'
 
     Masilia\Bundle\IbexaAi\Admin\:
         resource: '../../Admin/'
@@ -38,6 +54,8 @@ services:
     # The AI OS: capabilities (tagged), their registry, access, audit and the three tools the model sees.
     Masilia\Bundle\IbexaAi\Os\:
         resource: '../../Os/'
+        # The old names of the selftest types (they are in Masilia\Contracts\IbexaAi now).
+        exclude: '../../Os/Selftest/'
 
     Masilia\IbexaAi\Os\CapabilityRegistry:
         arguments:

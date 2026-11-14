@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Access;
 
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 
 /**
  * Whether the current user may use a capability: its domain is on, and the user has the Ibexa policies of what it

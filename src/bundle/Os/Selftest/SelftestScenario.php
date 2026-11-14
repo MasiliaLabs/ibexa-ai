@@ -4,24 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Selftest;
 
-/**
- * Steps a package adds to `masilia:ai:os:selftest` to test its own capabilities end to end, on the same throwaway
- * location as the OS's own. Register one by implementing this interface (it is found by autoconfiguration).
- */
-interface SelftestScenario
-{
-    /** A short name, shown when the scenario is skipped. */
-    public function name(): string;
+// The name this type had until masilia/ibexa-ai 0.5. It is \Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario since 0.6 (the public API of the
+// package is in Masilia\Contracts\IbexaAi), and this name goes in 1.0.
+@trigger_error(sprintf('%s is deprecated since masilia/ibexa-ai 0.6, use %s instead.', SelftestScenario::class, \Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario::class), \E_USER_DEPRECATED);
 
-    /**
-     * Runs the steps through the context. Throw nothing for a failing step: the context counts it. A scenario that
-     * cannot run on this installation says so with {@see SelftestContext::skip()} and returns.
-     */
-    public function run(SelftestContext $context): void;
-
-    /**
-     * Removes whatever the scenario made that the contents registered with {@see SelftestContext::track()} do not
-     * cover. Called even when a step threw.
-     */
-    public function cleanup(): void;
-}
+class_alias(\Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario::class, SelftestScenario::class);

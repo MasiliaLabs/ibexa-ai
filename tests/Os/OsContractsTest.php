@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Tests\Os;
 
 use InvalidArgumentException;
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Preview;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 use Masilia\IbexaAi\Os\SchemaCoercer;
 use Masilia\IbexaAi\Os\SchemaValidator;
 use PHPUnit\Framework\TestCase;

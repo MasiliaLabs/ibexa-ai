@@ -7,7 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Os\Tool;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
 use Masilia\Bundle\IbexaAi\Os\Access\CapabilityAccess;
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
 
 /**

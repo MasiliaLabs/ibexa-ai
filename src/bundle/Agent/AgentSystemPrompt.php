@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Agent;
 
-use Masilia\IbexaAi\Os\Skill;
+use Masilia\Contracts\IbexaAi\Os\Skill;
 
 /**
  * System prompt of the content agent: what an Ibexa administrator can do, through capabilities, and the rules that

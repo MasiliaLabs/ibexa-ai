@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Agent\Block;
 
 use Ibexa\Contracts\Core\Repository\ContentTypeService;
+use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentType;
 use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
 use Throwable;
 
@@ -40,6 +41,11 @@ final class ContentTypeSchemas implements ContentTypeSchemaSource
             'name' => $type->getName(),
             'fields' => $this->buildFieldSchemas($type),
         ];
+    }
+
+    public function fields(ContentType $type): array
+    {
+        return $this->buildFieldSchemas($type);
     }
 
     public function knownTypes(): array

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Bundle\Os;
 
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 use Masilia\IbexaAi\Os\SchemaValidator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

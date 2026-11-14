@@ -9,9 +9,9 @@ use Ibexa\Contracts\Core\Repository\Repository;
 use Masilia\Bundle\IbexaAi\Agent\Worker\Plan;
 use Masilia\Bundle\IbexaAi\Agent\Worker\PlanBuilder;
 use Masilia\Bundle\IbexaAi\Agent\Worker\PlanExecutor;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Preview;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 use Throwable;
 
 /**

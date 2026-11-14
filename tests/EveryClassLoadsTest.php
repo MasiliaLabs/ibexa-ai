@@ -19,6 +19,7 @@ final class EveryClassLoadsTest extends TestCase
 {
     private const NAMESPACES = [
         'lib' => 'Masilia\\IbexaAi\\',
+        'contracts' => 'Masilia\\Contracts\\IbexaAi\\',
         'bundle' => 'Masilia\\Bundle\\IbexaAi\\',
     ];
 
@@ -37,6 +38,10 @@ final class EveryClassLoadsTest extends TestCase
                 $relative = substr($file->getPathname(), strlen($root . '/' . $directory . '/'), -4);
                 $class = $namespace . str_replace('/', '\\', $relative);
                 if (str_contains($class, '\\Resources\\') || str_contains($class, '\\Migrations\\')) {
+                    continue;
+                }
+                // An old name of a type of the public API: checked by ContractsTest, it says it is deprecated when loaded.
+                if (str_contains((string) file_get_contents($file->getPathname()), 'class_alias(')) {
                     continue;
                 }
 

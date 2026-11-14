@@ -6,8 +6,8 @@ namespace Masilia\Bundle\IbexaAi\Image;
 
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
-use Masilia\Bundle\IbexaAi\Support\ImageGenerationResult;
-use Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface;
+use Masilia\Contracts\IbexaAi\Image\ImageGenerationResult;
+use Masilia\Contracts\IbexaAi\Image\ImageGenerator;
 use RuntimeException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
@@ -19,7 +19,7 @@ use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
  *  - OpenAI images (/images/generations), also used by OpenAI-compatible gateways;
  *  - MiniMax image generation (/v1/image_generation).
  */
-final readonly class ImageGenerator implements ImageGeneratorInterface
+final readonly class ProviderImageGenerator implements ImageGenerator
 {
     private const OPENAI_BASE = 'https://api.openai.com/v1';
     private const MINIMAX_HOST = 'https://api.minimax.io';

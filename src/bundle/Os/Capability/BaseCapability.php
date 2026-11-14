@@ -5,35 +5,15 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Capability;
 
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
-use Masilia\IbexaAi\Os\Capability;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 
 /**
- * Defaults for a capability: no extra policy, no example, and a preview that only names the action.
+ * The capabilities of this package. Another package extends {@see AbstractCapability}: this class only adds what the
+ * capabilities that still wrap an agent tool need, and goes with those tools (1.0).
  */
-abstract class BaseCapability implements Capability
+abstract class BaseCapability extends AbstractCapability
 {
-    public function requires(): array
-    {
-        return [];
-    }
-
-    public function examples(): array
-    {
-        return [];
-    }
-
-    public function validate(array $arguments): ?string
-    {
-        return null;
-    }
-
-    public function preview(array $arguments): Preview
-    {
-        return new Preview($this->summary());
-    }
-
     /** A capability that does what an existing tool does answers as the tool does. */
     protected static function fromTool(ToolResult $result): CapabilityResult
     {

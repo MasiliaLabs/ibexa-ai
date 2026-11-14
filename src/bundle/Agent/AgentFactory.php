@@ -32,7 +32,7 @@ final readonly class AgentFactory
         private DescribeCapabilityTool $describeCapability,
         private RunCapabilityTool $runCapability,
         private ProposeChangesTool $proposeChanges,
-        /** @var iterable<\Masilia\IbexaAi\Os\Skill> What the packages on the OS teach the assistant, added to its prompt */
+        /** @var iterable<\Masilia\Contracts\IbexaAi\Os\Skill> What the packages on the OS teach the assistant, added to its prompt */
         private iterable $skills = [],
     ) {
     }

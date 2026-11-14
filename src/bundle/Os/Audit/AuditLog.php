@@ -7,7 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Os\Audit;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 
 /**
  * Who had the assistant do what, with what result: one row per capability that changes something, and per failure.

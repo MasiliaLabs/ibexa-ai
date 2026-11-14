@@ -9,7 +9,7 @@ use Ibexa\Core\FieldType\Image\Value as ImageValue;
 use Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ImageFileHelper;
 use Masilia\Bundle\IbexaAi\Agent\Tool\TempFileRegistry;
-use Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface;
+use Masilia\Contracts\IbexaAi\Image\ImageGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -41,7 +41,7 @@ use Throwable;
 readonly class ImageTransformer implements FieldValueTransformerInterface
 {
     public function __construct(
-        private ImageGeneratorInterface $imageClient,
+        private ImageGenerator $imageClient,
         private LoggerInterface $aiLogger,
     ) {
     }

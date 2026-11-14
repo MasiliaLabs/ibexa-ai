@@ -8,8 +8,8 @@ use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
 use Ibexa\Core\FieldType\Image\Value as ImageValue;
 use Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformer\ImageTransformer;
 use Masilia\Bundle\IbexaAi\Agent\Tool\TempFileRegistry;
-use Masilia\Bundle\IbexaAi\Support\ImageGenerationResult;
-use Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface;
+use Masilia\Contracts\IbexaAi\Image\ImageGenerationResult;
+use Masilia\Contracts\IbexaAi\Image\ImageGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -90,8 +90,8 @@ final class ImageTransformerTest extends TestCase
         bool $configured,
         ?ImageGenerationResult $result = null,
         ?\Throwable $throw = null,
-    ): ImageGeneratorInterface {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+    ): ImageGenerator {
+        $client = $this->createMock(ImageGenerator::class);
         $client->method('isConfigured')->willReturn($configured);
         if ($throw !== null) {
             $client->method('generate')->willThrowException($throw);
@@ -179,7 +179,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testObjectDescriptionIsExtractedForGenerateWithSizeAndQuality(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
@@ -199,7 +199,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testObjectWithPromptKeyIsNormalized(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
@@ -213,7 +213,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testObjectWithAltKeyIsNormalized(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
@@ -227,7 +227,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testObjectWithoutDescriptionReturnsOriginalValue(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->expects(self::never())->method('generate');
 
         $sut = new ImageTransformer($client, new NullLogger());
@@ -240,7 +240,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testNonStringSizeAndQualityAreIgnored(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
@@ -258,7 +258,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testEmptySizeAndQualityAreTreatedAsNull(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
@@ -276,7 +276,7 @@ final class ImageTransformerTest extends TestCase
 
     public function testEmptyDescriptionWithSizeAndQualityReturnsOriginalValue(): void
     {
-        $client = $this->createMock(ImageGeneratorInterface::class);
+        $client = $this->createMock(ImageGenerator::class);
         $client->expects(self::never())->method('generate');
 
         $sut = new ImageTransformer($client, new NullLogger());

@@ -4,23 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Support;
 
-/**
- * Provider-agnostic image generation capability.
- *
- * Implemented by {@see ImageGenerationClient} in production and by test
- * stubs in unit tests (ImageGenerationClient is `readonly` and cannot
- * be mocked directly).
- */
-interface ImageGeneratorInterface
-{
-    public function isConfigured(): bool;
+// The name this type had until masilia/ibexa-ai 0.5. It is \Masilia\Contracts\IbexaAi\Image\ImageGenerator since 0.6 (the public API of the
+// package is in Masilia\Contracts\IbexaAi), and this name goes in 1.0.
+@trigger_error(sprintf('%s is deprecated since masilia/ibexa-ai 0.6, use %s instead.', ImageGeneratorInterface::class, \Masilia\Contracts\IbexaAi\Image\ImageGenerator::class), \E_USER_DEPRECATED);
 
-    /**
-     * @throws \Throwable on network / API / configuration failure
-     */
-    public function generate(
-        string $prompt,
-        ?string $size = null,
-        ?string $quality = null,
-    ): ImageGenerationResult;
-}
+class_alias(\Masilia\Contracts\IbexaAi\Image\ImageGenerator::class, ImageGeneratorInterface::class);

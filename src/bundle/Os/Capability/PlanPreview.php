@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Capability;
 
 use Masilia\Bundle\IbexaAi\Agent\Worker\Plan;
-use Masilia\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Preview;
 
 /**
  * What a plan will do, as the rows of an approval card.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Agent\Tool;
 
 use Ibexa\Contracts\Core\SiteAccess\ConfigResolverInterface;
+use Masilia\Contracts\IbexaAi\Site\SiteLocations;
 
 /**
  * Resolves parent location ID from a siteaccess name.
@@ -14,7 +15,7 @@ use Ibexa\Contracts\Core\SiteAccess\ConfigResolverInterface;
  * 2. Resolve from siteaccess name via ConfigResolver
  * 3. Current request siteaccess fallback
  */
-readonly class SiteaccessLocationResolver
+readonly class SiteaccessLocationResolver implements SiteLocations
 {
     public function __construct(
         private ConfigResolverInterface $configResolver,
@@ -51,5 +52,10 @@ readonly class SiteaccessLocationResolver
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    public function rootLocationId(string $siteaccess = ''): ?int
+    {
+        return $this->resolve($siteaccess);
     }
 }

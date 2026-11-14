@@ -4,42 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Os;
 
-/**
- * What a capability answers: the same shape the chat already reads for a tool (success, message, data).
- */
-final readonly class CapabilityResult
-{
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function __construct(
-        public bool $success,
-        public string $message,
-        public array $data = [],
-    ) {
-    }
+// The name this type had until masilia/ibexa-ai 0.5. It is \Masilia\Contracts\IbexaAi\Os\CapabilityResult since 0.6 (the public API of the
+// package is in Masilia\Contracts\IbexaAi), and this name goes in 1.0.
+@trigger_error(sprintf('%s is deprecated since masilia/ibexa-ai 0.6, use %s instead.', CapabilityResult::class, \Masilia\Contracts\IbexaAi\Os\CapabilityResult::class), \E_USER_DEPRECATED);
 
-    /**
-     * @param array<string, mixed> $data
-     */
-    public static function ok(string $message, array $data = []): self
-    {
-        return new self(true, $message, $data);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public static function error(string $message, array $data = []): self
-    {
-        return new self(false, $message, $data);
-    }
-
-    /**
-     * @return array{success: bool, message: string, data: array<string, mixed>}
-     */
-    public function toArray(): array
-    {
-        return ['success' => $this->success, 'message' => $this->message, 'data' => $this->data];
-    }
-}
+class_alias(\Masilia\Contracts\IbexaAi\Os\CapabilityResult::class, CapabilityResult::class);

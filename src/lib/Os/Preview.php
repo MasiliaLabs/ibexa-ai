@@ -4,43 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Os;
 
-/**
- * What a change will do, written for the person who approves it. Computed without writing anything.
- *
- * It travels as lines of "Label: value", and "Note: sentence" for a note (see {@see toApprovalText}), which the chat
- * reads into a card.
- */
-final readonly class Preview
-{
-    public const CLOSING = 'The change runs only if you approve it.';
+// The name this type had until masilia/ibexa-ai 0.5. It is \Masilia\Contracts\IbexaAi\Os\Preview since 0.6 (the public API of the
+// package is in Masilia\Contracts\IbexaAi), and this name goes in 1.0.
+@trigger_error(sprintf('%s is deprecated since masilia/ibexa-ai 0.6, use %s instead.', Preview::class, \Masilia\Contracts\IbexaAi\Os\Preview::class), \E_USER_DEPRECATED);
 
-    /**
-     * @param list<array{0: string, 1: string}> $rows  (label, value) pairs
-     * @param list<string>                      $notes Sentences under the rows: warnings, consequences
-     */
-    public function __construct(
-        public string $title,
-        public array $rows = [],
-        public array $notes = [],
-    ) {
-    }
-
-    public function toApprovalText(Risk $risk): string
-    {
-        $lines = [sprintf('Action: %s', self::line($this->title)), sprintf('Risk: %s', $risk->value)];
-        foreach ($this->rows as [$label, $value]) {
-            $lines[] = sprintf('%s: %s', self::line($label), self::line($value));
-        }
-        foreach ($this->notes as $note) {
-            $lines[] = sprintf('Note: %s', self::line($note));
-        }
-
-        return implode("\n", $lines) . "\n\n" . self::CLOSING;
-    }
-
-    /** One line: what is shown is never able to start a new row of the card. */
-    private static function line(string $text): string
-    {
-        return trim((string) preg_replace('/\s+/u', ' ', $text));
-    }
-}
+class_alias(\Masilia\Contracts\IbexaAi\Os\Preview::class, Preview::class);

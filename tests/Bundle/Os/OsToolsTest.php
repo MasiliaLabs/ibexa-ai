@@ -16,11 +16,11 @@ use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
 use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\RunCapabilityTool;
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Preview;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 

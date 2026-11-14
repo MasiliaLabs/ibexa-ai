@@ -6,9 +6,9 @@ namespace Masilia\Bundle\IbexaAi;
 
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Os\Security\OsPolicyProvider;
-use Masilia\Bundle\IbexaAi\Os\Selftest\SelftestScenario;
-use Masilia\IbexaAi\Os\Capability;
-use Masilia\IbexaAi\Os\Skill;
+use Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario;
+use Masilia\Contracts\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Skill;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

@@ -4,34 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Os;
 
-/**
- * What a capability can do to the repository. It decides whether the user is asked first, and which permission
- * of the "masilia_ai" module the user needs to use it.
- */
-enum Risk: string
-{
-    /** Reads only. Runs without asking. */
-    case READ = 'read';
-    /** Creates or changes something that can be changed back. The user approves it first. */
-    case WRITE = 'write';
-    /** Removes something for good, or something many others depend on. Approved, with a warning. */
-    case DESTRUCTIVE = 'destructive';
-    /** Changes who can do what: roles, policies, users. Approved, with a warning, and off by default. */
-    case ACCESS = 'access';
+// The name this type had until masilia/ibexa-ai 0.5. It is \Masilia\Contracts\IbexaAi\Os\Risk since 0.6 (the public API of the
+// package is in Masilia\Contracts\IbexaAi), and this name goes in 1.0.
+@trigger_error(sprintf('%s is deprecated since masilia/ibexa-ai 0.6, use %s instead.', Risk::class, \Masilia\Contracts\IbexaAi\Os\Risk::class), \E_USER_DEPRECATED);
 
-    public function needsApproval(): bool
-    {
-        return $this !== self::READ;
-    }
-
-    /** The function of the "masilia_ai" permission module a user needs to run a capability of this risk. */
-    public function permission(): string
-    {
-        return match ($this) {
-            self::READ => 'use',
-            self::WRITE => 'write',
-            self::DESTRUCTIVE => 'destructive',
-            self::ACCESS => 'access',
-        };
-    }
-}
+class_alias(\Masilia\Contracts\IbexaAi\Os\Risk::class, Risk::class);

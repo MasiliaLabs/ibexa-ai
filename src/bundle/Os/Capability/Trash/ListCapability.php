@@ -7,8 +7,8 @@ namespace Masilia\Bundle\IbexaAi\Os\Capability\Trash;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query;
 use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 
 final class ListCapability extends BaseCapability
 {

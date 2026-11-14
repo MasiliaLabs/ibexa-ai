@@ -8,7 +8,7 @@ use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Masilia\Bundle\IbexaAi\Ibexa\ContentContextReader;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Suggestion\PromptText;
-use Masilia\Bundle\IbexaAi\Support\ImageGeneratorInterface;
+use Masilia\Contracts\IbexaAi\Image\ImageGenerator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +28,7 @@ final readonly class ImageController
 
     public function __construct(
         private PermissionResolver $permissions,
-        private ImageGeneratorInterface $images,
+        private ImageGenerator $images,
         private ContentContextReader $contents,
         private LoggerInterface $aiLogger,
     ) {

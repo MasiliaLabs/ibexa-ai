@@ -4,28 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Support;
 
-/**
- * Normalized result from an image generation API call.
- */
-final readonly class ImageGenerationResult
-{
-    public function __construct(
-        public string  $imageData,
-        public string  $mimeType,
-        public ?string $revisedPrompt = null,
-    )
-    {
-    }
+// The name this type had until masilia/ibexa-ai 0.5. It is \Masilia\Contracts\IbexaAi\Image\ImageGenerationResult since 0.6 (the public API of the
+// package is in Masilia\Contracts\IbexaAi), and this name goes in 1.0.
+@trigger_error(sprintf('%s is deprecated since masilia/ibexa-ai 0.6, use %s instead.', ImageGenerationResult::class, \Masilia\Contracts\IbexaAi\Image\ImageGenerationResult::class), \E_USER_DEPRECATED);
 
-    /**
-     * @return array{imageData: string, mimeType: string, revisedPrompt: string|null}
-     */
-    public function toArray(): array
-    {
-        return [
-            'imageData' => $this->imageData,
-            'mimeType' => $this->mimeType,
-            'revisedPrompt' => $this->revisedPrompt,
-        ];
-    }
-}
+class_alias(\Masilia\Contracts\IbexaAi\Image\ImageGenerationResult::class, ImageGenerationResult::class);

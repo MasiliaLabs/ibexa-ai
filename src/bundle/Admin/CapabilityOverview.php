@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Admin;
 
 use Masilia\Bundle\IbexaAi\Os\Access\CapabilityAccess;
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
-use Masilia\IbexaAi\Os\Risk;
-use Masilia\IbexaAi\Os\Skill;
+use Masilia\Contracts\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\Skill;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**

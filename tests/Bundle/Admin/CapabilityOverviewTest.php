@@ -8,12 +8,12 @@ use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Masilia\Bundle\IbexaAi\Admin\CapabilityOverview;
 use Masilia\Bundle\IbexaAi\Os\Access\CapabilityAccess;
 use Masilia\Bundle\IbexaAi\Os\Capability\Content\LoadCapability;
-use Masilia\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Preview;
-use Masilia\IbexaAi\Os\Risk;
-use Masilia\IbexaAi\Os\Skill;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\Skill;
 use PHPUnit\Framework\TestCase;
 
 final class CapabilityOverviewTest extends TestCase
@@ -89,9 +89,9 @@ final class CapabilityOverviewTest extends TestCase
 
         self::assertSame('AI OS', CapabilityOverview::packageOf((new \ReflectionClass(LoadCapability::class))->newInstanceWithoutConstructor()));
         // An anonymous class is named after its interface: what matters is that it is not "AI OS", the bundle's own.
-        self::assertSame('Masilia\IbexaAi\Os', CapabilityOverview::packageOf($this->capability('a.b', Risk::READ)));
+        self::assertSame('Masilia\Contracts\IbexaAi', CapabilityOverview::packageOf($this->capability('a.b', Risk::READ)));
 
         $overview = $this->overview([$this->capability('a.b', Risk::READ)], [], [], [$skill])->build();
-        self::assertSame([['name' => 'How we build', 'package' => 'Masilia\IbexaAi\Os']], $overview['skills']);
+        self::assertSame([['name' => 'How we build', 'package' => 'Masilia\Contracts\IbexaAi']], $overview['skills']);
     }
 }

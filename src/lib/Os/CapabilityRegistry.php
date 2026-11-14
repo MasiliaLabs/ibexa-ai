@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Os;
 
+use Masilia\Contracts\IbexaAi\Os\Capability;
 use InvalidArgumentException;
 
 /**

@@ -9,11 +9,11 @@ use Masilia\Bundle\IbexaAi\Agent\Tool\GatedToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
 use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
-use Masilia\IbexaAi\Os\Capability;
-use Masilia\IbexaAi\Os\CapabilityResult;
-use Masilia\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Capability;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
 use Masilia\IbexaAi\Os\References;
-use Masilia\IbexaAi\Os\Risk;
+use Masilia\Contracts\IbexaAi\Os\Risk;
 use RuntimeException;
 use Throwable;
 
