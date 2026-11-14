@@ -18,42 +18,7 @@ use ReflectionClass;
  */
 final class CapabilityContractTest extends TestCase
 {
-    private const FOLDER = __DIR__ . '/../../../src/lib/Os/Capability';
-
-    /**
-     * @return iterable<string, array{class-string<Capability>}>
-     */
-    public static function capabilities(): iterable
-    {
-        $base = (string) realpath(self::FOLDER);
-        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS));
-        foreach ($files as $file) {
-            if ($file->getExtension() !== 'php') {
-                continue;
-            }
-            $relative = substr($file->getPathname(), strlen($base) + 1, -4);
-            $class = 'Masilia\\IbexaAi\\Os\\Capability\\' . str_replace('/', '\\', $relative);
-            $reflection = new ReflectionClass($class);
-            if (!$reflection->isAbstract() && $reflection->implementsInterface(Capability::class)) {
-                yield $class => [$class];
-            }
-        }
-    }
-
-    private function make(string $class): Capability
-    {
-        $arguments = [];
-        foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
-            $type = (string) $parameter->getType();
-            if ($type === 'array') {
-                $arguments[] = [];
-                continue;
-            }
-            $arguments[] = $this->createMock($type);
-        }
-
-        return new $class(...$arguments);
-    }
+    use EveryCapability;
 
     #[DataProvider('capabilities')]
     public function testItIsNamedAndDescribedForTheModel(string $class): void

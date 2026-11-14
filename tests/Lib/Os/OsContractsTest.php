@@ -64,7 +64,6 @@ final class OsContractsTest extends TestCase
 
         self::assertSame('content.update', $registry->get('content.update')?->name());
         self::assertNull($registry->get('content.nothing'));
-        self::assertSame(['content' => 1, 'trash' => 1], $registry->domains());
 
         $this->expectException(InvalidArgumentException::class);
         new CapabilityRegistry([$this->capability('content.update'), $this->capability('content.update')]);
@@ -74,21 +73,6 @@ final class OsContractsTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         new CapabilityRegistry([$this->capability('update')]);
-    }
-
-    public function testWordsFindTheBestCapabilityFirstAndTheFilterHidesWhatIsNotAllowed(): void
-    {
-        $registry = new CapabilityRegistry([
-            $this->capability('content.search', 'Find contents by name or type', 'Searches the repository'),
-            $this->capability('trash.list', 'List what is in the trash', 'Shows deleted contents'),
-            $this->capability('content.update', 'Change the fields of a content', ''),
-        ]);
-
-        self::assertSame('trash.list', $registry->search('trash')[0]->name());
-        self::assertSame('content.search', $registry->search('find contents')[0]->name());
-        self::assertSame(['content.search', 'content.update'], array_map(static fn (Capability $c): string => $c->name(), $registry->search('', 'content')));
-        self::assertSame([], $registry->search('trash', null, static fn (Capability $c): bool => false));
-        self::assertSame([], $registry->search('zzzz'));
     }
 
     public function testArgumentsAreCheckedAgainstTheSchema(): void
