@@ -47,7 +47,15 @@ final class SwapCapability extends LocationCapability
 
     public function validate(array $arguments): ?string
     {
-        return $this->missing((int) $arguments['location_id'], (int) $arguments['other_location_id']);
+        $problem = $this->missing((int) $arguments['location_id'], (int) $arguments['other_location_id']);
+        if ($problem !== null) {
+            return $problem;
+        }
+        if ($this->rules->isRoot($this->load((int) $arguments['location_id'])) || $this->rules->isRoot($this->load((int) $arguments['other_location_id']))) {
+            return 'A root location cannot be swapped.';
+        }
+
+        return null;
     }
 
     public function preview(array $arguments): Preview

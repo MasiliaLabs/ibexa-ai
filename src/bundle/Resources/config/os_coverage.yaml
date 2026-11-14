@@ -17,7 +17,7 @@ capabilities:
   ibexa.content.translate_with_location: localization.translation.add
   ibexa.content.update_main_location: location.set_main
   ibexa.content.update_main_translation: localization.set_main_language
-  ibexa.content.update_visibility: location.set_visibility
+  ibexa.content.update_visibility: content.set_visibility
   ibexa.content.view: content.load
   ibexa.content_draft.list: workspace.drafts.list
   ibexa.content_draft.remove: workspace.drafts.delete
@@ -54,7 +54,7 @@ capabilities:
   ibexa.location.add: location.add
   ibexa.location.assign_section: section.assign
   ibexa.location.copy: location.copy
-  ibexa.location.copy_subtree: location.copy
+  ibexa.location.copy_subtree: location.copy_subtree
   ibexa.location.move: location.move
   ibexa.location.remove: location.remove
   ibexa.location.swap: location.swap

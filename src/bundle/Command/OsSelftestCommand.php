@@ -83,7 +83,7 @@ final class OsSelftestCommand extends Command
                 return;
             }
             $wrong = $result->success ? ($check !== null ? $check($result->data) : null) : $result->message;
-            if (isset($result->data['content_id']) && $result->success && in_array($capability, ['content.create_folder', 'location.copy'], true)) {
+            if (isset($result->data['content_id']) && $result->success && in_array($capability, ['content.create_folder', 'location.copy', 'location.copy_subtree'], true)) {
                 $contents[] = (int) $result->data['content_id'];
             }
             if ($remember !== null) {
@@ -125,8 +125,20 @@ final class OsSelftestCommand extends Command
             $step('the tree of the parent is read', 'tree.browse', ['location_id' => $parent, 'limit' => 5], static fn (array $d): ?string => is_int($d['total'] ?? null) && is_array($d['items'] ?? null) ? null : 'no items list');
             $step('A refers to nothing', 'relations.list', ['content_id' => $a['content_id']], static fn (array $d): ?string => $d['incoming_total'] === 0 ? null : 'unexpected incoming relation');
             $step('copy B below the parent', 'location.copy', ['location_id' => $b['location_id'], 'target_parent_location_id' => $parent], null, 'copy');
-            // Copying B copied what is under it too (A, shown there): those copies are ours to delete.
-            array_push($contents, ...$this->subtreeContentIds((int) ($answers['copy']['location_id'] ?? 0)));
+            // The admin's "copy" is one content: what is under B is not copied.
+            $step('what is under B was not copied', 'tree.browse', ['location_id' => $answers['copy']['location_id'] ?? 0], static fn (array $d): ?string => ($d['total'] ?? 0) === 0 ? null : 'the copy of B has children');
+            $step('copy B and what is under it', 'location.copy_subtree', ['location_id' => $b['location_id'], 'target_parent_location_id' => $parent], null, 'subtree');
+            // The copy of the subtree copied A as well (shown under B): those copies are ours to delete.
+            array_push($contents, ...$this->subtreeContentIds((int) ($answers['subtree']['location_id'] ?? 0)));
+            $step('a root cannot be moved', 'location.move', ['location_id' => 1, 'new_parent_location_id' => $parent], null, null, true);
+            $step('a root cannot be copied with its subtree', 'location.copy_subtree', ['location_id' => 1, 'target_parent_location_id' => $parent], null, null, true);
+            $step('hide A everywhere', 'content.set_visibility', ['content_id' => $a['content_id'], 'visible' => false]);
+            $step('A is hidden in all its locations', 'location.list', ['content_id' => $a['content_id']], static fn (array $d): ?string => array_filter($d['locations'], static fn (array $l): bool => !$l['hidden'] && !$l['invisible']) === [] ? null : 'a location of A is still visible');
+            $step('A cannot be hidden twice', 'content.set_visibility', ['content_id' => $a['content_id'], 'visible' => false], null, null, true);
+            $step('show A everywhere', 'content.set_visibility', ['content_id' => $a['content_id'], 'visible' => true]);
+            $step('there is no draft of A to publish yet', 'content.publish', ['content_id' => $a['content_id']], null, null, true);
+            $step('start a draft of A', 'content.draft.create', ['content_id' => $a['content_id']], null, 'draft');
+            $step('publish the draft of A', 'content.publish', ['content_id' => $a['content_id'], 'version_no' => $answers['draft']['version_no'] ?? 0], static fn (array $d): ?string => ($d['version_no'] ?? 0) === ($answers['draft']['version_no'] ?? -1) ? null : 'another version was published');
             $step('swap A and B', 'location.swap', ['location_id' => $a['location_id'], 'other_location_id' => $b['location_id']]);
             $step('move the copy under B', 'location.move', ['location_id' => $answers['copy']['location_id'] ?? 0, 'new_parent_location_id' => $b['location_id']]);
             $step('move B under itself is refused', 'location.move', ['location_id' => $b['location_id'], 'new_parent_location_id' => $answers['copy']['location_id'] ?? 0], null, null, true);

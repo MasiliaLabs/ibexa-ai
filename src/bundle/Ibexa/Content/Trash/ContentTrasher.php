@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Ibexa\Content\Trash;
 
 use Ibexa\Contracts\Core\Repository\Repository;
+use Ibexa\AdminUi\Specification\Content\ContentHaveAssetRelation;
+use Ibexa\AdminUi\Specification\Content\ContentHaveUniqueRelation;
+use Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo;
 use Ibexa\Contracts\Core\Repository\Values\Content\Relation;
+use Ibexa\Contracts\Core\Repository\Values\Content\RelationType;
 use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -25,18 +29,51 @@ readonly class ContentTrasher
     }
 
     /**
-     * @return array{content_id: int, location_id: int, trashed: true, unlinked_from: list<string>} The unlinked list holds "content_id:name"
+     * @return array{content_id: int, location_id: int, trashed: true, unlinked_from: list<string>, trashed_assets: list<int>} The unlinked list holds "content_id:name"
      */
-    public function trash(int $contentId): array
+    public function trash(int $contentId, bool $withAssets = false): array
     {
         $content = $this->repository->getContentService()->loadContent($contentId);
+        // What the admin offers on its trash form: the image assets only this content uses go with it. Read before it is trashed.
+        $assets = $withAssets ? $this->uniqueAssets($contentId) : [];
         $locationId = $content->getContentInfo()->getMainLocationId();
         $location = $this->repository->getLocationService()->loadLocation($locationId);
 
         $unlinked = $this->unlinkReverseRelations($contentId);
         $this->repository->getTrashService()->trash($location);
+        $trashedAssets = [];
+        foreach ($assets as $asset) {
+            $assetLocationId = $asset->getMainLocationId();
+            if ($assetLocationId !== null) {
+                $this->repository->getTrashService()->trash($this->repository->getLocationService()->loadLocation($assetLocationId));
+                $trashedAssets[] = $asset->getId();
+            }
+        }
 
-        return ['content_id' => $contentId, 'location_id' => $locationId, 'trashed' => true, 'unlinked_from' => $unlinked];
+        return ['content_id' => $contentId, 'location_id' => $locationId, 'trashed' => true, 'unlinked_from' => $unlinked, 'trashed_assets' => $trashedAssets];
+    }
+
+    /**
+     * The image assets that only this content uses: the ones the admin offers to trash with it. None when the content has no
+     * asset, or when one of them is used elsewhere.
+     *
+     * @return list<ContentInfo>
+     */
+    public function uniqueAssets(int $contentId): array
+    {
+        $service = $this->repository->getContentService();
+        $content = $service->loadContent($contentId);
+        if (!(new ContentHaveAssetRelation($service))->and(new ContentHaveUniqueRelation($service))->isSatisfiedBy($content)) {
+            return [];
+        }
+        $assets = [];
+        foreach ($service->loadRelationList($content->getVersionInfo(), 0, 50, RelationType::ASSET)->items as $item) {
+            if ($item->hasRelation()) {
+                $assets[] = $item->getRelation()->getDestinationContentInfo();
+            }
+        }
+
+        return $assets;
     }
 
     /**

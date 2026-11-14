@@ -51,9 +51,16 @@ final class MoveCapability extends LocationCapability
         if ($problem !== null) {
             return $problem;
         }
-        $path = $this->load((int) $arguments['new_parent_location_id'])->pathString;
+        $location = $this->load((int) $arguments['location_id']);
+        $parent = $this->load((int) $arguments['new_parent_location_id']);
+        if ($this->rules->isRoot($location)) {
+            return 'A root location cannot be moved.';
+        }
+        if (!$this->rules->isContainer($parent)) {
+            return 'Cannot move a location to a parent that is not a container.';
+        }
 
-        return str_contains($path, sprintf('/%d/', (int) $arguments['location_id'])) ? 'A location cannot be moved under itself or one of its descendants.' : null;
+        return $this->rules->isInside($parent, $location) ? 'A location cannot be moved under itself or one of its descendants.' : null;
     }
 
     public function preview(array $arguments): Preview

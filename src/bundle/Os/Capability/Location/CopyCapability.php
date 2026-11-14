@@ -17,12 +17,12 @@ final class CopyCapability extends LocationCapability
 
     public function summary(): string
     {
-        return 'Copy a location, with everything under it, below another parent.';
+        return 'Copy the content of a location below another parent (not what is under it).';
     }
 
     public function description(): string
     {
-        return 'Copies the content at the location and everything under it as new contents below the target parent. The answer has the location_id of the copy.';
+        return 'Copies the content at the location, alone, as a new content below the target parent, which must be a container. What is under the location is not copied: use location.copy_subtree for that. The answer has the location_id of the copy.';
     }
 
     public function inputSchema(): array
@@ -42,24 +42,34 @@ final class CopyCapability extends LocationCapability
 
     public function examples(): array
     {
-        return [['description' => 'Copy a folder and what is in it', 'arguments' => ['location_id' => 1364, 'target_parent_location_id' => 1020]]];
+        return [['description' => 'Copy a page below another folder', 'arguments' => ['location_id' => 1364, 'target_parent_location_id' => 1020]]];
     }
 
     public function validate(array $arguments): ?string
     {
-        return $this->missing((int) $arguments['location_id'], (int) $arguments['target_parent_location_id']);
+        $problem = $this->missing((int) $arguments['location_id'], (int) $arguments['target_parent_location_id']);
+        if ($problem !== null) {
+            return $problem;
+        }
+
+        return $this->rules->isContainer($this->load((int) $arguments['target_parent_location_id'])) ? null : 'Cannot copy a location to a parent that is not a container.';
     }
 
     public function preview(array $arguments): Preview
     {
-        return new Preview('Copy a location', [['Copy', $this->label((int) $arguments['location_id'])], ['Below', $this->label((int) $arguments['target_parent_location_id'])]], ['Everything under it is copied too: the copy can be large.']);
+        return new Preview('Copy a location', [['Copy', $this->label((int) $arguments['location_id'])], ['Below', $this->label((int) $arguments['target_parent_location_id'])]], ['Only this content is copied, not what is under it.']);
     }
 
     public function execute(array $arguments): CapabilityResult
     {
-        $service = $this->repository->getLocationService();
-        $copy = $service->copySubtree($this->load((int) $arguments['location_id']), $this->load((int) $arguments['target_parent_location_id']));
+        $locations = $this->repository->getLocationService();
+        $contents = $this->repository->getContentService();
+        $copy = $contents->copyContent(
+            $this->load((int) $arguments['location_id'])->getContentInfo(),
+            $locations->newLocationCreateStruct((int) $arguments['target_parent_location_id']),
+        );
+        $mainLocationId = $copy->getContentInfo()->getMainLocationId();
 
-        return CapabilityResult::ok(sprintf('Copied to location %d', $copy->id), ['location_id' => $copy->id, 'content_id' => $copy->contentInfo->id]);
+        return CapabilityResult::ok(sprintf('Copied to location %d', (int) $mainLocationId), ['location_id' => $mainLocationId, 'content_id' => $copy->getContentInfo()->getId()]);
     }
 }

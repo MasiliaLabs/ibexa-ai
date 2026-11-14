@@ -93,7 +93,7 @@ final class ContentTrasherTest extends TestCase
 
         $trashed = (new ContentTrasher($repository, $updater, $logger = new RecordingLogger()))->trash(1353);
 
-        self::assertSame(['content_id' => 1353, 'location_id' => 2000, 'trashed' => true, 'unlinked_from' => ['77:Source 77']], $trashed);
+        self::assertSame(['content_id' => 1353, 'location_id' => 2000, 'trashed' => true, 'unlinked_from' => ['77:Source 77'], 'trashed_assets' => []], $trashed);
         self::assertSame([], $logger->records, 'nothing failed on the way');
     }
 
