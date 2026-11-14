@@ -18,7 +18,7 @@ interface ContentFactoryInterface
     /**
      * @param array<int> $parentLocationIds
      * @param array<string, mixed> $attributes
-     * @return array{content: Content, location: ?Location}
+     * @return array{content: Content, location: ?Location}|array{} Empty for a content type that does not exist
      */
     public function createAndPublish(
         string $contentTypeIdentifier,

@@ -20,6 +20,9 @@ interface ContentWriter
      * @param list<int>            $parentLocationIds Where the content goes (its first parent is its main location)
      * @param array<string, mixed> $fields            Field identifier => value, as the assistant gives it
      * @param string               $language          The language the content is written in ("fre-FR")
+     *
+     * @throws \InvalidArgumentException For a content type that does not exist
+     * @throws \RuntimeException         When Ibexa refuses the content (a field value it does not accept, no right to create it…)
      */
     public function create(string $contentType, array $parentLocationIds, array $fields, string $language): PublishedContent;
 

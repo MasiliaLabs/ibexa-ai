@@ -19,12 +19,6 @@ parameters:
 			path: src/bundle/Agent/Tool/Content/LoadContentTool.php
 
 		-
-			message: '#^Method Masilia\\Bundle\\IbexaAi\\Agent\\Tool\\ContentCreator\:\:createAndPublish\(\) should return array\{content\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Content, location\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Location\|null\} but returns array\{\}\.$#'
-			identifier: return.type
-			count: 1
-			path: src/bundle/Agent/Tool/ContentCreator.php
-
-		-
 			message: '#^If condition is always false\.$#'
 			identifier: if.alwaysFalse
 			count: 1
@@ -65,12 +59,6 @@ parameters:
 			identifier: parameter.notFound
 			count: 1
 			path: src/bundle/Agent/Tool/ToolRegistry.php
-
-		-
-			message: '#^Offset ''content'' on array\{content\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Content, location\: Ibexa\\Contracts\\Core\\Repository\\Values\\Content\\Location\|null\} in isset\(\) always exists and is not nullable\.$#'
-			identifier: isset.offset
-			count: 1
-			path: src/bundle/Agent/Worker/PlanExecutor.php
 
 		-
 			message: '#^Anonymous function has an unused use \$stamp\.$#'

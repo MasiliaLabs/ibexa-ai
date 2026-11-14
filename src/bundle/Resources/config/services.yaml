@@ -36,6 +36,8 @@ services:
         alias: Masilia\Bundle\IbexaAi\Content\Write\RepositoryContentWriter
     Masilia\Contracts\IbexaAi\Content\ContentTypeSchemas:
         alias: Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas
+    Masilia\Contracts\IbexaAi\Content\Languages:
+        alias: Masilia\Bundle\IbexaAi\Content\EnabledLanguages
     Masilia\Contracts\IbexaAi\Site\SiteLocations:
         alias: Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver
     Masilia\Bundle\IbexaAi\Content\:
