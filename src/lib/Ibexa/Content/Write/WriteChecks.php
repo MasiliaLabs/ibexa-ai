@@ -191,6 +191,20 @@ readonly class WriteChecks
         return $allowed ? null : sprintf('Your role does not let you edit the content %d.', $contentId);
     }
 
+    /** The user's role lets them remove the content (content/remove, with its subtree limitations on the location). */
+    public function mayTrash(int $contentId): ?string
+    {
+        try {
+            $info = $this->repository->getContentService()->loadContentInfo($contentId);
+            $targets = $info->getMainLocationId() !== null ? [$this->repository->getLocationService()->loadLocation($info->getMainLocationId())] : [];
+            $allowed = $this->permissions->canUser('content', 'remove', $info, $targets);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $allowed ? null : sprintf('Your role does not let you move the content %d to the trash.', $contentId);
+    }
+
     /** The content exists. */
     public function content(int $contentId): ?string
     {

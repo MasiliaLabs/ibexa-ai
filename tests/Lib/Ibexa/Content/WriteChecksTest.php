@@ -196,4 +196,10 @@ final class WriteChecksTest extends TestCase
         self::assertNull($this->checksFor(true)->mayEdit(9));
         self::assertStringContainsString('does not let you edit the content 9', (string) $this->checksFor(false)->mayEdit(9));
     }
+
+    public function testATrashTheRoleDoesNotAllowIsSaidBeforeTheCard(): void
+    {
+        self::assertNull($this->checksFor(true)->mayTrash(9));
+        self::assertStringContainsString('does not let you move the content 9 to the trash', (string) $this->checksFor(false)->mayTrash(9));
+    }
 }

@@ -75,6 +75,9 @@ final class TrashCapability extends AbstractCapability
         if (($problem = $this->checks->notAUser((int) $arguments['content_id'], 'access.user.delete')) !== null) {
             return $problem;
         }
+        if (($problem = $this->checks->mayTrash((int) $arguments['content_id'])) !== null) {
+            return $problem;
+        }
         $mainLocationId = $info->getMainLocationId();
         if ($mainLocationId !== null && $this->rules->isRoot($this->repository->getLocationService()->loadLocation($mainLocationId))) {
             return 'A root location cannot be trashed.';
