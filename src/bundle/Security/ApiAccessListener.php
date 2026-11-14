@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Security;
 
+use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
-use Masilia\IbexaAi\Api\ApiError;
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Observability;
+namespace Masilia\Contracts\IbexaAi\Observability;
 
 interface RequestLogger
 {

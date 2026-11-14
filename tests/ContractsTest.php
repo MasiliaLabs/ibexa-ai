@@ -17,8 +17,8 @@ final class ContractsTest extends TestCase
 {
     private const ROOT = __DIR__ . '/../src/contracts';
 
-    /** Names a type of the contracts may use besides its own namespace and PHP's: Ibexa's contracts, and Neuron (the OS is built on it). */
-    private const ALLOWED = ['Masilia\\Contracts\\IbexaAi\\', 'Ibexa\\Contracts\\', 'NeuronAI\\'];
+    /** Names a type of the contracts may use besides its own namespace and PHP's: Ibexa's contracts, Neuron (the OS is built on it) and Symfony's HttpFoundation. */
+    private const ALLOWED = ['Masilia\\Contracts\\IbexaAi\\', 'Ibexa\\Contracts\\', 'NeuronAI\\', 'Symfony\\Component\\HttpFoundation\\'];
 
     public function testTheContractsNameNothingButThemselvesIbexaContractsAndPhp(): void
     {

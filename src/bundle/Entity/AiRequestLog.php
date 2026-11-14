@@ -6,7 +6,7 @@ namespace Masilia\Bundle\IbexaAi\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Masilia\Bundle\IbexaAi\Repository\AiRequestLogRepository;
-use Masilia\IbexaAi\Observability\RequestLog;
+use Masilia\Contracts\IbexaAi\Observability\RequestLog;
 
 /**
  * One model call (table app_ai_request_log, shared with the previous package).

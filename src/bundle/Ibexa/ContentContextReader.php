@@ -7,7 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Ibexa;
 use Ibexa\Contracts\Core\Repository\ContentService;
 use Ibexa\Contracts\Core\Repository\Values\Content\Content;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentType;
-use Masilia\IbexaAi\Suggestion\LanguageCode;
+use Masilia\IbexaAi\Content\LanguageCode;
 use Masilia\IbexaAi\Suggestion\MatrixContext;
 use Masilia\IbexaAi\Suggestion\PromptText;
 use Masilia\IbexaAi\Suggestion\SiblingField;

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Tests\Bundle\Security;
 
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
-use Masilia\Bundle\IbexaAi\Security\Access;
+use Masilia\Contracts\IbexaAi\Security\Access;
 use Masilia\Bundle\IbexaAi\Security\ApiAccessListener;
-use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
+use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Api;
 
-use Masilia\IbexaAi\Api\ApiError;
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Api\SseEncoder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

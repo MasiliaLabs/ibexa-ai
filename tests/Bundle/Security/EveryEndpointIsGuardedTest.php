@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Bundle\Security;
 
-use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
+use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;

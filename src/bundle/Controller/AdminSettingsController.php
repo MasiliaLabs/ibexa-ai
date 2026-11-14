@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Controller;
 
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
-use Masilia\Bundle\IbexaAi\Http\ApiRequest;
-use Masilia\Bundle\IbexaAi\Security\Access;
-use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
+use Masilia\Contracts\IbexaAi\Http\ApiRequest;
+use Masilia\Contracts\IbexaAi\Security\Access;
+use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Provider\HealthChecker;
 use Masilia\Bundle\IbexaAi\Provider\ProviderCatalog;
 use Masilia\Bundle\IbexaAi\Provider\ProviderTester;
 use Masilia\Bundle\IbexaAi\Provider\UsageReport;
-use Masilia\IbexaAi\Api\ApiError;
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

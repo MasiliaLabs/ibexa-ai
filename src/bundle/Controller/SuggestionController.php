@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Controller;
 
 use Locale;
-use Masilia\Bundle\IbexaAi\Http\ApiRequest;
-use Masilia\Bundle\IbexaAi\Security\Access;
-use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
+use Masilia\Contracts\IbexaAi\Http\ApiRequest;
+use Masilia\Contracts\IbexaAi\Security\Access;
+use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Ibexa\ContentContextReader;
 use Masilia\Bundle\IbexaAi\Ibexa\SuggestionRequestFactory;
 use Masilia\Bundle\IbexaAi\Llm\TextGeneratorFactory;
-use Masilia\IbexaAi\Api\ApiError;
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Api\SseEncoder;
 use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\InvalidModelOutputException;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Api;
+namespace Masilia\Contracts\IbexaAi\Api;
 
 /**
  * Error envelope returned to the admin front: {"error": {"code", "message"}}.

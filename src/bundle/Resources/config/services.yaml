@@ -65,7 +65,6 @@ services:
 
     Masilia\Bundle\IbexaAi\Security\:
         resource: '../../Security/'
-        exclude: ['../../Security/Access.php', '../../Security/RequiresAccess.php']
 
     Masilia\Bundle\IbexaAi\Command\:
         resource: '../../Command/'
@@ -76,9 +75,13 @@ services:
 
     Masilia\Bundle\IbexaAi\Observability\:
         resource: '../../Observability/'
+    Masilia\Contracts\IbexaAi\Observability\RequestLogger:
+        alias: Masilia\Bundle\IbexaAi\Observability\DoctrineRequestLogger
 
     Masilia\Bundle\IbexaAi\Http\:
         resource: '../../Http/'
+    Masilia\Contracts\IbexaAi\Http\ApiRequest:
+        alias: Masilia\Bundle\IbexaAi\Http\SymfonyApiRequest
 
     Masilia\Bundle\IbexaAi\Controller\:
         resource: '../../Controller/'

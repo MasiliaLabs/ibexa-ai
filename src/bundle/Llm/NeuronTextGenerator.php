@@ -6,9 +6,9 @@ namespace Masilia\Bundle\IbexaAi\Llm;
 
 use Generator;
 use Masilia\IbexaAi\Llm\TextGenerator;
-use Masilia\IbexaAi\Observability\NullRequestLogger;
-use Masilia\IbexaAi\Observability\RequestLog;
-use Masilia\IbexaAi\Observability\RequestLogger;
+use Masilia\Contracts\IbexaAi\Observability\NullRequestLogger;
+use Masilia\Contracts\IbexaAi\Observability\RequestLog;
+use Masilia\Contracts\IbexaAi\Observability\RequestLogger;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Providers\AIProviderInterface;

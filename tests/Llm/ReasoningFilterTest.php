@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Tests\Suggestion;
+namespace Masilia\IbexaAi\Tests\Llm;
 
-use Masilia\IbexaAi\Suggestion\ReasoningFilter;
+use Masilia\IbexaAi\Llm\ReasoningFilter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

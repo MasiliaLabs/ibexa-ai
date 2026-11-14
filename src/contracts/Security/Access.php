@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\Bundle\IbexaAi\Security;
+namespace Masilia\Contracts\IbexaAi\Security;
 
 /**
  * What a user must be allowed to do to use an endpoint of the AI bundle. One place says it: an endpoint names its access

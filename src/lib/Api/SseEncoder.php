@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Api;
 
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 /**
  * Encodes the suggestion stream as named, versioned Server-Sent Events:
  *

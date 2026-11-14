@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Suggestion;
+namespace Masilia\IbexaAi\Llm;
 
 /**
  * Removes reasoning blocks ("<think>...</think>") that reasoning models put inline in their answer.

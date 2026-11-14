@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Masilia\Bundle\IbexaAi\Http\ApiRequest;
-use Masilia\Bundle\IbexaAi\Security\Access;
-use Masilia\Bundle\IbexaAi\Security\RequiresAccess;
+use Masilia\Contracts\IbexaAi\Http\ApiRequest;
+use Masilia\Contracts\IbexaAi\Security\Access;
+use Masilia\Contracts\IbexaAi\Security\RequiresAccess;
 use Masilia\Bundle\IbexaAi\Os\Neuron\OsAgentFactory;
 use Masilia\Bundle\IbexaAi\Chat\ChatRun;
 use Masilia\Bundle\IbexaAi\Chat\RunRefused;
@@ -17,9 +17,9 @@ use Masilia\Bundle\IbexaAi\Chat\Stream\ReasoningFilteredAGUIAdapter;
 use Masilia\Bundle\IbexaAi\Chat\Thread\AgentThreads;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadId;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadTitle;
-use Masilia\IbexaAi\Api\ApiError;
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
-use Masilia\IbexaAi\Suggestion\ReasoningFilter;
+use Masilia\IbexaAi\Llm\ReasoningFilter;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Controller;
 
-use Masilia\Bundle\IbexaAi\Security\Access;
+use Masilia\Contracts\IbexaAi\Security\Access;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;

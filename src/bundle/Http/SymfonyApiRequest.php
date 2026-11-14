@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Http;
 
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Masilia\Contracts\IbexaAi\Http\ApiRequest;
 use Ibexa\Core\MVC\Symfony\SiteAccess\SiteAccessServiceInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-/** What the endpoints of the admin API each need to read from the request: its JSON body, the siteaccess and the user. */
-readonly class ApiRequest
+/** {@see ApiRequest} on the Symfony request, the Ibexa siteaccess and the current user. */
+final readonly class SymfonyApiRequest implements ApiRequest
 {
     public function __construct(
         private PermissionResolver $permissions,
@@ -17,11 +18,6 @@ readonly class ApiRequest
     ) {
     }
 
-    /**
-     * The JSON object of the body, or null when the body is not JSON or not an object.
-     *
-     * @return array<string, mixed>|null
-     */
     public function json(Request $request): ?array
     {
         try {
@@ -33,7 +29,6 @@ readonly class ApiRequest
         return is_array($decoded) ? $decoded : null;
     }
 
-    /** The name of the siteaccess the request is served by. */
     public function siteaccess(): string
     {
         return $this->siteAccess->getCurrent()?->name ?? 'default';

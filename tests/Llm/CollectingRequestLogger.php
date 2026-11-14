@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Llm;
 
-use Masilia\IbexaAi\Observability\RequestLog;
-use Masilia\IbexaAi\Observability\RequestLogger;
+use Masilia\Contracts\IbexaAi\Observability\RequestLog;
+use Masilia\Contracts\IbexaAi\Observability\RequestLogger;
 
 final class CollectingRequestLogger implements RequestLogger
 {

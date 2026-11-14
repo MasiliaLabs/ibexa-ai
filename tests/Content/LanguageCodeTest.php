@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Tests\Suggestion;
+namespace Masilia\IbexaAi\Tests\Content;
 
-use Masilia\IbexaAi\Suggestion\LanguageCode;
+use Masilia\IbexaAi\Content\LanguageCode;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

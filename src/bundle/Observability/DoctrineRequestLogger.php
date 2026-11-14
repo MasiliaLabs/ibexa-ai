@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Observability;
 
 use Masilia\Bundle\IbexaAi\Entity\AiRequestLog;
-use Masilia\IbexaAi\Observability\RequestLog;
-use Masilia\IbexaAi\Observability\RequestLogger;
+use Masilia\Contracts\IbexaAi\Observability\RequestLog;
+use Masilia\Contracts\IbexaAi\Observability\RequestLogger;
 use Doctrine\Persistence\ManagerRegistry;
 use Throwable;
 

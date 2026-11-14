@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Chat;
 
-use Masilia\IbexaAi\Api\ApiError;
+use Masilia\Contracts\IbexaAi\Api\ApiError;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 

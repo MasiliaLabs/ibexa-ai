@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Observability;
+namespace Masilia\Contracts\IbexaAi\Observability;
 
 /**
  * One model call, as recorded for the usage dashboard. Contains no prompt or answer text.
