@@ -77,13 +77,15 @@ final class WriteCapabilitiesTest extends TestCase
         self::assertSame(['content_id' => 500, 'location_id' => 501], $result->data);
     }
 
-    public function testACreationWithAMissingRequiredFieldIsRefusedBeforeAnythingIsWritten(): void
+    public function testACreationThatIbexaWouldRefuseIsRefusedBeforeAnythingIsWritten(): void
     {
         $writer = $this->createMock(ContentWriter::class);
+        $writer->expects(self::once())->method('validateCreate')->with('article', ['title' => ''], 'eng-GB')
+            ->willReturn(['Field "title" (eng-GB): Value for required field definition \'title\' with language \'eng-GB\' is empty']);
         $writer->expects(self::never())->method('create');
         $capability = new CreateCapability($this->checks(['article' => ['name' => 'Article', 'fields' => ['title' => ['type' => 'ibexa_string', 'required' => true]]]]), $writer, $this->languages());
 
-        self::assertStringContainsString('required field "title" is empty', (string) $capability->validate(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => '']]));
+        self::assertStringContainsString('Field "title" (eng-GB)', (string) $capability->validate(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => '']]));
         self::assertSame('content.create requires non-empty fields.', $capability->validate(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => []]));
     }
 

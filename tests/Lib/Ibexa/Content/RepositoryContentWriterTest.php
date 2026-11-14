@@ -19,6 +19,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\VersionInfo;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentType;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
 use Ibexa\Core\Base\Exceptions\NotFoundException;
+use Ibexa\Core\FieldType\ValidationError;
 use Masilia\IbexaAi\Ibexa\Content\Write\RepositoryContentWriter;
 use Masilia\IbexaAi\Ibexa\Field\Input\FieldInputs;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -37,6 +38,7 @@ final class RepositoryContentWriterTest extends TestCase
         $locations = $this->createMock(LocationService::class);
         $locations->method('newLocationCreateStruct')->willReturnCallback(fn (int $id): LocationCreateStruct => new LocationCreateStruct(['parentLocationId' => $id]));
         $title = $this->createMock(FieldDefinition::class);
+        $title->method('getId')->willReturn(7);
         $title->method('getIdentifier')->willReturn('title');
         $title->method('getFieldTypeIdentifier')->willReturn('ibexa_string');
         $this->type = $this->createMock(ContentType::class);
@@ -211,5 +213,28 @@ final class RepositoryContentWriterTest extends TestCase
         $field->method('isTranslatable')->willReturn($translatable);
 
         return $field;
+    }
+
+    public function testWhatIbexaWouldRefuseIsSaidBeforeAnythingIsWritten(): void
+    {
+        $this->contents->method('newContentCreateStruct')->willReturn(new ContentCreateStruct(['contentType' => $this->type, 'mainLanguageCode' => 'eng-GB']));
+        $this->contents->expects(self::once())->method('validate')->willReturn([
+            7 => ['eng-GB' => new ValidationError("Value for required field definition '%identifier%' with language '%languageCode%' is empty", null, ['%identifier%' => 'title', '%languageCode%' => 'eng-GB'], 'empty')],
+        ]);
+        $this->contents->expects(self::never())->method('createContent');
+
+        self::assertSame(
+            ['Field "title" (eng-GB): Value for required field definition \'title\' with language \'eng-GB\' is empty'],
+            $this->writer()->validateCreate('article', ['title' => ''], 'eng-GB'),
+        );
+    }
+
+    public function testAContentIbexaWouldAcceptHasNoProblem(): void
+    {
+        $this->contents->method('newContentCreateStruct')->willReturn(new ContentCreateStruct(['contentType' => $this->type, 'mainLanguageCode' => 'eng-GB']));
+        $this->contents->method('validate')->willReturn([]);
+
+        self::assertSame([], $this->writer()->validateCreate('article', ['title' => 'Hello'], 'eng-GB'));
+        self::assertSame(['There is no content type "ghost".'], $this->writer()->validateCreate('ghost', [], 'eng-GB'));
     }
 }

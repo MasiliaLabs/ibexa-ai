@@ -43,16 +43,6 @@ final class WriteChecksTest extends TestCase
         self::assertNull($this->checks($types)->contentType('article', ['title' => 'Hello']));
     }
 
-    public function testARequiredFieldThatIsEmptyOrMissingIsRefused(): void
-    {
-        $types = ['article' => ['name' => 'Article', 'fields' => ['title' => ['type' => 'ibexa_string', 'required' => true]]]];
-        $checks = $this->checks($types);
-
-        self::assertStringContainsString('required field "title" is empty', (string) $checks->contentType('article', ['title' => '   ']));
-        self::assertStringContainsString('required field "title" is empty', (string) $checks->contentType('article', ['title' => null]));
-        self::assertStringContainsString('required field "title" is empty', (string) $checks->contentType('article', []));
-    }
-
     public function testAnOptionalFieldMayBeEmpty(): void
     {
         $types = ['article' => ['name' => 'Article', 'fields' => ['title' => 'ibexa_string', 'body' => 'ibexa_text']]];
@@ -70,19 +60,6 @@ final class WriteChecksTest extends TestCase
 
         self::assertNull($checks->contentType('info_cards', ['cards' => [['icon' => 'star', 'title' => 'Hello'], ['icon' => 'check', 'title' => 'Second']]]));
         self::assertStringContainsString('matrix field "cards" row 0 has unknown column "guess"', (string) $checks->contentType('info_cards', ['cards' => [['guess' => 'x']]]));
-    }
-
-    public function testARequiredMatrixNeedsAtLeastOneNonEmptyRow(): void
-    {
-        $types = ['info_cards' => ['name' => 'Info Cards', 'fields' => ['cards' => [
-            'type' => 'ibexa_matrix', 'required' => true,
-            'settings' => ['columns' => [['identifier' => 'title', 'name' => 'Title']]],
-        ]]]];
-        $checks = $this->checks($types);
-
-        self::assertStringContainsString('required field "cards" is empty', (string) $checks->contentType('info_cards', ['cards' => []]));
-        self::assertStringContainsString('required field "cards" is empty', (string) $checks->contentType('info_cards', ['cards' => [['title' => '']]]));
-        self::assertNull($checks->contentType('info_cards', ['cards' => [['title' => 'Hello']]]));
     }
 
     public function testAParentThatDoesNotExistIsRefused(): void

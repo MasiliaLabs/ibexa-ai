@@ -65,6 +65,68 @@ final readonly class RepositoryContentWriter implements ContentWriter
         return new PublishedContent($published, $publish ? $published->getContentInfo()->getMainLocation() : null);
     }
 
+    public function validateCreate(string $contentType, array $fields, string $language): array
+    {
+        try {
+            $type = $this->repository->getContentTypeService()->loadContentTypeByIdentifier($contentType);
+            $contents = $this->repository->getContentService();
+            $struct = $contents->newContentCreateStruct($type, $language);
+            $this->fill($struct, $type, $fields, $language);
+
+            return $this->problems($type, $contents->validate($struct, []));
+        } catch (NotFoundException) {
+            return [sprintf('There is no content type "%s".', $contentType)];
+        } catch (Throwable $e) {
+            return [$e->getMessage()];
+        }
+    }
+
+    public function validateUpdate(int $contentId, array $fields, string $language, ?string $baseLanguage = null): array
+    {
+        try {
+            $contents = $this->repository->getContentService();
+            $content = $contents->loadContent($contentId);
+            $struct = $contents->newContentUpdateStruct();
+            $struct->initialLanguageCode = $language;
+            $this->fill($struct, $content->getContentType(), $fields, $language);
+            if ($baseLanguage !== null && $baseLanguage !== $language) {
+                $this->startFrom($struct, $contents->loadContent($contentId, [$baseLanguage]), $fields, $language, $baseLanguage);
+            }
+
+            return $this->problems($content->getContentType(), $contents->validate($struct, ['content' => $content]));
+        } catch (NotFoundException) {
+            return [sprintf('The content %d does not exist.', $contentId)];
+        } catch (Throwable $e) {
+            return [$e->getMessage()];
+        }
+    }
+
+    /**
+     * The errors of ContentService::validate() (field definition id => language => error or errors), as sentences naming the field.
+     *
+     * @param array<int|string, array<string, mixed>> $errors
+     *
+     * @return list<string>
+     */
+    private function problems(ContentType $type, array $errors): array
+    {
+        $identifiers = [];
+        foreach ($type->getFieldDefinitions() as $definition) {
+            $identifiers[$definition->getId()] = $definition->getIdentifier();
+        }
+
+        $problems = [];
+        foreach ($errors as $definitionId => $byLanguage) {
+            foreach ($byLanguage as $language => $found) {
+                foreach (is_array($found) ? $found : [$found] as $error) {
+                    $problems[] = sprintf('Field "%s" (%s): %s', $identifiers[$definitionId] ?? (string) $definitionId, $language, (string) $error->getTranslatableMessage());
+                }
+            }
+        }
+
+        return $problems;
+    }
+
     public function update(int $contentId, array $fields, string $language, bool $publish = true, ?string $baseLanguage = null): Content
     {
         $contents = $this->repository->getContentService();

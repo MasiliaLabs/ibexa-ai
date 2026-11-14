@@ -81,10 +81,21 @@ final class CreateCapability extends AbstractCapability
             return 'content.create requires non-empty fields.';
         }
 
-        return $this->checks->notAUserType($type)
+        $problem = $this->checks->notAUserType($type)
             ?? $this->checks->contentType($type, $fields)
-            ?? $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null)
-            ?? $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null)[1];
+            ?? $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null);
+        if ($problem !== null) {
+            return $problem;
+        }
+        [$language, $problem] = $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null);
+        if ($problem !== null) {
+            return $problem;
+        }
+
+        // What Ibexa would refuse, said before the user is asked to approve.
+        $refused = $this->writer->validateCreate($type, $fields, $language ?? $this->languages->default());
+
+        return $refused === [] ? null : implode("\n", $refused);
     }
 
     public function preview(array $arguments): Preview

@@ -39,7 +39,8 @@ readonly class WriteChecks
     }
 
     /**
-     * The content type exists, its matrix fields have the columns it has, and its required fields are filled.
+     * The content type exists and its matrix fields have the columns it has. What Ibexa itself refuses (a required field left empty, a
+     * value outside the limits of its field type) is found by ContentWriter::validateCreate() and ::validateUpdate().
      *
      * @param array<string, mixed> $fields
      */
@@ -70,12 +71,6 @@ readonly class WriteChecks
                         return sprintf('Content type "%s": matrix field "%s" row %d has unknown column "%s". Valid columns: %s', $identifier, $fieldId, $rowIndex, $column, implode(', ', $columns));
                     }
                 }
-            }
-        }
-
-        foreach ($schema['fields'] as $fieldId => $fieldInfo) {
-            if (($fieldInfo['required'] ?? false) && self::isEmpty($fields[$fieldId] ?? null)) {
-                return sprintf('Content type "%s": required field "%s" is empty. Provide a non-empty value.', $identifier, $fieldId);
             }
         }
 
@@ -219,27 +214,5 @@ readonly class WriteChecks
         }
 
         return null;
-    }
-
-    /** Null, an empty string or an empty list, at any depth: nothing to save. */
-    private static function isEmpty(mixed $value): bool
-    {
-        if ($value === null) {
-            return true;
-        }
-        if (is_string($value)) {
-            return trim($value) === '';
-        }
-        if (is_array($value)) {
-            foreach ($value as $entry) {
-                if (!self::isEmpty($entry)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        return false;
     }
 }

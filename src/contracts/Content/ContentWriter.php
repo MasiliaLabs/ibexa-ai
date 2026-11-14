@@ -38,4 +38,23 @@ interface ContentWriter
      *                                           translation form of the admin; what $fields gives replaces it
      */
     public function update(int $contentId, array $fields, string $language, bool $publish = true, ?string $baseLanguage = null): Content;
+
+    /**
+     * What Ibexa itself would refuse in a content about to be created (the validation of the editing form: required fields, the
+     * limits of each field type), found before the user is asked to approve it. Nothing is written.
+     *
+     * @param array<string, mixed> $fields Field identifier => value, as the assistant gives it
+     *
+     * @return list<string> The problems, in words for the model; empty when Ibexa would accept the content
+     */
+    public function validateCreate(string $contentType, array $fields, string $language): array;
+
+    /**
+     * The same for the changes of a content: what Ibexa would refuse once they are applied.
+     *
+     * @param array<string, mixed> $fields Field identifier => value, as the assistant gives it
+     *
+     * @return list<string>
+     */
+    public function validateUpdate(int $contentId, array $fields, string $language, ?string $baseLanguage = null): array;
 }

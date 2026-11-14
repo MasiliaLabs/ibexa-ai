@@ -107,7 +107,13 @@ final class UpdateCapability extends AbstractCapability
             return sprintf('Language "%s" does not exist. Use a language code such as "eng-GB" or "fre-FR".', $arguments['language']);
         }
 
-        return null;
+        // What Ibexa would refuse once the fields are changed, said before the user is asked to approve.
+        $language = isset($arguments['language'])
+            ? $this->languages->resolve((string) $arguments['language'])
+            : $this->repository->getContentService()->loadContentInfo($id)->getMainLanguageCode();
+        $refused = $this->writer->validateUpdate($id, (array) ($arguments['fields'] ?? []), (string) $language);
+
+        return $refused === [] ? null : implode("\n", $refused);
     }
 
     public function execute(array $arguments): CapabilityResult
