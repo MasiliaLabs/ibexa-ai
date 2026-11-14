@@ -20,7 +20,6 @@ services:
     Masilia\Bundle\IbexaAi\Ibexa\:
         resource: '../../Ibexa/'
         exclude:
-            - '../../Ibexa/ContentContext.php'
             - '../../Ibexa/Field/FieldTypes.php'
             - '../../Ibexa/Field/Text/FieldStringValue.php'
             - '../../Ibexa/Field/Input/FieldInputs.php'
@@ -73,10 +72,6 @@ services:
 
     Masilia\Bundle\IbexaAi\Command\:
         resource: '../../Command/'
-
-    Masilia\Bundle\IbexaAi\Llm\:
-        resource: '../../Llm/'
-        exclude: '../../Llm/NeuronTextGenerator.php'
 
     Masilia\Bundle\IbexaAi\Observability\:
         resource: '../../Observability/'

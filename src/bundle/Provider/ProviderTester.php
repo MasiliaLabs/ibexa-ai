@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Provider;
 
-use Masilia\Bundle\IbexaAi\Llm\NeuronTextGenerator;
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
 use Masilia\IbexaAi\Provider\ProviderConnection;
 use Masilia\IbexaAi\Provider\ProviderFactory;
 use Masilia\IbexaAi\Provider\ProviderId;
+use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
+use NeuronAI\Chat\Messages\UserMessage;
 use Throwable;
 use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
 
@@ -50,8 +51,10 @@ final readonly class ProviderTester
                 temperature: 0.0,
                 maxTokens: 32,
             );
-            $generator = new NeuronTextGenerator($this->factory->create($connection));
-            $answer = $generator->generate('You are a connection test. Answer briefly.', 'Reply with the single word OK.');
+            $llm = $this->factory->create($connection);
+            $answer = $llm->systemPrompt('You are a connection test. Answer briefly.')
+                ->chat(new UserMessage('Reply with the single word OK.'))
+                ->message()->getContent() ?? '';
         } catch (Throwable $e) {
             return $this->result(false, 'Connection failed: ' . $e->getMessage());
         }
@@ -66,8 +69,10 @@ final readonly class ProviderTester
 
         try {
             $chunks = 0;
-            foreach ($generator->stream('You are a connection test.', 'Reply with the single word OK.') as $chunk) {
-                $chunks++;
+            foreach ($llm->systemPrompt('You are a connection test.')->stream(new UserMessage('Reply with the single word OK.')) as $chunk) {
+                if ($chunk instanceof TextChunk && $chunk->content !== '') {
+                    $chunks++;
+                }
             }
             $streamOk = $chunks > 0;
         } catch (Throwable $e) {

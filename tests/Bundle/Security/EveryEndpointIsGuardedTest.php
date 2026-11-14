@@ -18,7 +18,6 @@ final class EveryEndpointIsGuardedTest extends TestCase
 {
     /** Routes with no #[RequiresAccess], and why. */
     private const OPEN = [
-        'SuggestionController::fieldTypes' => 'a fixed list of the field types the suggestions support: it holds nothing of the site',
         'AdminPageController::settings' => 'a page: it refuses by an exception that the admin shows as a page, not as JSON',
         'CapabilitiesPageController::page' => 'a page: it refuses by an exception, and shows an administrator more than the others',
     ];
