@@ -84,4 +84,26 @@ final class ArchitectureTest extends TestCase
 
         self::assertSame([], $wrong, implode("\n", $wrong));
     }
+
+    /**
+     * The OS is generic: it knows Ibexa, not the project it runs in. How a project builds its sites (its siteaccesses, content types,
+     * locations) lives in the skills of the packages built on it (ibexa-ai-craft), never here.
+     */
+    public function testTheOsNamesNothingOfAnyProject(): void
+    {
+        $project = '/fossil_exit|fossil exit|africa_integrates|africa_v2x|mattcch|fuelexit|\bimal\b|\b1018\b/i';
+        $found = [];
+        foreach (['bundle', 'lib', 'contracts'] as $part) {
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::SRC . '/' . $part, FilesystemIterator::SKIP_DOTS)) as $file) {
+                if (!$file->isFile() || str_contains($file->getPathname(), '/node_modules/') || !in_array($file->getExtension(), ['php', 'ts', 'tsx', 'twig', 'yaml', 'xlf'], true)) {
+                    continue;
+                }
+                if (preg_match($project, (string) file_get_contents($file->getPathname()), $match) === 1) {
+                    $found[] = substr($file->getPathname(), strlen(self::SRC) + 1) . ' (' . $match[0] . ')';
+                }
+            }
+        }
+
+        self::assertSame([], $found, "These files name a project:\n" . implode("\n", $found));
+    }
 }

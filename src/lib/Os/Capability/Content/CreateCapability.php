@@ -62,7 +62,7 @@ final class CreateCapability extends AbstractCapability
 
     public function examples(): array
     {
-        return [['description' => 'An article under a folder', 'arguments' => ['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => 'Hello'], 'siteaccess' => 'fossil_exit']]];
+        return [['description' => 'An article under a folder', 'arguments' => ['content_type' => 'article', 'parent_location_id' => 2, 'fields' => ['title' => 'Hello'], 'siteaccess' => 'shop']]];
     }
 
     public function risk(): Risk

@@ -61,7 +61,7 @@ final class SearchCapability extends AbstractCapability
     {
         return [
             ['description' => 'Pages whose name starts with "About"', 'arguments' => ['content_type' => 'page', 'name' => 'About*']],
-            ['description' => 'Everything under a location that mentions "energy"', 'arguments' => ['subtree_location_id' => 1018, 'query' => 'energy', 'limit' => 20]],
+            ['description' => 'Everything under a location that mentions "energy"', 'arguments' => ['subtree_location_id' => 2, 'query' => 'energy', 'limit' => 20]],
         ];
     }
 

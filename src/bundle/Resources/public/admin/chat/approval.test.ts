@@ -5,15 +5,15 @@ import { parseApproval } from './approval';
 
 test('the proposal is read into a heading and labelled rows', () => {
     const summary = parseApproval(
-        'Intent: create_folder\nTitle: "Test (a supprimer)"\nType: folder\nSiteaccess: fossil_exit\nParent: 1018\nLanguage: eng-GB\n\nThe change runs only if you approve it.',
+        'Intent: create_folder\nTitle: "Test (a supprimer)"\nType: folder\nSiteaccess: shop\nParent: 2\nLanguage: eng-GB\n\nThe change runs only if you approve it.',
     );
 
     assert.equal(summary.heading, 'Create a folder');
     assert.deepEqual(summary.rows, [
         { label: 'Title', value: 'Test (a supprimer)' },
         { label: 'Content type', value: 'folder' },
-        { label: 'Site', value: 'fossil_exit' },
-        { label: 'Parent location', value: '1018' },
+        { label: 'Site', value: 'shop' },
+        { label: 'Parent location', value: '2' },
         { label: 'Language', value: 'eng-GB' },
     ]);
     assert.deepEqual(summary.notes, []);

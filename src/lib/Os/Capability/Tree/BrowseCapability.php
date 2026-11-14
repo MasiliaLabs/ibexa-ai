@@ -68,7 +68,7 @@ final class BrowseCapability extends AbstractCapability
     {
         return [
             ['description' => 'What is under the media library', 'arguments' => ['location_id' => 43, 'content_type' => 'folder']],
-            ['description' => 'Contents with no French translation', 'arguments' => ['location_id' => 1018, 'missing_language' => 'fre-FR']],
+            ['description' => 'Contents with no French translation', 'arguments' => ['location_id' => 2, 'missing_language' => 'fre-FR']],
         ];
     }
 

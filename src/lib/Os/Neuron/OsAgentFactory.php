@@ -82,7 +82,7 @@ readonly class OsAgentFactory
     public function forgetWorkflow(string $threadId): void
     {
         // Neuron's DatabasePersistence stores the partition (the workflow id, here the thread id) hex-encoded.
-        // Exact match only: one thread id can be the prefix of another ("…-admin" and "…-admin_fossil_exit").
+        // Exact match only: one thread id can be the prefix of another ("…-admin" and "…-admin_shop").
         $statement = $this->pdo()->prepare(
             'DELETE FROM ' . OsAgent::WORKFLOW_TABLE . ' WHERE `partition` = ?',
         );

@@ -12,7 +12,7 @@ use Throwable;
  * The content languages of a site.
  *
  * A site is served by several siteaccesses on the same content tree, one per language (for example
- * fossil_exit in English, fossil_exit_fr in French). The languages a site can be written in are the ones
+ * shop in English, shop_fr in French). The languages a site can be written in are the ones
  * of all the siteaccesses that share its tree root, the siteaccess asked for first: its own language is the
  * site's language for that siteaccess.
  */
