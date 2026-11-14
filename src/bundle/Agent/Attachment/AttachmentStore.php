@@ -16,7 +16,7 @@ use Masilia\Bundle\IbexaAi\Agent\DTO\Attachment;
  * JPEG, PNG, GIF or WebP, not too heavy, not too large in pixels. Every read is for one user. Old attachments are
  * removed when a new one comes in.
  */
-final class AttachmentStore
+class AttachmentStore
 {
     public const TABLE = 'app_ai_attachment';
     public const MAX_BYTES = 5 * 1024 * 1024;

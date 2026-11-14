@@ -73,9 +73,6 @@ services:
     Masilia\Bundle\IbexaAi\Os\Capability\Tree\BrowseCapability:
         arguments:
             $browseTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Control\BrowseLocationTool'
-    Masilia\Bundle\IbexaAi\Os\Capability\Content\UpdateCapability:
-        arguments:
-            $updateTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\UpdateContentTool'
 
     Masilia\IbexaAi\Provider\ProviderFactory: ~
 
@@ -132,8 +129,6 @@ services:
             - '../../Agent/AgentSystemPrompt.php'
             - '../../Agent/Neuron/'
             - '../../Agent/DTO/'
-            - '../../Agent/Worker/Plan.php'
-            - '../../Agent/Worker/ExecutionResult.php'
             - '../../Agent/Tool/ToolResult.php'
             - '../../Agent/Tool/ToolRegistry.php'
             - '../../Agent/Tool/FieldValueTransformerRegistry.php'

@@ -4,11 +4,24 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
-use Masilia\Bundle\IbexaAi\Agent\Worker\Plan;
-use Masilia\Bundle\IbexaAi\Os\Capability\PlanCapability;
+use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;
+use Masilia\Contracts\IbexaAi\Content\ContentWriter;
+use Masilia\Contracts\IbexaAi\Content\Languages;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Risk;
+use Throwable;
 
-final class CreateCapability extends PlanCapability
+final class CreateCapability extends AbstractCapability
 {
+    public function __construct(
+        private readonly WriteChecks $checks,
+        private readonly ContentWriter $writer,
+        private readonly Languages $languages,
+    ) {
+    }
+
     public function name(): string
     {
         return 'content.create';
@@ -51,14 +64,52 @@ final class CreateCapability extends PlanCapability
         return [['description' => 'An article under a folder', 'arguments' => ['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => 'Hello'], 'siteaccess' => 'fossil_exit']]];
     }
 
-    protected function plan(array $arguments): array
+    public function risk(): Risk
     {
-        return ['intent' => Plan::INTENT_CREATE_CONTENT] + array_filter([
-            'content_type' => $arguments['content_type'] ?? null,
-            'parent_location_id' => $arguments['parent_location_id'] ?? null,
-            'fields' => $arguments['fields'] ?? [],
-            'siteaccess' => $arguments['siteaccess'] ?? null,
-            'language' => $arguments['language'] ?? null,
-        ], static fn (mixed $value): bool => $value !== null);
+        return Risk::WRITE;
+    }
+
+    public function validate(array $arguments): ?string
+    {
+        $type = (string) ($arguments['content_type'] ?? '');
+        $fields = (array) ($arguments['fields'] ?? []);
+        if ($type === '') {
+            return 'content.create requires content_type.';
+        }
+        if ($fields === []) {
+            return 'content.create requires non-empty fields.';
+        }
+
+        return $this->checks->contentType($type, $fields)
+            ?? $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null)
+            ?? $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null)[1];
+    }
+
+    public function preview(array $arguments): Preview
+    {
+        $fields = array_keys((array) ($arguments['fields'] ?? []));
+
+        return new Preview('Create a content', array_filter([
+            ['Content type', (string) $arguments['content_type']],
+            ['Parent location', (string) $arguments['parent_location_id']],
+            isset($arguments['siteaccess']) ? ['Site', (string) $arguments['siteaccess']] : null,
+            isset($arguments['language']) ? ['Language', (string) $arguments['language']] : null,
+            ['Fields', implode(', ', array_slice(array_map('strval', $fields), 0, 14))],
+        ]));
+    }
+
+    public function execute(array $arguments): CapabilityResult
+    {
+        [$language] = $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null);
+        try {
+            $published = $this->writer->create((string) $arguments['content_type'], [(int) $arguments['parent_location_id']], (array) $arguments['fields'], $language ?? $this->languages->default());
+        } catch (Throwable $e) {
+            return CapabilityResult::error(sprintf('Failed to create content: %s', $e->getMessage()));
+        }
+
+        return CapabilityResult::ok(sprintf('Created %s (ID: %d)', $arguments['content_type'], $published->content->getId()), [
+            'content_id' => $published->content->getId(),
+            'location_id' => $published->location?->getId(),
+        ]);
     }
 }

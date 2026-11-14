@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
+use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;
+use Masilia\Contracts\IbexaAi\Content\ContentWriter;
+use Masilia\Contracts\IbexaAi\Content\Languages;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 use Throwable;
 
-final class UpdateCapability extends BaseCapability
+final class UpdateCapability extends AbstractCapability
 {
     public function __construct(
-        private readonly ToolInterface $updateTool,
+        private readonly WriteChecks $checks,
+        private readonly ContentWriter $writer,
+        private readonly Languages $languages,
         private readonly Repository $repository,
     ) {
     }
@@ -82,12 +86,35 @@ final class UpdateCapability extends BaseCapability
         ], ['A new version is published.']);
     }
 
+    public function validate(array $arguments): ?string
+    {
+        $id = (int) $arguments['content_id'];
+        if (($problem = $this->checks->content($id)) !== null) {
+            return $problem;
+        }
+        if (isset($arguments['language']) && $this->languages->resolve((string) $arguments['language']) === null) {
+            return sprintf('Language "%s" does not exist. Use a language code such as "eng-GB" or "fre-FR".', $arguments['language']);
+        }
+
+        return null;
+    }
+
     public function execute(array $arguments): CapabilityResult
     {
-        return self::fromTool($this->updateTool->execute(array_filter([
-            'content_id' => $arguments['content_id'],
-            'attributes' => $arguments['fields'],
-            'language' => $arguments['language'] ?? null,
-        ], static fn (mixed $value): bool => $value !== null)));
+        $id = (int) $arguments['content_id'];
+        // Without a language the update stays in the language of the content, not in the repository default.
+        $language = isset($arguments['language'])
+            ? $this->languages->resolve((string) $arguments['language'])
+            : $this->repository->getContentService()->loadContentInfo($id)->getMainLanguageCode();
+        try {
+            $published = $this->writer->update($id, (array) $arguments['fields'], (string) $language);
+        } catch (Throwable $e) {
+            return CapabilityResult::error(sprintf('Update of content %d failed: %s', $id, $e->getMessage()));
+        }
+
+        return CapabilityResult::ok(sprintf('Updated content %d', $id), [
+            'content_id' => $published->getId(),
+            'version_no' => $published->getVersionInfo()->getVersionNo(),
+        ]);
     }
 }

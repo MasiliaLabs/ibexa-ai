@@ -4,11 +4,27 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
-use Masilia\Bundle\IbexaAi\Agent\Worker\Plan;
-use Masilia\Bundle\IbexaAi\Os\Capability\PlanCapability;
+use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;
+use Masilia\Contracts\IbexaAi\Content\ContentWriter;
+use Masilia\Contracts\IbexaAi\Content\Languages;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
+use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
+use Masilia\Contracts\IbexaAi\Os\Preview;
+use Masilia\Contracts\IbexaAi\Os\Risk;
+use Throwable;
 
-final class CreateFolderCapability extends PlanCapability
+final class CreateFolderCapability extends AbstractCapability
 {
+    /** The folder content type of a stock Ibexa repository: it holds a name. */
+    private const FOLDER_TYPE = 'folder';
+
+    public function __construct(
+        private readonly WriteChecks $checks,
+        private readonly ContentWriter $writer,
+        private readonly Languages $languages,
+    ) {
+    }
+
     public function name(): string
     {
         return 'content.create_folder';
@@ -49,13 +65,39 @@ final class CreateFolderCapability extends PlanCapability
         return [['description' => 'A folder at the root of a site', 'arguments' => ['name' => 'Press kit', 'parent_location_id' => 1018, 'siteaccess' => 'fossil_exit']]];
     }
 
-    protected function plan(array $arguments): array
+    public function risk(): Risk
     {
-        return ['intent' => Plan::INTENT_CREATE_FOLDER] + array_filter([
-            'title' => $arguments['name'] ?? null,
-            'parent_location_id' => $arguments['parent_location_id'] ?? null,
-            'siteaccess' => $arguments['siteaccess'] ?? null,
-            'language' => $arguments['language'] ?? null,
-        ], static fn (mixed $value): bool => $value !== null);
+        return Risk::WRITE;
+    }
+
+    public function validate(array $arguments): ?string
+    {
+        return $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null)
+            ?? $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null)[1];
+    }
+
+    public function preview(array $arguments): Preview
+    {
+        return new Preview('Create a folder', array_filter([
+            ['Title', (string) $arguments['name']],
+            ['Parent location', (string) $arguments['parent_location_id']],
+            isset($arguments['siteaccess']) ? ['Site', (string) $arguments['siteaccess']] : null,
+            isset($arguments['language']) ? ['Language', (string) $arguments['language']] : null,
+        ]));
+    }
+
+    public function execute(array $arguments): CapabilityResult
+    {
+        [$language] = $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null);
+        try {
+            $published = $this->writer->create(self::FOLDER_TYPE, [(int) $arguments['parent_location_id']], ['name' => (string) $arguments['name']], $language ?? $this->languages->default());
+        } catch (Throwable $e) {
+            return CapabilityResult::error(sprintf('Failed to create folder: %s', $e->getMessage()));
+        }
+
+        return CapabilityResult::ok(sprintf('Created folder "%s" (ID: %d)', $arguments['name'], $published->content->getId()), [
+            'content_id' => $published->content->getId(),
+            'location_id' => $published->location?->getId(),
+        ]);
     }
 }
