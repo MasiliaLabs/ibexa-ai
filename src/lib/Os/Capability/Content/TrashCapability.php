@@ -38,8 +38,8 @@ final class TrashCapability extends AbstractCapability
 
     public function description(): string
     {
-        return 'Moves the content, and what is under its location, to the trash. The contents that point at it through a relation field are unlinked first. '
-            . 'Nothing is deleted for good: trash.restore brings it back.';
+        return 'Moves the content, and what is under its location, to the trash, as the admin does: nothing else changes. The contents that point at it through a relation field keep '
+            . 'their link (see relations.list; relations.unlink removes it first, in the same propose_changes). Nothing is deleted for good: trash.restore brings it back.';
     }
 
     public function inputSchema(): array
@@ -95,7 +95,7 @@ final class TrashCapability extends AbstractCapability
             $notes[] = sprintf('%d item(s) directly below it go to the trash with it (and what is under them).', $warnings['children']);
         }
         if ($warnings['reverse_relations'] > 0) {
-            $notes[] = sprintf('%d content(s) point at it: they are unlinked from it first, and get a new version.', $warnings['reverse_relations']);
+            $notes[] = sprintf('%d content(s) point at it and keep their link: relations.unlink removes it first.', $warnings['reverse_relations']);
         }
         if ($warnings['drafts'] > 0) {
             $notes[] = sprintf('Its %d draft(s) are trashed with it.', $warnings['drafts']);
@@ -123,11 +123,6 @@ final class TrashCapability extends AbstractCapability
             return CapabilityResult::error(sprintf('Trashing content %d failed: %s', (int) $arguments['content_id'], $e->getMessage()));
         }
 
-        $message = sprintf('Trashed content %d', $trashed['content_id']);
-        if ($trashed['unlinked_from'] !== []) {
-            $message .= sprintf(' (unlinked from %d content item(s): %s)', count($trashed['unlinked_from']), implode(', ', $trashed['unlinked_from']));
-        }
-
-        return CapabilityResult::ok($message, $trashed);
+        return CapabilityResult::ok(sprintf('Trashed content %d', $trashed['content_id']), $trashed);
     }
 }

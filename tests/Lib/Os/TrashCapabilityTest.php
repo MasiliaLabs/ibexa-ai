@@ -39,17 +39,17 @@ final class TrashCapabilityTest extends TestCase
         return new TrashCapability($repository, $trasher, $rules, $checks);
     }
 
-    public function testItTrashesTheContentAndSaysWhatWasUnlinked(): void
+    public function testItTrashesTheContentAndNothingElse(): void
     {
         $trasher = $this->createMock(ContentTrasher::class);
         $trasher->expects(self::once())->method('trash')->with(1353, false)->willReturn([
-            'content_id' => 1353, 'location_id' => 2000, 'trashed' => true, 'unlinked_from' => ['77:Home'], 'trashed_assets' => [],
+            'content_id' => 1353, 'location_id' => 2000, 'trashed' => true, 'trashed_assets' => [],
         ]);
 
         $result = $this->capability($trasher)->execute(['content_id' => 1353]);
 
         self::assertTrue($result->success);
-        self::assertSame('Trashed content 1353 (unlinked from 1 content item(s): 77:Home)', $result->message);
+        self::assertSame('Trashed content 1353', $result->message);
         self::assertSame(2000, $result->data['location_id']);
     }
 
@@ -93,7 +93,7 @@ final class TrashCapabilityTest extends TestCase
     {
         $trasher = $this->createMock(ContentTrasher::class);
         $trasher->expects(self::once())->method('trash')->with(1353, true)->willReturn([
-            'content_id' => 1353, 'location_id' => 2000, 'trashed' => true, 'unlinked_from' => [], 'trashed_assets' => [88],
+            'content_id' => 1353, 'location_id' => 2000, 'trashed' => true, 'trashed_assets' => [88],
         ]);
 
         self::assertTrue($this->capability($trasher)->execute(['content_id' => 1353, 'with_assets' => true])->success);
@@ -125,7 +125,7 @@ final class TrashCapabilityTest extends TestCase
         $notes = implode("\n", $this->capability($trasher)->preview(['content_id' => 1])->notes);
 
         self::assertStringContainsString('4 item(s) directly below it go to the trash', $notes);
-        self::assertStringContainsString('2 content(s) point at it', $notes);
+        self::assertStringContainsString('2 content(s) point at it and keep their link: relations.unlink', $notes);
         self::assertStringContainsString('Its 1 draft(s)', $notes);
     }
 }

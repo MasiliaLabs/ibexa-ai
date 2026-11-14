@@ -131,6 +131,7 @@ final class OsSelftestCommand extends Command
             // The copy of the subtree copied A as well (shown under B): those copies are ours to delete.
             array_push($contents, ...$this->subtreeContentIds((int) ($answers['subtree']['location_id'] ?? 0)));
             $step('a folder without its name is refused by Ibexa\'s validation, before anything is written', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $a['location_id'], 'fields' => ['name' => ' ', 'short_name' => 'x']], null, null, true);
+            $step('nothing holds A in a relation field: unlinking it changes nothing', 'relations.unlink', ['content_id' => $a['content_id']], static fn (array $d): ?string => ($d['unlinked_from'] ?? null) === [] ? null : 'something was unlinked');
             $step('a root cannot be moved', 'location.move', ['location_id' => 1, 'new_parent_location_id' => $parent], null, null, true);
             $step('a root cannot be copied with its subtree', 'location.copy_subtree', ['location_id' => 1, 'target_parent_location_id' => $parent], null, null, true);
             $step('hide A everywhere', 'content.set_visibility', ['content_id' => $a['content_id'], 'visible' => false]);
