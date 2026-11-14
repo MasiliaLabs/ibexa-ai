@@ -19,7 +19,7 @@ use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadId;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadTitle;
 use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
-use Masilia\IbexaAi\Llm\ReasoningFilter;
+use Masilia\Contracts\IbexaAi\Llm\ReasoningFilter;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;

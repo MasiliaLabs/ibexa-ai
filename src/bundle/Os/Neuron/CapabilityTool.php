@@ -18,14 +18,15 @@ use NeuronAI\Tools\Tool;
  */
 final class CapabilityTool extends Tool
 {
+    use CallBudget;
+
     public function __construct(
         private readonly Capability $capability,
         private readonly CapabilityRunner $runner,
     ) {
         $this->setName(self::toolName($capability->name()));
         $this->setDescription(self::describe($capability));
-        // A budget per call site is the agent's: this only keeps a runaway loop from running a capability for ever.
-        $this->setMaxRuns(12);
+        $this->startBudget();
     }
 
     public static function toolName(string $capability): string
@@ -63,8 +64,11 @@ final class CapabilityTool extends Tool
 
     public function execute(): void
     {
-        [$capability, $args, $error] = $this->runner->prepare($this->capability->name(), $this->getInputs());
-        if ($capability === null || $error !== null) {
+        $refused = $this->overBudget();
+        [$capability, $args, $error] = $refused === null ? $this->runner->prepare($this->capability->name(), $this->getInputs()) : [null, [], null];
+        if ($refused !== null) {
+            $result = $refused;
+        } elseif ($capability === null || $error !== null) {
             $result = ToolResult::error($error ?? 'Unknown capability.');
         } else {
             $outcome = $this->runner->run($capability, $args);

@@ -13,7 +13,7 @@ use Masilia\Bundle\IbexaAi\Ibexa\Site\SiteLanguages;
 use Masilia\Contracts\IbexaAi\Content\ContentTypeSchemas;
 use Masilia\Contracts\IbexaAi\Content\Languages;
 use Masilia\Contracts\IbexaAi\Site\SiteLocations;
-use Masilia\IbexaAi\Content\LanguageCode;
+use Masilia\Contracts\IbexaAi\Content\LanguageCode;
 use Throwable;
 
 /**

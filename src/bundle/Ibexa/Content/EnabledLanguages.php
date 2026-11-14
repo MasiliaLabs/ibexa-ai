@@ -6,7 +6,7 @@ namespace Masilia\Bundle\IbexaAi\Ibexa\Content;
 
 use Ibexa\Contracts\Core\Repository\LanguageService;
 use Masilia\Contracts\IbexaAi\Content\Languages;
-use Masilia\IbexaAi\Content\LanguageCode;
+use Masilia\Contracts\IbexaAi\Content\LanguageCode;
 
 final readonly class EnabledLanguages implements Languages
 {

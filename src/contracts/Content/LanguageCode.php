@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Content;
+namespace Masilia\Contracts\IbexaAi\Content;
 
 /**
  * Matches language codes that may come in different shapes: the admin front
