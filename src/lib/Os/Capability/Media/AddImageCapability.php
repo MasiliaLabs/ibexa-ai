@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Os\Capability\Media;
 
 use Ibexa\Core\FieldType\Image\Value as ImageValue;
+use Ibexa\Core\FieldType\ImageAsset\AssetMapper;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Masilia\IbexaAi\Chat\Attachment\AttachmentStore;
 use Masilia\IbexaAi\Ibexa\Content\Write\WriteChecks;
-use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Contracts\IbexaAi\Content\Languages;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
@@ -20,10 +20,10 @@ final class AddImageCapability extends AbstractCapability
 {
     public function __construct(
         private readonly WriteChecks $checks,
-        private readonly ContentWriter $writer,
         private readonly Languages $languages,
         private readonly AttachmentStore $attachments,
         private readonly PermissionResolver $permissions,
+        private readonly AssetMapper $assets,
     ) {
     }
 
@@ -39,8 +39,8 @@ final class AddImageCapability extends AbstractCapability
 
     public function description(): string
     {
-        return 'Creates an "image" content in a media folder from an image the user attached (its id is in the <attachment-image> tag of the message). '
-            . 'The parent must be an Images folder of the media library: find it with tree.browse under the Media location. '
+        return 'Adds an image the user attached (its id is in the <attachment-image> tag of the message) to the media library, where the admin puts the images it uploads: '
+            . 'the folder and the content type are the ones the project configured for image assets (fieldtypes.ibexa_image_asset.mappings). '
             . 'The title is the name of the content (by default the file name without its extension). The answer has content_id and location_id.';
     }
 
@@ -48,10 +48,9 @@ final class AddImageCapability extends AbstractCapability
     {
         return [
             'type' => 'object',
-            'required' => ['attachment_id', 'parent_location_id'],
+            'required' => ['attachment_id'],
             'properties' => [
                 'attachment_id' => ['type' => 'string', 'description' => 'The id in the image\'s <attachment-image> tag'],
-                'parent_location_id' => ['type' => 'integer', 'minimum' => 1, 'description' => 'An Images folder of the media library'],
                 'title' => ['type' => 'string', 'maxLength' => 190],
                 'alternative_text' => ['type' => 'string', 'maxLength' => 300, 'description' => 'In the language of the site; leave it out rather than invent it'],
                 'language' => ['type' => 'string'],
@@ -66,7 +65,7 @@ final class AddImageCapability extends AbstractCapability
 
     public function examples(): array
     {
-        return [['description' => 'Put an attached logo in a site\'s images', 'arguments' => ['attachment_id' => '3f2b8c1e-5d6a-4e7f-9a10-2b3c4d5e6f70', 'parent_location_id' => 1020, 'title' => 'Logo', 'alternative_text' => 'The campaign logo']]];
+        return [['description' => 'Put an attached logo in the media library', 'arguments' => ['attachment_id' => '3f2b8c1e-5d6a-4e7f-9a10-2b3c4d5e6f70', 'title' => 'Logo', 'alternative_text' => 'The campaign logo']]];
     }
 
     public function risk(): Risk
@@ -77,7 +76,6 @@ final class AddImageCapability extends AbstractCapability
     public function validate(array $arguments): ?string
     {
         return $this->checks->attachment((string) $arguments['attachment_id'])
-            ?? $this->checks->parent((int) $arguments['parent_location_id'])
             ?? $this->checks->language($arguments['language'] ?? null)[1];
     }
 
@@ -85,7 +83,7 @@ final class AddImageCapability extends AbstractCapability
     {
         $rows = [
             ['Image', 'attached by you'],
-            ['Parent location', (string) $arguments['parent_location_id']],
+            ['Where', sprintf('the media library, location %d (the folder of the image assets)', $this->assets->getParentLocationId())],
         ];
         if (isset($arguments['title'])) {
             array_unshift($rows, ['Title', (string) $arguments['title']]);
@@ -119,14 +117,14 @@ final class AddImageCapability extends AbstractCapability
         [$language] = $this->checks->language($arguments['language'] ?? null);
 
         try {
-            $published = $this->writer->create('image', [(int) $arguments['parent_location_id']], ['name' => $title, 'image' => $value], $language ?? $this->languages->default());
+            $content = $this->assets->createAsset($title, $value, $language ?? $this->languages->default());
         } catch (Throwable $e) {
             return CapabilityResult::error(sprintf('The image could not be added: %s', $e->getMessage()));
         }
 
-        return CapabilityResult::ok(sprintf('Added the image "%s" to the media library (ID: %d)', $title, $published->content->getId()), [
-            'content_id' => $published->content->getId(),
-            'location_id' => $published->location?->getId(),
+        return CapabilityResult::ok(sprintf('Added the image "%s" to the media library (ID: %d)', $title, $content->getId()), [
+            'content_id' => $content->getId(),
+            'location_id' => $content->getContentInfo()->getMainLocationId(),
         ]);
     }
 }

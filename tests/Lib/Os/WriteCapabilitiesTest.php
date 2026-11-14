@@ -15,8 +15,8 @@ use Ibexa\Contracts\Core\Repository\Values\Content\VersionInfo;
 use Ibexa\Core\FieldType\Image\Value as ImageValue;
 use Masilia\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\IbexaAi\Os\Capability\Content\CreateCapability;
-use Masilia\IbexaAi\Os\Capability\Content\CreateFolderCapability;
 use Masilia\IbexaAi\Os\Capability\Content\UpdateCapability;
+use Ibexa\Core\FieldType\ImageAsset\AssetMapper;
 use Masilia\IbexaAi\Os\Capability\Media\AddImageCapability;
 use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Contracts\IbexaAi\Content\Languages;
@@ -89,55 +89,42 @@ final class WriteCapabilitiesTest extends TestCase
         self::assertSame('content.create requires non-empty fields.', $capability->validate(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => []]));
     }
 
-    public function testAFolderIsWrittenAsAFolderWithItsNameInTheSitesLanguage(): void
-    {
-        $writer = $this->createMock(ContentWriter::class);
-        $writer->expects(self::once())->method('create')->with('folder', [1018], ['name' => 'Press'], 'fre-FR')->willReturn($this->published(600));
-
-        $result = (new CreateFolderCapability($this->checks(), $writer, $this->languages()))
-            ->execute(['name' => 'Press', 'parent_location_id' => 1018, 'language' => 'fr', 'siteaccess' => 'fossil_exit']);
-
-        self::assertTrue($result->success);
-        self::assertSame('Created folder "Press" (ID: 600)', $result->message);
-    }
-
     public function testAnImageOfAnotherUserOrOneThatIsGoneIsRefusedAndNothingIsWritten(): void
     {
         [$store, $id] = $this->storeWithImageOf(14);
-        $writer = $this->createMock(ContentWriter::class);
-        $writer->expects(self::never())->method('create');
+        $assets = $this->createMock(AssetMapper::class);
+        $assets->expects(self::never())->method('createAsset');
         $permissions = $this->createMock(PermissionResolver::class);
         $permissions->method('getCurrentUserReference')->willReturn(new \Ibexa\Core\Repository\Values\User\UserReference(15));
-        $capability = new AddImageCapability($this->checks([], [], $store, 15), $writer, $this->languages(), $store, $permissions);
+        $capability = new AddImageCapability($this->checks([], [], $store, 15), $this->languages(), $store, $permissions, $assets);
 
-        self::assertStringContainsString('not available', (string) $capability->validate(['attachment_id' => $id, 'parent_location_id' => 43]));
-        $result = $capability->execute(['attachment_id' => $id, 'parent_location_id' => 43]);
+        self::assertStringContainsString('not available', (string) $capability->validate(['attachment_id' => $id]));
+        $result = $capability->execute(['attachment_id' => $id]);
         self::assertFalse($result->success);
         self::assertSame('The attached image is no longer available. Attach it again.', $result->message);
     }
 
-    public function testAnAttachedImageIsAddedToTheMediaLibraryUnderItsFileName(): void
+    public function testAnAttachedImageIsAddedWhereTheAdminPutsItsUploads(): void
     {
         [$store, $id] = $this->storeWithImageOf(14);
-        $writer = $this->createMock(ContentWriter::class);
-        $writer->expects(self::once())->method('create')->willReturnCallback(function (string $type, array $parents, array $fields, string $language): PublishedContent {
-            self::assertSame('image', $type);
-            self::assertSame([43], $parents);
-            self::assertSame('logo', $fields['name'], 'named after the file, without its extension');
-            self::assertInstanceOf(ImageValue::class, $fields['image']);
-            self::assertSame('Our logo', $fields['image']->alternativeText);
+        $assets = $this->createMock(AssetMapper::class);
+        $assets->method('getParentLocationId')->willReturn(51);
+        $assets->expects(self::once())->method('createAsset')->willReturnCallback(function (string $name, ImageValue $image, string $language): Content {
+            self::assertSame('logo', $name, 'named after the file, without its extension');
+            self::assertSame('Our logo', $image->alternativeText);
             self::assertSame('eng-GB', $language);
 
-            return $this->published(700);
+            return $this->published(700)->content;
         });
         $permissions = $this->createMock(PermissionResolver::class);
         $permissions->method('getCurrentUserReference')->willReturn(new \Ibexa\Core\Repository\Values\User\UserReference(14));
-        $capability = new AddImageCapability($this->checks([], [], $store, 14), $writer, $this->languages(), $store, $permissions);
+        $capability = new AddImageCapability($this->checks([], [], $store, 14), $this->languages(), $store, $permissions, $assets);
 
-        $result = $capability->execute(['attachment_id' => $id, 'parent_location_id' => 43, 'alternative_text' => 'Our logo']);
+        $result = $capability->execute(['attachment_id' => $id, 'alternative_text' => 'Our logo']);
 
         self::assertTrue($result->success);
         self::assertSame('Added the image "logo" to the media library (ID: 700)', $result->message);
+        self::assertStringContainsString('location 51', $capability->preview(['attachment_id' => $id])->rows[1][1]);
     }
 
     public function testUpdatingAMissingContentIsRefusedAndAnUnknownLanguageToo(): void
@@ -165,6 +152,5 @@ final class WriteCapabilitiesTest extends TestCase
     {
         $checks = $this->checks();
         self::assertSame(\Masilia\Contracts\IbexaAi\Os\Risk::WRITE, (new CreateCapability($checks, $this->createMock(ContentWriter::class), $this->languages()))->risk());
-        self::assertSame(\Masilia\Contracts\IbexaAi\Os\Risk::WRITE, (new CreateFolderCapability($checks, $this->createMock(ContentWriter::class), $this->languages()))->risk());
     }
 }

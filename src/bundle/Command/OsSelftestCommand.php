@@ -83,7 +83,7 @@ final class OsSelftestCommand extends Command
                 return;
             }
             $wrong = $result->success ? ($check !== null ? $check($result->data) : null) : $result->message;
-            if (isset($result->data['content_id']) && $result->success && in_array($capability, ['content.create_folder', 'location.copy', 'location.copy_subtree'], true)) {
+            if (isset($result->data['content_id']) && $result->success && in_array($capability, ['content.create', 'location.copy', 'location.copy_subtree'], true)) {
                 $contents[] = (int) $result->data['content_id'];
             }
             if ($remember !== null) {
@@ -101,8 +101,8 @@ final class OsSelftestCommand extends Command
         $stamp = date('His');
         try {
             $io->title('AI OS selftest');
-            $step('create folder A', 'content.create_folder', ['name' => "Selftest A $stamp", 'parent_location_id' => $parent], null, 'a');
-            $step('create folder B', 'content.create_folder', ['name' => "Selftest B $stamp", 'parent_location_id' => $parent], null, 'b');
+            $step('create folder A', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest A $stamp"]], null, 'a');
+            $step('create folder B', 'content.create', ['content_type' => 'folder', 'parent_location_id' => $parent, 'fields' => ['name' => "Selftest B $stamp"]], null, 'b');
             $a = $answers['a'] ?? [];
             $b = $answers['b'] ?? [];
             if (!isset($a['location_id'], $b['location_id'])) {
