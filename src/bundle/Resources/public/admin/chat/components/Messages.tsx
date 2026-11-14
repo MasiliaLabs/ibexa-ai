@@ -65,12 +65,12 @@ export function AssistantMessage() {
 }
 
 const RUNNING: Record<string, string> = {
-    explore_site: 'Exploring the site',
-    browse_location: 'Looking up content',
-    find_capabilities: 'Looking for what I can do',
-    describe_capability: 'Reading how it works',
-    run_capability: 'Doing it',
+    tool_search: 'Looking for what I can do',
+    propose_changes: 'Preparing the changes',
 };
+
+/** A capability is a tool named after it, with "__" for the dots ("content.update" is content__update). */
+const isCapability = (tool: string | undefined): boolean => tool !== undefined && tool.includes('__');
 
 function Steps({ indices, running, children }: { indices: readonly number[]; running: boolean; children: React.ReactNode }) {
     const parts = useAuiState((state) => state.message.parts) as ReadonlyArray<{ type: string; toolName?: string }>;
@@ -78,7 +78,7 @@ function Steps({ indices, running, children }: { indices: readonly number[]; run
     const [chosen, setChosen] = useState<boolean | null>(null);
     const open = chosen ?? running;
     const tool = parts[indices[indices.length - 1]]?.toolName;
-    const label = running ? `${(tool !== undefined ? RUNNING[tool] : undefined) ?? 'Working'}…` : indices.length === 1 ? '1 step' : `${indices.length} steps`;
+    const label = running ? `${(tool !== undefined ? RUNNING[tool] : undefined) ?? (isCapability(tool) ? 'Doing it' : 'Working')}…` : indices.length === 1 ? '1 step' : `${indices.length} steps`;
 
     return (
         <details

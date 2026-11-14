@@ -12,7 +12,8 @@ use Masilia\Bundle\IbexaAi\Os\Access\CapabilityAccess;
 use Masilia\Bundle\IbexaAi\Os\Audit\AuditLog;
 use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
 use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
-use Masilia\Bundle\IbexaAi\Os\Tool\ProposeChangesTool;
+use Masilia\Bundle\IbexaAi\Os\Neuron\ProposeChangesTool;
+use Masilia\Bundle\IbexaAi\Os\Neuron\ToolResult;
 use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
@@ -90,6 +91,25 @@ final class ProposeChangesToolTest extends TestCase
         return new ProposeChangesTool(new CapabilityRunner($registry, new CapabilityAccess($permissions, []), new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger()), $repository);
     }
 
+    /** The card the agent would show for these steps, or null when nothing needs approval. */
+    private function approval(ProposeChangesTool $tool, array $arguments): ?string
+    {
+        $tool->setInputs($arguments);
+        $approval = $tool->requiresApproval();
+
+        return $approval === false ? null : (string) $approval;
+    }
+
+    /** Runs the tool the way the agent does and reads its answer. */
+    private function applied(ProposeChangesTool $tool, array $arguments): ToolResult
+    {
+        $tool->setInputs($arguments);
+        $tool->execute();
+        $answer = json_decode((string) $tool->getResult(), true, 512, JSON_THROW_ON_ERROR);
+
+        return new ToolResult($answer['success'], $answer['message'], $answer['data']);
+    }
+
     private function audit(): array
     {
         return $this->connection->fetchAllAssociative('SELECT capability, risk, success, message FROM app_ai_audit ORDER BY id');
@@ -99,7 +119,7 @@ final class ProposeChangesToolTest extends TestCase
     {
         $tool = $this->tool([$this->capability('folder.create', Risk::WRITE), $this->capability('trash.wipe', Risk::DESTRUCTIVE)]);
 
-        $reason = $tool->approvalReason(['steps' => [['capability' => 'folder.create', 'arguments' => ['title' => 'A']], ['capability' => 'trash.wipe']]]);
+        $reason = $this->approval($tool, ['steps' => [['capability' => 'folder.create', 'arguments' => ['title' => 'A']], ['capability' => 'trash.wipe']]]);
 
         self::assertSame(
             "Action: Apply 2 changes\nRisk: destructive\nStep 1: Do folder.create: Title A\nStep 2: Do trash.wipe: Title\nNote: It cannot be undone.\nNote: The steps are applied together: if one fails, none of the changes is kept.\n\nThe change runs only if you approve it.",
@@ -112,8 +132,8 @@ final class ProposeChangesToolTest extends TestCase
     {
         $tool = $this->tool([$this->capability('content.look', Risk::READ)]);
 
-        self::assertNull($tool->approvalReason(['steps' => [['capability' => 'content.look']]]));
-        self::assertTrue($tool->execute(['steps' => [['capability' => 'content.look']]])->success);
+        self::assertNull($this->approval($tool, ['steps' => [['capability' => 'content.look']]]));
+        self::assertTrue($this->applied($tool, ['steps' => [['capability' => 'content.look']]])->success);
     }
 
     public function testAStepUsesWhatAnEarlierStepAnsweredAndAllAreCommittedTogether(): void
@@ -124,10 +144,10 @@ final class ProposeChangesToolTest extends TestCase
             ['capability' => 'page.create', 'arguments' => ['parent' => '$folder.location_id', 'title' => 'Hello']],
         ]];
 
-        $card = (string) $tool->approvalReason($steps);
+        $card = (string) $this->approval($tool, $steps);
         self::assertStringContainsString('Step 2: page.create: parent: result of folder.location_id, title: Hello', $card);
 
-        $result = $tool->execute($steps);
+        $result = $this->applied($tool, $steps);
 
         self::assertTrue($result->success);
         self::assertSame(['folder.create:{"title":"News"}', 'page.create:{"parent":77,"title":"Hello"}'], $this->log);
@@ -140,7 +160,7 @@ final class ProposeChangesToolTest extends TestCase
     {
         $tool = $this->tool([$this->capability('folder.create', Risk::WRITE), $this->capability('page.create', Risk::WRITE, ['fails' => true]), $this->capability('page.publish', Risk::WRITE)]);
 
-        $result = $tool->execute(['steps' => [['capability' => 'folder.create'], ['id' => 'page', 'capability' => 'page.create'], ['capability' => 'page.publish']]]);
+        $result = $this->applied($tool, ['steps' => [['capability' => 'folder.create'], ['id' => 'page', 'capability' => 'page.create'], ['capability' => 'page.publish']]]);
 
         self::assertFalse($result->success);
         self::assertStringContainsString('Step "page" (page.create) failed: It did not work. None of the changes was kept.', $result->message);
@@ -161,8 +181,8 @@ final class ProposeChangesToolTest extends TestCase
             [['capability' => 'page.create', 'arguments' => ['parent' => '$folder.location_id']], ['id' => 'folder', 'capability' => 'folder.create']],
             [['capability' => 'page.create', 'arguments' => ['parent' => '$nope.location_id']]],
         ] as $steps) {
-            self::assertNull($tool->approvalReason(['steps' => $steps]));
-            self::assertStringContainsString('not an earlier step', $tool->execute(['steps' => $steps])->message);
+            self::assertNull($this->approval($tool, ['steps' => $steps]));
+            self::assertStringContainsString('not an earlier step', $this->applied($tool, ['steps' => $steps])->message);
         }
         self::assertSame([], $this->log);
         self::assertSame(['begin' => 0, 'commit' => 0, 'rollback' => 0], $this->transaction);
@@ -172,7 +192,7 @@ final class ProposeChangesToolTest extends TestCase
     {
         $tool = $this->tool([$this->capability('folder.create', Risk::WRITE, ['data' => ['content_id' => 5]]), $this->capability('page.create', Risk::WRITE)]);
 
-        $result = $tool->execute(['steps' => [['id' => 'folder', 'capability' => 'folder.create'], ['capability' => 'page.create', 'arguments' => ['parent' => '$folder.location_id']]]]);
+        $result = $this->applied($tool, ['steps' => [['id' => 'folder', 'capability' => 'folder.create'], ['capability' => 'page.create', 'arguments' => ['parent' => '$folder.location_id']]]]);
 
         self::assertFalse($result->success);
         self::assertStringContainsString('did not answer a field "location_id" (it answered: content_id)', $result->message);
@@ -184,7 +204,7 @@ final class ProposeChangesToolTest extends TestCase
     {
         $tool = $this->tool([$this->capability('content.look', Risk::READ), $this->capability('page.create', Risk::WRITE, ['problem' => 'The type does not exist.'])]);
 
-        $upFront = $tool->execute(['steps' => [['capability' => 'content.look'], ['capability' => 'page.create']]]);
+        $upFront = $this->applied($tool, ['steps' => [['capability' => 'content.look'], ['capability' => 'page.create']]]);
 
         self::assertStringContainsString('Step "s2": page.create: The type does not exist.', $upFront->message);
         self::assertSame([], $this->log);
@@ -196,7 +216,7 @@ final class ProposeChangesToolTest extends TestCase
         $tool = $this->tool([$this->capability('folder.create', Risk::WRITE, ['data' => ['location_id' => 7]]), $this->capability('page.create', Risk::WRITE, ['problem' => 'The type does not exist.'])]);
 
         // With a reference, or after a step that changes something, the arguments are checked when the step runs.
-        $late = $tool->execute(['steps' => [['id' => 'f', 'capability' => 'folder.create'], ['capability' => 'page.create', 'arguments' => ['parent' => '$f.location_id']]]]);
+        $late = $this->applied($tool, ['steps' => [['id' => 'f', 'capability' => 'folder.create'], ['capability' => 'page.create', 'arguments' => ['parent' => '$f.location_id']]]]);
 
         self::assertFalse($late->success);
         self::assertStringContainsString('The type does not exist.', $late->message);
@@ -209,8 +229,8 @@ final class ProposeChangesToolTest extends TestCase
         $tool = $this->tool([$this->capability('group.create', Risk::WRITE), $this->capability('type.create', Risk::WRITE, ['problem' => 'There is no group.'])]);
         $steps = ['steps' => [['capability' => 'group.create'], ['capability' => 'type.create']]];
 
-        self::assertNotNull($tool->approvalReason($steps), 'the batch is shown for approval');
-        $result = $tool->execute($steps);
+        self::assertNotNull($this->approval($tool, $steps), 'the batch is shown for approval');
+        $result = $this->applied($tool, $steps);
 
         self::assertFalse($result->success, 'and it is checked, and undone, when the step runs');
         self::assertStringContainsString('There is no group.', $result->message);
@@ -218,7 +238,7 @@ final class ProposeChangesToolTest extends TestCase
 
         // After reads only, the state is the one that is checked up front.
         $reads = $this->tool([$this->capability('a.read', Risk::READ), $this->capability('type.create', Risk::WRITE, ['problem' => 'There is no group.'])]);
-        self::assertNull($reads->approvalReason(['steps' => [['capability' => 'a.read'], ['capability' => 'type.create']]]));
+        self::assertNull($this->approval($reads, ['steps' => [['capability' => 'a.read'], ['capability' => 'type.create']]]));
     }
 
     public function testBadBatchesAreAnsweredNotRun(): void
@@ -235,7 +255,7 @@ final class ProposeChangesToolTest extends TestCase
             [[['arguments' => []]], 'needs a "capability"'],
         ];
         foreach ($cases as [$steps, $expected]) {
-            $result = $tool->execute(['steps' => $steps]);
+            $result = $this->applied($tool, ['steps' => $steps]);
             self::assertFalse($result->success);
             self::assertStringContainsString($expected, $result->message);
         }

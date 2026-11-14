@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\Bundle\IbexaAi\Agent\Tool;
+namespace Masilia\Bundle\IbexaAi\Os\Neuron;
 
 readonly class ToolResult
 {

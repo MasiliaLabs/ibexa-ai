@@ -50,7 +50,7 @@ services:
     # The AI OS: capabilities (tagged), their registry, access, audit and the three tools the model sees.
     Masilia\Bundle\IbexaAi\Os\:
         resource: '../../Os/'
-        exclude: ['../../Os/Neuron/OsAgent.php', '../../Os/Neuron/OsSystemPrompt.php']
+        exclude: ['../../Os/Neuron/OsAgent.php', '../../Os/Neuron/OsSystemPrompt.php', '../../Os/Neuron/CapabilityTool.php', '../../Os/Neuron/ToolResult.php']
 
     Masilia\IbexaAi\Os\CapabilityRegistry:
         arguments:

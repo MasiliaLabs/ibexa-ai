@@ -196,7 +196,7 @@ parameters:
 			message: '#^Variable \$failure on left side of \?\?\= always exists and is always null\.$#'
 			identifier: nullCoalesce.variable
 			count: 1
-			path: src/bundle/Os/Tool/ProposeChangesTool.php
+			path: src/bundle/Os/Neuron/ProposeChangesTool.php
 
 		-
 			message: '#^Strict comparison using \=\=\= between non\-empty\-array\<mixed, mixed\> and array\{\} will always evaluate to false\.$#'

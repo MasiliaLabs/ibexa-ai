@@ -6,6 +6,8 @@ namespace Masilia\Bundle\IbexaAi\Os\Neuron;
 
 use Masilia\Bundle\IbexaAi\Chat\PageContext;
 use NeuronAI\Agent\Agent;
+use NeuronAI\Agent\Middleware\Summarization;
+use NeuronAI\Agent\Middleware\ToolSearchMiddleware;
 use NeuronAI\Chat\History\MessageStoreInterface;
 use NeuronAI\Chat\History\SQLMessageStore;
 use NeuronAI\Chat\Messages\SystemMessage;
@@ -24,15 +26,20 @@ class OsAgent extends Agent
     public const MESSAGES_TABLE = 'app_ai_agent_messages';
     public const WORKFLOW_TABLE = 'app_ai_agent_workflow';
 
+    /** How many tools one tool_search brings. */
+    public const SEARCH_RESULTS = 8;
+
     private ?PageContext $page = null;
     private bool $vision = false;
 
     /**
-     * @param list<\NeuronAI\Tools\ToolInterface> $exposedTools the tools the model can call
+     * @param list<\NeuronAI\Tools\ToolInterface> $exposedTools    the tools the model has from the start of every turn
+     * @param list<\NeuronAI\Tools\ToolInterface> $searchableTools the others: the model finds them with tool_search, within the turn
      */
     public function __construct(
         private readonly AIProviderInterface $llm,
         private readonly array $exposedTools,
+        private readonly array $searchableTools,
         private readonly PDO $pdo,
         /** The system prompt: the OS's own text and the fragments of the skills (see OsSystemPrompt). */
         private readonly string $systemPrompt = '',
@@ -77,6 +84,15 @@ class OsAgent extends Agent
     protected function tools(): array
     {
         return $this->exposedTools;
+    }
+
+    protected function globalMiddleware(): array
+    {
+        return [
+            new ToolSearchMiddleware($this->searchableTools, self::SEARCH_RESULTS),
+            // A long conversation is summarised before it outgrows the model's context.
+            new Summarization($this->llm),
+        ];
     }
 
     protected function messageStore(): MessageStoreInterface

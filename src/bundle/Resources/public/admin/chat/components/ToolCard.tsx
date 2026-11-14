@@ -6,16 +6,12 @@ import { parseApproval } from '../approval';
 import { toolOutcome } from '../toolResult';
 
 const LABELS: Record<string, string> = {
-    explore_site: 'Explored the site',
-    browse_location: 'Looked up content',
-    propose_plan: 'Proposed a change',
-    find_capabilities: 'Looked for a capability',
-    describe_capability: 'Read how a capability works',
-    run_capability: 'Ran a capability',
+    propose_changes: 'Proposed changes',
+    tool_search: 'Looked for a capability',
 };
 
-/** The tools that act on a named capability say which. */
-const NAMED = new Set(['describe_capability', 'run_capability']);
+/** A capability is a tool named after it, with "__" for the dots ("content.update" is content__update). */
+const capabilityOf = (toolName: string): string | null => (toolName.includes('__') ? toolName.replaceAll('__', '.') : null);
 
 type State = 'waiting' | 'refused' | 'running' | 'failed' | 'ok';
 
@@ -58,8 +54,8 @@ export function ToolCard(props: ToolCallMessagePartProps) {
                         <span className="masilia-chat__tool-icon" aria-hidden="true">
                             <Icon name={ICONS[state]} size="small" />
                         </span>
-                        {LABELS[toolName] ?? toolName}
-                    {NAMED.has(toolName) && typeof (args as { name?: unknown } | undefined)?.name === 'string' ? <span className="masilia-chat__tool-capability">{(args as { name: string }).name}</span> : null}
+                        {LABELS[toolName] ?? (capabilityOf(toolName) !== null ? 'Ran' : toolName)}
+                        {capabilityOf(toolName) !== null ? <span className="masilia-chat__tool-capability">{capabilityOf(toolName)}</span> : null}
                         <span className="visually-hidden">{`, ${STATE_LABELS[state]}`}</span>
                     </summary>
                     {outcome !== null && outcome.message !== '' ? <p className="masilia-chat__tool-message">{outcome.message}</p> : null}

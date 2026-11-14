@@ -13,15 +13,15 @@ use Masilia\Bundle\IbexaAi\Os\Access\CapabilityAccess;
 use Masilia\Bundle\IbexaAi\Os\Audit\AuditLog;
 use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
 use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
-use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
-use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
-use Masilia\Bundle\IbexaAi\Os\Tool\RunCapabilityTool;
+use Masilia\Bundle\IbexaAi\Os\Neuron\CapabilityTool;
+use Masilia\Bundle\IbexaAi\Os\Neuron\CapabilityToolPool;
 use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\IbexaAi\Os\CapabilityRegistry;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 use PHPUnit\Framework\TestCase;
+use NeuronAI\Agent\Middleware\ToolSearchTool;
 use Psr\Log\NullLogger;
 
 final class OsToolsTest extends TestCase
@@ -84,9 +84,9 @@ final class OsToolsTest extends TestCase
      * @param array<string, bool>  $domains
      * @param list<string>         $denied "module/function" the user does not have
      *
-     * @return array{RunCapabilityTool, FindCapabilitiesTool, DescribeCapabilityTool}
+     * @return array{CapabilityToolPool, CapabilityRunner}
      */
-    private function tools(array $capabilities, array $domains = [], array $denied = []): array
+    private function os(array $capabilities, array $domains = [], array $denied = []): array
     {
         $permissions = $this->createMock(PermissionResolver::class);
         $permissions->method('hasAccess')->willReturnCallback(static fn (string $module, string $function): bool => !in_array($module . '/' . $function, $denied, true));
@@ -94,12 +94,33 @@ final class OsToolsTest extends TestCase
 
         $registry = new CapabilityRegistry($capabilities);
         $access = new CapabilityAccess($permissions, $domains);
+        $runner = new CapabilityRunner($registry, $access, new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger());
 
-        return [
-            new RunCapabilityTool(new CapabilityRunner($registry, $access, new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger())),
-            new FindCapabilitiesTool($registry, $access),
-            new DescribeCapabilityTool($registry, $access),
-        ];
+        return [new CapabilityToolPool($registry, $access, $runner), $runner];
+    }
+
+    /** The tool of a capability, whether or not the user may use it. */
+    private function tool(Capability $capability, array $denied = []): CapabilityTool
+    {
+        [, $runner] = $this->os([$capability], [], $denied);
+
+        return new CapabilityTool($capability, $runner);
+    }
+
+    /**
+     * What the agent sees of a call: the approval it asks for (false, or the card), and the answer once it runs.
+     *
+     * @param array<string, mixed> $arguments
+     *
+     * @return array{0: bool|string, 1: array{success: bool, message: string, data: array<string, mixed>}}
+     */
+    private function call(CapabilityTool $tool, array $arguments): array
+    {
+        $tool->setInputs($arguments);
+        $approval = $tool->requiresApproval();
+        $tool->execute();
+
+        return [$approval, json_decode((string) $tool->getResult(), true, 512, JSON_THROW_ON_ERROR)];
     }
 
     private function audit(): array
@@ -107,27 +128,44 @@ final class OsToolsTest extends TestCase
         return $this->connection->fetchAllAssociative('SELECT * FROM app_ai_audit ORDER BY id');
     }
 
+    public function testACapabilityIsATool(): void
+    {
+        $tool = $this->tool($this->capability('location.set_main', Risk::WRITE));
+
+        self::assertSame('location__set_main', $tool->getName());
+        self::assertSame('location.set_main', CapabilityTool::capabilityName($tool->getName()));
+        self::assertSame(1, preg_match('/^[a-zA-Z0-9_-]{1,64}$/', $tool->getName()), 'a name every provider accepts');
+        self::assertSame('integer', $tool->getInputSchema()['properties']['id']['type']);
+        self::assertStringContainsString('Summary of location.set_main Description of location.set_main', (string) $tool->getDescription());
+        self::assertStringContainsString('the user approves it first', (string) $tool->getDescription());
+        self::assertStringContainsString('Example (Example): {"id":1}', (string) $tool->getDescription());
+    }
+
+    public function testAReadDoesNotSayItNeedsApproval(): void
+    {
+        self::assertStringNotContainsString('approves', (string) $this->tool($this->capability('content.look', Risk::READ))->getDescription());
+    }
+
     public function testAReadRunsAtOnceWithoutApprovalAndLeavesNoRecord(): void
     {
-        [$run] = $this->tools([$this->capability('content.look', Risk::READ)]);
+        [$approval, $result] = $this->call($this->tool($this->capability('content.look', Risk::READ)), ['id' => 5]);
 
-        self::assertNull($run->approvalReason(['name' => 'content.look', 'arguments' => ['id' => 5]]));
-        $result = $run->execute(['name' => 'content.look', 'arguments' => ['id' => 5]]);
-
-        self::assertTrue($result->success);
+        self::assertFalse($approval);
+        self::assertTrue($result['success']);
         self::assertSame(['content.look'], $this->ran);
         self::assertSame([], $this->audit());
     }
 
     public function testAWriteIsApprovedFirstOnACardMadeOfItsPreviewThenRecorded(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE)]);
+        $tool = $this->tool($this->capability('content.change', Risk::WRITE));
+        $tool->setInputs(['id' => 5]);
 
-        $reason = $run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => 5]]);
-        self::assertSame("Action: Do content.change\nRisk: write\nId: 5\n\nThe change runs only if you approve it.", $reason);
+        self::assertSame("Action: Do content.change\nRisk: write\nId: 5\n\nThe change runs only if you approve it.", $tool->requiresApproval());
         self::assertSame([], $this->ran, 'asking does not run it');
 
-        self::assertTrue($run->execute(['name' => 'content.change', 'arguments' => ['id' => 5]])->success);
+        $tool->execute();
+        self::assertTrue(json_decode((string) $tool->getResult(), true)['success']);
         $rows = $this->audit();
         self::assertCount(1, $rows);
         self::assertSame(['content.change', 'write', '1', 14], [$rows[0]['capability'], $rows[0]['risk'], (string) $rows[0]['success'], (int) $rows[0]['user_id']]);
@@ -136,128 +174,127 @@ final class OsToolsTest extends TestCase
 
     public function testADestructiveCallNamesItsRiskOnTheCard(): void
     {
-        [$run] = $this->tools([$this->capability('trash.wipe', Risk::DESTRUCTIVE)]);
+        $tool = $this->tool($this->capability('trash.wipe', Risk::DESTRUCTIVE));
+        $tool->setInputs(['id' => 1]);
 
-        self::assertStringContainsString("Risk: destructive\n", (string) $run->approvalReason(['name' => 'trash.wipe', 'arguments' => ['id' => 1]]));
+        self::assertStringContainsString("Risk: destructive\n", (string) $tool->requiresApproval());
     }
 
     public function testAWriteIsNeverRunWithoutACardEvenWhenItsPreviewFails(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE, ['previewFails' => true])]);
+        $tool = $this->tool($this->capability('content.change', Risk::WRITE, ['previewFails' => true]));
+        $tool->setInputs(['id' => 5]);
 
-        $reason = $run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => 5]]);
+        $reason = $tool->requiresApproval();
 
-        self::assertNotNull($reason, 'the call is still approved before it runs');
+        self::assertIsString($reason, 'the call is still approved before it runs');
         self::assertStringContainsString('Action: Summary of content.change', $reason);
         self::assertStringContainsString('Risk: write', $reason);
     }
 
     public function testBadArgumentsAreAnsweredNotApprovedNorRun(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE)]);
+        [$approval, $result] = $this->call($this->tool($this->capability('content.change', Risk::WRITE)), ['id' => 'five']);
 
-        self::assertNull($run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => 'five']]));
-        $result = $run->execute(['name' => 'content.change', 'arguments' => ['id' => 'five']]);
-
-        self::assertFalse($result->success);
-        self::assertStringContainsString('arguments.id must be a whole number', $result->message);
-        self::assertStringContainsString('describe_capability', $result->message);
+        self::assertFalse($approval);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('arguments.id must be a whole number', $result['message']);
+        self::assertStringContainsString('Check the arguments against its definition', $result['message']);
         self::assertSame([], $this->ran);
         self::assertSame([], $this->audit(), 'a call that ran nothing leaves no record');
     }
 
     public function testAProblemTheSchemaCannotSeeIsAnsweredNotApprovedNorRun(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE, ['problem' => 'The parent is in another site.'])]);
+        [$approval, $result] = $this->call($this->tool($this->capability('content.change', Risk::WRITE, ['problem' => 'The parent is in another site.'])), ['id' => 5]);
 
-        self::assertNull($run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => 5]]));
-        $result = $run->execute(['name' => 'content.change', 'arguments' => ['id' => 5]]);
-
-        self::assertFalse($result->success);
-        self::assertSame('content.change: The parent is in another site.', $result->message);
+        self::assertFalse($approval);
+        self::assertFalse($result['success']);
+        self::assertSame('content.change: The parent is in another site.', $result['message']);
         self::assertSame([], $this->ran);
     }
 
     public function testANumberWrittenAsTextIsStillANumber(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE)]);
+        $tool = $this->tool($this->capability('content.change', Risk::WRITE));
+        $tool->setInputs(['id' => '5']);
 
-        self::assertStringContainsString('Id: 5', (string) $run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => '5']]));
-        self::assertTrue($run->execute(['name' => 'content.change', 'arguments' => ['id' => '5']])->success);
+        self::assertStringContainsString('Id: 5', (string) $tool->requiresApproval());
+        $tool->execute();
+        self::assertTrue(json_decode((string) $tool->getResult(), true)['success']);
     }
 
-    public function testAnUnknownCapabilityAndAMissingOneAreAnswered(): void
+    public function testAMissingArgumentIsAnswered(): void
     {
-        [$run] = $this->tools([$this->capability('content.look', Risk::READ)]);
+        [, $result] = $this->call($this->tool($this->capability('content.look', Risk::READ)), []);
 
-        self::assertStringContainsString('There is no capability "nope.x"', $run->execute(['name' => 'nope.x'])->message);
-        self::assertStringContainsString('arguments.id is required', $run->execute(['name' => 'content.look'])->message);
+        self::assertStringContainsString('arguments.id is required', $result['message']);
     }
 
-    public function testWhatTheUserMayNotDoIsNeitherListedNorRunNorApproved(): void
+    public function testEitherSpellingOfACapabilityNamesIt(): void
     {
-        $capabilities = [$this->capability('content.look', Risk::READ, ['requires' => [['content', 'read']]]), $this->capability('content.change', Risk::WRITE)];
-        [$run, $find, $describe] = $this->tools($capabilities, [], ['masilia_ai/write']);
+        [, $runner] = $this->os([$this->capability('content.look', Risk::READ)]);
 
-        $names = array_column($find->execute([])->data['capabilities'], 'name');
-        self::assertSame(['content.look'], $names);
-        self::assertNull($run->approvalReason(['name' => 'content.change', 'arguments' => ['id' => 5]]));
-        $result = $run->execute(['name' => 'content.change', 'arguments' => ['id' => 5]]);
-        self::assertStringContainsString('masilia_ai/write', $result->message);
+        self::assertSame('content.look', $runner->prepare('content__look', ['id' => 1])[0]?->name());
+        self::assertSame('content.look', $runner->prepare('content.look', ['id' => 1])[0]?->name());
+        self::assertStringContainsString('There is no capability "nope.x"', (string) $runner->prepare('nope__x', [])[2]);
+        self::assertStringContainsString('tool_search', (string) $runner->prepare('nope__x', [])[2]);
+    }
+
+    public function testWhatTheUserMayNotDoIsNeitherInThePoolNorRunNorApproved(): void
+    {
+        $look = $this->capability('content.look', Risk::READ, ['requires' => [['content', 'read']]]);
+        $change = $this->capability('content.change', Risk::WRITE);
+        [$pool] = $this->os([$look, $change], [], ['masilia_ai/write']);
+
+        self::assertSame(['content__look'], array_map(static fn (CapabilityTool $tool): string => $tool->getName(), $pool->forCurrentUser()));
+
+        [$approval, $result] = $this->call($this->tool($change, ['masilia_ai/write']), ['id' => 5]);
+        self::assertFalse($approval);
+        self::assertStringContainsString('masilia_ai/write', $result['message']);
         self::assertSame([], $this->ran);
-        self::assertStringContainsString('not available', $describe->execute(['name' => 'content.change'])->message);
     }
 
     public function testAPolicyOfTheThingTouchedIsRequiredToo(): void
     {
-        [$run] = $this->tools([$this->capability('content.look', Risk::READ, ['requires' => [['content', 'read']]])], [], ['content/read']);
+        [, $result] = $this->call($this->tool($this->capability('content.look', Risk::READ, ['requires' => [['content', 'read']]]), ['content/read']), ['id' => 1]);
 
-        self::assertStringContainsString('content/read', $run->execute(['name' => 'content.look', 'arguments' => ['id' => 1]])->message);
+        self::assertStringContainsString('content/read', $result['message']);
     }
 
     public function testADomainTurnedOffIsGoneAndAccessIsOffUntilTurnedOn(): void
     {
         $capabilities = [$this->capability('content.look', Risk::READ), $this->capability('trash.look', Risk::READ), $this->capability('access.look', Risk::READ)];
-        [, $find] = $this->tools($capabilities, ['trash' => false, 'access' => false]);
+        [$pool] = $this->os($capabilities, ['trash' => false, 'access' => false]);
 
-        self::assertSame(['content.look'], array_column($find->execute([])->data['capabilities'], 'name'));
-        self::assertSame(['content' => 1], $find->execute([])->data['domains']);
+        self::assertSame(['content__look'], array_map(static fn (CapabilityTool $tool): string => $tool->getName(), $pool->forCurrentUser()));
     }
 
     public function testAFailureOfTheCapabilityIsAnsweredAndRecordedWithoutLeakingAnException(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE, ['throws' => new \RuntimeException('database is gone')])]);
+        [, $result] = $this->call($this->tool($this->capability('content.change', Risk::WRITE, ['throws' => new \RuntimeException('database is gone')])), ['id' => 5]);
 
-        $result = $run->execute(['name' => 'content.change', 'arguments' => ['id' => 5]]);
-
-        self::assertFalse($result->success);
-        self::assertStringContainsString('content.change failed: database is gone', $result->message);
+        self::assertFalse($result['success']);
+        self::assertStringContainsString('content.change failed: database is gone', $result['message']);
         self::assertSame('0', (string) $this->audit()[0]['success']);
     }
 
     public function testARefusalOfTheRepositoryIsAnsweredInWords(): void
     {
-        [$run] = $this->tools([$this->capability('content.change', Risk::WRITE, ['throws' => new UnauthorizedException('content', 'edit', ['contentId' => 5])])]);
+        [, $result] = $this->call($this->tool($this->capability('content.change', Risk::WRITE, ['throws' => new UnauthorizedException('content', 'edit', ['contentId' => 5])])), ['id' => 5]);
 
-        $result = $run->execute(['name' => 'content.change', 'arguments' => ['id' => 5]]);
-
-        self::assertFalse($result->success);
-        self::assertStringStartsWith('You are not allowed to do this', $result->message);
+        self::assertFalse($result['success']);
+        self::assertStringStartsWith('You are not allowed to do this', $result['message']);
     }
 
-    public function testFindingByWordsAndDescribingGiveWhatTheModelNeeds(): void
+    public function testToolSearchFindsACapabilityByWhatItDoes(): void
     {
-        [, $find, $describe] = $this->tools([$this->capability('content.look', Risk::READ), $this->capability('trash.wipe', Risk::DESTRUCTIVE)]);
+        [$pool] = $this->os([$this->capability('content.look', Risk::READ), $this->capability('trash.wipe', Risk::DESTRUCTIVE), $this->capability('location.move', Risk::WRITE)]);
+        $search = new ToolSearchTool($pool->forCurrentUser(), 3);
 
-        self::assertSame('trash.wipe', $find->execute(['query' => 'wipe'])->data['capabilities'][0]['name']);
-        self::assertSame([], $find->execute(['query' => 'zzzzz'])->data['capabilities']);
-
-        $described = $describe->execute(['name' => 'trash.wipe']);
-        self::assertTrue($described->success);
-        self::assertTrue($described->data['user_approves_first']);
-        self::assertSame('integer', $described->data['input_schema']['properties']['id']['type']);
-        self::assertSame(1, $described->data['examples'][0]['arguments']['id']);
-        self::assertStringContainsString('Did you mean: trash.wipe', $describe->execute(['name' => 'trash.wip'])->message);
+        self::assertSame('trash__wipe', $search->search('wipe')[0]->getName());
+        self::assertSame('location__move', $search->search('location move')[0]->getName());
+        self::assertSame([], $search->search('zzzzz'));
     }
 
     public function testTheAuditLogKeepsLongArgumentsCut(): void

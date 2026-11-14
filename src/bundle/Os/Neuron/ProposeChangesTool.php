@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Masilia\Bundle\IbexaAi\Os\Tool;
+namespace Masilia\Bundle\IbexaAi\Os\Neuron;
 
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Agent\Tool\GatedToolInterface;
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
+use Masilia\Bundle\IbexaAi\Os\Neuron\ToolResult;
 use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
 use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
 use Masilia\IbexaAi\Os\References;
 use Masilia\Contracts\IbexaAi\Os\Risk;
+use NeuronAI\Tools\Tool;
 use RuntimeException;
 use Throwable;
 
@@ -21,34 +20,31 @@ use Throwable;
  * Several capabilities that belong together, approved once and applied together: if a step fails, none of the changes
  * is kept (the repository transaction is rolled back). A step can use what an earlier one produced ("$folder.location_id").
  */
-final readonly class ProposeChangesTool implements ToolInterface, GatedToolInterface
+final class ProposeChangesTool extends Tool
 {
     public const MAX_STEPS = 15;
     private const ID = '/^[a-z][a-z0-9_]*$/';
 
     public function __construct(
-        private CapabilityRunner $runner,
-        private Repository $repository,
+        private readonly CapabilityRunner $runner,
+        private readonly Repository $repository,
     ) {
+        $this->setName('propose_changes');
+        $this->setDescription(self::description());
     }
 
-    public function getName(): string
-    {
-        return 'propose_changes';
-    }
-
-    public function getDescription(): string
+    private static function description(): string
     {
         return sprintf(
             'Apply several capabilities as one change: the user approves the whole list once, and if a step fails none of them is kept. '
             . 'Each step is {capability, arguments, id?}. A step can use what an earlier step answered: write "$id.field" (for example '
             . '"$folder.location_id", where the step with id "folder" created a folder) instead of a value. At most %d steps. '
-            . 'Use run_capability for a single step.',
+            . 'For a single change, call its own tool.',
             self::MAX_STEPS,
         );
     }
 
-    public function getParameters(): array
+    public function getInputSchema(): array
     {
         return [
             'type' => 'object',
@@ -71,11 +67,11 @@ final readonly class ProposeChangesTool implements ToolInterface, GatedToolInter
         ];
     }
 
-    public function approvalReason(array $arguments): ?string
+    protected function approvalPolicy(): bool|string
     {
-        [$steps, $error] = $this->prepare($arguments);
+        [$steps, $error] = $this->prepare($this->getInputs());
         if ($error !== null || !array_filter($steps, static fn (array $step): bool => $step['capability']->risk()->needsApproval())) {
-            return null;
+            return false;
         }
 
         $rows = [];
@@ -107,7 +103,15 @@ final readonly class ProposeChangesTool implements ToolInterface, GatedToolInter
         return (new Preview(sprintf('Apply %d changes', count($steps)), $rows, array_values(array_unique($notes))))->toApprovalText($highest);
     }
 
-    public function execute(array $params): ToolResult
+    public function execute(): void
+    {
+        $this->setResult(json_encode($this->apply($this->getInputs())->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private function apply(array $params): ToolResult
     {
         [$steps, $error] = $this->prepare($params);
         if ($error !== null) {

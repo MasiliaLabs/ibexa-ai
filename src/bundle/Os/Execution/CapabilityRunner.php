@@ -21,7 +21,7 @@ use Throwable;
 /**
  * Prepares, previews and runs a capability call: the one place where a call is checked (it exists, the user may use
  * it, its arguments follow its schema), where an exception becomes an answer, and where what changed is recorded.
- * run_capability and propose_changes both go through it.
+ * The tool of a capability and propose_changes both go through it.
  */
 final readonly class CapabilityRunner
 {
@@ -46,10 +46,11 @@ final readonly class CapabilityRunner
      */
     public function prepare(string $name, mixed $arguments, ?callable $forValidation = null, bool $checkState = true): array
     {
-        $name = trim($name);
+        // The tool of a capability is named with "__" for the dots: either spelling means the same capability.
+        $name = str_replace('__', '.', trim($name));
         $capability = $this->registry->get($name);
         if ($capability === null) {
-            return [null, [], sprintf('There is no capability "%s". Use find_capabilities.', $name)];
+            return [null, [], sprintf('There is no capability "%s". Search for it with tool_search.', $name)];
         }
         $denial = $this->access->denial($capability);
         if ($denial !== null) {
@@ -68,7 +69,7 @@ final readonly class CapabilityRunner
         $checked = $forValidation !== null ? $forValidation($schema, $arguments) : $arguments;
         $errors = SchemaValidator::validate($schema, $checked);
         if ($errors !== []) {
-            return [$capability, $arguments, sprintf('%s: %s Read it with describe_capability.', $name, implode(' ', $errors))];
+            return [$capability, $arguments, sprintf('%s: %s Check the arguments against its definition.', $name, implode(' ', $errors))];
         }
         // What the schema cannot see. Not when some values are references: they are checked when they are known.
         $problem = $checkState && $checked === $arguments ? $this->problem($capability, $arguments) : null;

@@ -5,30 +5,26 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Neuron;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Masilia\Bundle\IbexaAi\Agent\Neuron\NeuronToolAdapter;
 use Masilia\Contracts\IbexaAi\Provider\ChatProviders;
-use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
-use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
-use Masilia\Bundle\IbexaAi\Os\Tool\ProposeChangesTool;
-use Masilia\Bundle\IbexaAi\Os\Tool\RunCapabilityTool;
 use NeuronAI\Chat\History\SQLMessageStore;
 use PDO;
 
 /**
  * Builds the content agent for a siteaccess and a conversation thread.
  *
- * The model sees the four tools of the AI OS (find_capabilities, describe_capability, run_capability, propose_changes):
- * everything else, including what the packages on the OS bring, is a capability found through them. The system prompt is
- * the OS's text and the skills of those packages.
+ * The model has propose_changes, the capabilities that look around, and tool_search to find the rest of what the user may do:
+ * every capability is a tool of its own (see CapabilityTool). The system prompt is the OS's text and the skills of the packages
+ * built on it.
  */
 readonly class OsAgentFactory
 {
+    /** The capabilities the model has from the start of every turn: the ones that look around. */
+    private const ALWAYS = ['content.search', 'content.load', 'tree.browse'];
+
     public function __construct(
         private ChatProviders $chat,
         private EntityManagerInterface $entities,
-        private FindCapabilitiesTool $findCapabilities,
-        private DescribeCapabilityTool $describeCapability,
-        private RunCapabilityTool $runCapability,
+        private CapabilityToolPool $pool,
         private ProposeChangesTool $proposeChanges,
         /** @var iterable<\Masilia\Contracts\IbexaAi\Os\Skill> What the packages on the OS teach the assistant, added to its prompt */
         private iterable $skills = [],
@@ -51,12 +47,18 @@ readonly class OsAgentFactory
     {
         $llm = $this->chat->forSiteaccess($siteaccess)->provider;
 
-        $agent = new OsAgent($llm, [
-            new NeuronToolAdapter($this->findCapabilities),
-            new NeuronToolAdapter($this->describeCapability),
-            new NeuronToolAdapter($this->runCapability),
-            new NeuronToolAdapter($this->proposeChanges),
-        ], $this->pdo(), OsSystemPrompt::get($this->skills));
+        // What the user may use, as tools: the few that look around are there from the start, the rest is found with tool_search.
+        $always = [$this->proposeChanges];
+        $searchable = [];
+        foreach ($this->pool->forCurrentUser() as $tool) {
+            if (in_array($tool->capability()->name(), self::ALWAYS, true)) {
+                $always[] = $tool;
+            } else {
+                $searchable[] = $tool;
+            }
+        }
+
+        $agent = new OsAgent($llm, $always, $searchable, $this->pdo(), OsSystemPrompt::get($this->skills));
 
         return $agent->setThreadId($threadId);
     }

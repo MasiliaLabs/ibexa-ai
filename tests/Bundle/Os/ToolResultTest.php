@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Tests\Agent\Tool;
+namespace Masilia\IbexaAi\Tests\Bundle\Os;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
+use Masilia\Bundle\IbexaAi\Os\Neuron\ToolResult;
 use PHPUnit\Framework\TestCase;
 
 final class ToolResultTest extends TestCase
