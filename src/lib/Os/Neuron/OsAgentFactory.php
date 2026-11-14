@@ -34,6 +34,16 @@ readonly class OsAgentFactory
     }
 
     /**
+     * Whether a text names the capability, with its dots ("site.conventions") or as a tool ("site__conventions").
+     */
+    public static function isNamedIn(string $text, string $capability): bool
+    {
+        $pattern = '/(?<![a-z0-9_.])(?:' . preg_quote($capability, '/') . '|' . preg_quote(CapabilityTool::toolName($capability), '/') . ')(?![a-z0-9_])/';
+
+        return preg_match($pattern, $text) === 1;
+    }
+
+    /**
      * Whether the chat model of the siteaccess reads images (the admin says so, per model).
      */
     public function supportsVision(string $siteaccess): bool
@@ -51,17 +61,19 @@ readonly class OsAgentFactory
         $llm = $connection->provider;
 
         // What the user may use, as tools: the few that look around are there from the start, the rest is found with tool_search.
+        $prompt = OsSystemPrompt::get($this->skills);
         $always = [$this->proposeChanges];
         $searchable = [];
         foreach ($this->pool->forCurrentUser() as $tool) {
-            if (in_array($tool->capability()->name(), self::ALWAYS, true)) {
+            // The few that look around, and every capability the prompt names: a model calls what it has read about.
+            if (in_array($tool->capability()->name(), self::ALWAYS, true) || self::isNamedIn($prompt, $tool->capability()->name())) {
                 $always[] = $tool;
             } else {
                 $searchable[] = $tool;
             }
         }
 
-        $agent = new OsAgent($llm, $always, $searchable, $this->pdo(), OsSystemPrompt::get($this->skills));
+        $agent = new OsAgent($llm, $always, $searchable, $this->pdo(), $prompt);
 
         $this->usage->attach($agent, $connection, $siteaccess);
 

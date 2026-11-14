@@ -10,7 +10,6 @@ use NeuronAI\Exceptions\ToolRunsExceededException;
 use NeuronAI\Tools\ToolCall;
 use NeuronAI\Tools\ToolOutput;
 use NeuronAI\Agent\Middleware\Summarization;
-use NeuronAI\Agent\Middleware\ToolSearchMiddleware;
 use NeuronAI\Chat\History\MessageStoreInterface;
 use NeuronAI\Chat\History\SQLMessageStore;
 use NeuronAI\Chat\Messages\SystemMessage;
@@ -107,7 +106,7 @@ class OsAgent extends Agent
     protected function globalMiddleware(): array
     {
         return [
-            new ToolSearchMiddleware($this->searchableTools, self::SEARCH_RESULTS),
+            new ConversationToolSearch($this->searchableTools, self::SEARCH_RESULTS),
             // A long conversation is summarised before it outgrows the model's context.
             new Summarization($this->llm),
         ];

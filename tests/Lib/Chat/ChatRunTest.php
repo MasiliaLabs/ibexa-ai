@@ -149,6 +149,16 @@ final class ChatRunTest extends TestCase
         self::assertStringContainsString(ChatRun::GENERIC_ERROR, $frames[1]);
     }
 
+    public function testAToolTheModelHadNotLoadedIsSaidInPlainWords(): void
+    {
+        $chat = $this->chatRun();
+
+        $frames = self::all($chat->stream($this->events([], new \NeuronAI\Exceptions\ProviderException('The model is asking for a non-existing tool: site__conventions.'))));
+
+        self::assertStringContainsString('had not loaded', $frames[0]);
+        self::assertStringNotContainsString('currently unavailable', $frames[0]);
+    }
+
     public function testARunThatAlreadyClosedItselfGetsNoSecondTerminalEvent(): void
     {
         $chat = $this->chatRun();

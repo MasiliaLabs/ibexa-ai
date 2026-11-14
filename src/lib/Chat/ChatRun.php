@@ -19,6 +19,7 @@ use Masilia\Contracts\IbexaAi\Api\ApiError;
 use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use NeuronAI\Agent\Frontend\AGUIInputTranslator;
 use NeuronAI\Exceptions\InputTranslationException;
+use NeuronAI\Exceptions\ProviderException;
 use NeuronAI\Workflow\Streaming\ProtocolEvent;
 use NeuronAI\Workflow\Streaming\SSEEncoder;
 use Psr\Log\LoggerInterface;
@@ -151,7 +152,7 @@ final readonly class ChatRun
         } catch (Throwable $e) {
             $this->aiLogger->error('[AI Agent] AG-UI run failed: {message}', ['message' => $e->getMessage(), 'exception' => $e]);
             if (!$closed) {
-                yield SSEEncoder::frame(new ProtocolEvent('RUN_ERROR', ['message' => self::GENERIC_ERROR, 'code' => 'service_error']));
+                yield SSEEncoder::frame(new ProtocolEvent('RUN_ERROR', ['message' => $e instanceof ProviderException && str_contains($e->getMessage(), 'non-existing tool') ? ReasoningFilteredAGUIAdapter::UNKNOWN_TOOL : self::GENERIC_ERROR, 'code' => 'service_error']));
             }
         }
     }

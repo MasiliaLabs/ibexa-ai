@@ -200,6 +200,7 @@ final class ReasoningFilteredAGUIAdapterTest extends TestCase
         yield 'run in flight' => [new RunInFlightException('w', 'r', WorkflowStatus::Running, 1), 'still being finished'];
         yield 'too many steps' => [new ToolRunsExceededException('Tool x has been executed too many times - 10'), 'too many steps'];
         yield 'no provider' => [new ProviderConfigurationException('No AI provider is configured for this siteaccess.'), 'No AI provider is configured'];
+        yield 'a tool the model had not loaded' => [new \NeuronAI\Exceptions\ProviderException('The model is asking for a non-existing tool: site__conventions. You could try'), 'had not loaded'];
         yield 'anything else' => [new \RuntimeException('Network error during POST https://api.minimax.io/v1/chat/completions: Timeout'), 'currently unavailable'];
         yield 'no answer' => [new NoAnswerException(), 'stopped without answering'];
         yield 'decided in another window' => [new AlreadyDecidedException('x'), 'already decided'];

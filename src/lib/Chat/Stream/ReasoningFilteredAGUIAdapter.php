@@ -11,6 +11,7 @@ use NeuronAI\Agent\Interrupt\ApprovalRequest;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
 use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
+use NeuronAI\Exceptions\ProviderException;
 use NeuronAI\Exceptions\RunInFlightException;
 use NeuronAI\Exceptions\ToolRunsExceededException;
 use NeuronAI\Tools\ToolCall;
@@ -36,6 +37,7 @@ final class ReasoningFilteredAGUIAdapter extends AGUIAdapter
 
     private const GENERIC_ERROR = 'The AI agent is currently unavailable. Please try again later or contact an administrator.';
     private const TOO_MANY_STEPS = 'This request needed too many steps. Ask for a narrower scope, for example one site or one section.';
+    public const UNKNOWN_TOOL = 'The assistant asked for an action it had not loaded. Ask again, or say in a few words what you want done.';
     private const NO_ANSWER = 'The assistant stopped without answering. Try again, or ask in fewer words.';
     private const ALREADY_DECIDED = 'This change was already decided, probably in another window. The conversation was refreshed.';
     private const DECISION_PENDING = 'A change is waiting for your decision. Approve or refuse it first.';
@@ -143,6 +145,7 @@ final class ReasoningFilteredAGUIAdapter extends AGUIAdapter
             $error instanceof RunInFlightException => self::IN_FLIGHT,
             $error instanceof ToolRunsExceededException => self::TOO_MANY_STEPS,
             $error instanceof ProviderConfigurationException => $error->getMessage(),
+            $error instanceof ProviderException && str_contains($error->getMessage(), 'non-existing tool') => self::UNKNOWN_TOOL,
             default => self::GENERIC_ERROR,
         };
     }
