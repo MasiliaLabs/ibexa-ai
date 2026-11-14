@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Provider;
 
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Provider\ProviderConnection;
 use Masilia\IbexaAi\Provider\ProviderFactory;
 use Masilia\IbexaAi\Provider\ProviderId;

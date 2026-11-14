@@ -6,7 +6,7 @@ namespace Masilia\IbexaAi\Tests\Bundle\Security;
 
 use Masilia\Bundle\IbexaAi\Entity\AiProvider;
 use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Security\SecretCipher;
 use PHPUnit\Framework\TestCase;
 

@@ -6,12 +6,11 @@ namespace Masilia\Bundle\IbexaAi\Os\Neuron;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Masilia\Bundle\IbexaAi\Agent\Neuron\NeuronToolAdapter;
-use Masilia\Bundle\IbexaAi\Llm\ProviderResolver;
+use Masilia\Contracts\IbexaAi\Provider\ChatProviders;
 use Masilia\Bundle\IbexaAi\Os\Tool\DescribeCapabilityTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\FindCapabilitiesTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\ProposeChangesTool;
 use Masilia\Bundle\IbexaAi\Os\Tool\RunCapabilityTool;
-use Masilia\IbexaAi\Provider\ProviderFactory;
 use NeuronAI\Chat\History\SQLMessageStore;
 use PDO;
 
@@ -25,8 +24,7 @@ use PDO;
 readonly class OsAgentFactory
 {
     public function __construct(
-        private ProviderResolver $resolver,
-        private ProviderFactory $providers,
+        private ChatProviders $chat,
         private EntityManagerInterface $entities,
         private FindCapabilitiesTool $findCapabilities,
         private DescribeCapabilityTool $describeCapability,
@@ -43,7 +41,7 @@ readonly class OsAgentFactory
     public function supportsVision(string $siteaccess): bool
     {
         try {
-            return $this->resolver->resolveChat($siteaccess)->supportsVision;
+            return $this->chat->forSiteaccess($siteaccess)->supportsVision;
         } catch (\Throwable) {
             return false;
         }
@@ -51,7 +49,7 @@ readonly class OsAgentFactory
 
     public function create(string $siteaccess, string $threadId): OsAgent
     {
-        $llm = $this->providers->create($this->resolver->resolveChat($siteaccess));
+        $llm = $this->chat->forSiteaccess($siteaccess)->provider;
 
         $agent = new OsAgent($llm, [
             new NeuronToolAdapter($this->findCapabilities),

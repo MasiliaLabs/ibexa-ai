@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Security;
 
 use Masilia\Bundle\IbexaAi\Entity\AiProvider;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Security\SecretCipher;
 use Masilia\IbexaAi\Security\SecretDecryptionException;
 

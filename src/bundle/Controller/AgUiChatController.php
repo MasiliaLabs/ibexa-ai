@@ -18,7 +18,7 @@ use Masilia\Bundle\IbexaAi\Chat\Thread\AgentThreads;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadId;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadTitle;
 use Masilia\IbexaAi\Api\ApiError;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;

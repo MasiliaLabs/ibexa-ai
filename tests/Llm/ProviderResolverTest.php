@@ -6,10 +6,10 @@ namespace Masilia\IbexaAi\Tests\Llm;
 
 use Masilia\Bundle\IbexaAi\Entity\AiModel;
 use Masilia\Bundle\IbexaAi\Entity\AiProvider;
-use Masilia\Bundle\IbexaAi\Llm\ProviderResolver;
+use Masilia\Bundle\IbexaAi\Provider\ProviderResolver;
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
 use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Provider\ProviderId;
 use Masilia\IbexaAi\Security\SecretCipher;
 use PHPUnit\Framework\Attributes\CoversClass;

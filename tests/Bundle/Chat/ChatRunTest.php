@@ -11,7 +11,7 @@ use Masilia\Bundle\IbexaAi\Chat\RunRefused;
 use Masilia\Bundle\IbexaAi\Chat\Thread\AgentThreads;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadAccessDeniedException;
 use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use NeuronAI\Workflow\Streaming\ProtocolEvent;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;

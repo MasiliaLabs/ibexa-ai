@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Security;
 
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Security\SecretCipher;
 use Masilia\IbexaAi\Security\SecretDecryptionException;
 use PHPUnit\Framework\Attributes\DataProvider;

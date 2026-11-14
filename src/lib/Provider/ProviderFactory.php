@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Provider;
 
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
+
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Alibaba\DashScopeOpenAI;
 use NeuronAI\Providers\Anthropic\Anthropic;

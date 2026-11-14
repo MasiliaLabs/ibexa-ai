@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Llm;
 
 use Masilia\Bundle\IbexaAi\Observability\DoctrineRequestLogger;
+use Masilia\Contracts\IbexaAi\Provider\ChatProviders;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Llm\TextGenerator;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
-use Masilia\IbexaAi\Provider\ProviderFactory;
 
 /**
  * Builds the text generator for the current siteaccess. One instance per request, so the
@@ -16,9 +16,8 @@ use Masilia\IbexaAi\Provider\ProviderFactory;
 final readonly class TextGeneratorFactory
 {
     public function __construct(
-        private ProviderResolver $resolver,
+        private ChatProviders $chat,
         private DoctrineRequestLogger $logger,
-        private ProviderFactory $providers = new ProviderFactory(),
     ) {
     }
 
@@ -27,12 +26,12 @@ final readonly class TextGeneratorFactory
      */
     public function create(string $siteaccess): TextGenerator
     {
-        $connection = $this->resolver->resolveChat($siteaccess);
+        $connection = $this->chat->forSiteaccess($siteaccess);
 
         return new NeuronTextGenerator(
-            provider: $this->providers->create($connection),
+            provider: $connection->provider,
             logger: $this->logger,
-            providerIdentifier: $connection->provider->value,
+            providerIdentifier: $connection->providerIdentifier,
             modelIdentifier: $connection->model,
             siteaccess: $siteaccess,
         );

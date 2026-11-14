@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Provider;
 
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
+
 /**
  * Framework-agnostic description of how to reach one chat model.
  * Built from the admin configuration (DB, then YAML, then env) by the bundle.

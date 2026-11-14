@@ -13,7 +13,7 @@ use Masilia\Bundle\IbexaAi\Ibexa\SuggestionRequestFactory;
 use Masilia\Bundle\IbexaAi\Llm\TextGeneratorFactory;
 use Masilia\IbexaAi\Api\ApiError;
 use Masilia\IbexaAi\Api\SseEncoder;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\InvalidModelOutputException;
 use Masilia\IbexaAi\Suggestion\InvalidSuggestionRequestException;
 use Masilia\IbexaAi\Suggestion\SuggestionPayload;

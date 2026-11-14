@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Provider;
 
-use Masilia\Bundle\IbexaAi\Llm\ProviderResolver;
+use Masilia\Bundle\IbexaAi\Provider\ProviderResolver;
 use Masilia\Bundle\IbexaAi\Repository\AiRequestLogRepository;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use DateTimeImmutable;
 
 /**

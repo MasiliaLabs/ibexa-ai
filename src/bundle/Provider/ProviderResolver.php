@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Masilia\Bundle\IbexaAi\Llm;
+namespace Masilia\Bundle\IbexaAi\Provider;
 
 use Masilia\Bundle\IbexaAi\Repository\AiProviderRepository;
 use Masilia\Bundle\IbexaAi\Security\ProviderKeys;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Provider\ProviderConnection;
 use Masilia\IbexaAi\Provider\ProviderId;
 

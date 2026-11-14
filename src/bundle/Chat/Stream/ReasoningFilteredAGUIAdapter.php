@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Chat\Stream;
 
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use Masilia\IbexaAi\Suggestion\ReasoningFilter;
 use NeuronAI\Agent\Adapters\AGUIAdapter;
 use NeuronAI\Agent\Interrupt\ApprovalRequest;

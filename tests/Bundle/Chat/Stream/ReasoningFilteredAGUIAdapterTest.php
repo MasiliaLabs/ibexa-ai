@@ -8,7 +8,7 @@ use Masilia\Bundle\IbexaAi\Chat\Stream\AlreadyDecidedException;
 use Masilia\Bundle\IbexaAi\Chat\Stream\DecisionPendingException;
 use Masilia\Bundle\IbexaAi\Chat\Stream\NoAnswerException;
 use Masilia\Bundle\IbexaAi\Chat\Stream\ReasoningFilteredAGUIAdapter;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use NeuronAI\Agent\Interrupt\Action;
 use NeuronAI\Agent\Interrupt\ApprovalRequest;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;

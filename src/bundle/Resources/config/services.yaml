@@ -54,6 +54,9 @@ services:
 
     Masilia\IbexaAi\Provider\ProviderFactory: ~
 
+    Masilia\Contracts\IbexaAi\Provider\ChatProviders:
+        alias: Masilia\Bundle\IbexaAi\Provider\SiteaccessChatProviders
+
     Masilia\IbexaAi\Security\SecretCipher:
         factory: ['Masilia\IbexaAi\Security\SecretCipher', 'fromConfiguration']
         arguments:

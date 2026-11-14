@@ -16,7 +16,7 @@ use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadAccessDeniedException;
 use Masilia\Bundle\IbexaAi\Chat\Thread\ThreadId;
 use Masilia\Bundle\IbexaAi\Os\Audit\RunContext;
 use Masilia\IbexaAi\Api\ApiError;
-use Masilia\IbexaAi\Provider\ProviderConfigurationException;
+use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
 use NeuronAI\Agent\Frontend\AGUIInputTranslator;
 use NeuronAI\Exceptions\InputTranslationException;
 use NeuronAI\Workflow\Streaming\ProtocolEvent;
