@@ -4,52 +4,61 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Ibexa\Field\Input;
 
+use Ibexa\Contracts\Core\Repository\FieldTypeService;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
+use Throwable;
 
 /**
- * Registry of field value transformers keyed by Ibexa field type identifier.
- *
- * Falls back to passthrough when no transformer is registered for a type.
+ * What a model says for a field, turned into what Ibexa stores: the adapter of the field type when there is one (dates as
+ * text, labels of a selection, HTML for a rich text, a matrix as rows…), otherwise the field type's own reading of its
+ * hash (FieldType::fromHash), the way the REST API reads a value. A value the field type refuses is handed over as it is:
+ * the repository then refuses it with its own, precise message.
  */
 readonly class FieldInputs
 {
     /** @var array<string, FieldInput> */
-    private array $transformers;
+    private array $adapters;
 
     /**
-     * @param iterable<FieldInput> $transformers Tagged services
+     * @param iterable<FieldInput> $adapters Tagged services
      */
     public function __construct(
-        iterable $transformers,
+        iterable $adapters,
+        private ?FieldTypeService $fieldTypes = null,
     ) {
         $map = [];
-        foreach ($transformers as $transformer) {
-            $map[$transformer->getFieldTypeIdentifier()] = $transformer;
+        foreach ($adapters as $adapter) {
+            $map[$adapter->getFieldTypeIdentifier()] = $adapter;
         }
-        $this->transformers = $map;
+        $this->adapters = $map;
     }
 
     /**
-     * Transform a raw LLM value using the transformer registered for this field's type.
+     * @param FieldDefinition $fieldDef Drives the choice of the adapter and gives it the settings (the options of a selection)
+     * @param mixed           $value    What the model said
      *
-     * Falls back to passthrough when no transformer is registered for the field type.
-     * The FieldDefinition is forwarded to the transformer so label-resolution
-     * transformers (ezselection) can use field settings.
-     *
-     * @param FieldDefinition $fieldDef Field definition (drives dispatch and provides context)
-     * @param mixed           $value    Raw value from the LLM
-     *
-     * @return mixed Transformed value ready for setField()
+     * @return mixed A value ready for ContentStruct::setField()
      */
     public function transform(FieldDefinition $fieldDef, mixed $value): mixed
     {
         $type = $fieldDef->getFieldTypeIdentifier();
-        $transformer = $this->transformers[$type] ?? null;
-
-        if ($transformer === null) {
-            return $value;
+        $adapter = $this->adapters[$type] ?? null;
+        if ($adapter !== null) {
+            return $adapter->transform($fieldDef, $value);
         }
 
-        return $transformer->transform($fieldDef, $value);
+        return $this->fromHash($type, $value);
+    }
+
+    private function fromHash(string $type, mixed $value): mixed
+    {
+        if ($this->fieldTypes === null || !is_array($value)) {
+            return $value;
+        }
+        try {
+            return $this->fieldTypes->getFieldType($type)->fromHash($value);
+        } catch (Throwable) {
+            return $value;
+        }
     }
 }

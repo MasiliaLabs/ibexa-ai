@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Ibexa\Field\Text;
 
+use Masilia\Contracts\IbexaAi\Content\FieldTexts as FieldTextsContract;
 use Ibexa\Contracts\Core\Repository\Values\Content\Field;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
 use Psr\Log\LoggerInterface;
@@ -22,7 +23,7 @@ use Throwable;
  * custom stringifier cannot crash the whole AI prompt pipeline, but operators
  * can still see what went wrong.
  */
-class FieldTexts
+class FieldTexts implements FieldTextsContract
 {
     /**
      * Pseudo field-type identifier used to register the fallback stringifier
