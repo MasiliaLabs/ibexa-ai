@@ -44,18 +44,6 @@ final class PlanBuilderTest extends TestCase
         self::assertNull($plan->validate());
     }
 
-    public function testBuildTrashContentPlan(): void
-    {
-        $builder = new PlanBuilder();
-        $plan = $builder->build([
-            'intent' => 'trash_content',
-            'content_id' => 456,
-        ]);
-
-        self::assertSame(456, $plan->contentId);
-        self::assertNull($plan->validate());
-    }
-
     public function testBuildCreateFolderPlan(): void
     {
         $builder = new PlanBuilder();

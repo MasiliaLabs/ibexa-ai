@@ -17,5 +17,4 @@ final class ToolName
     public const SEARCH_CONTENT = 'search_content';
     public const LOAD_CONTENT = 'load_content';
     public const CREATE_FOLDER = 'create_folder';
-    public const TRASH_CONTENT = 'trash_content';
 }

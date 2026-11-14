@@ -16,7 +16,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Content;
 /**
  * Update + publish content items, with field-value transformation.
  */
-final readonly class ContentUpdater
+readonly class ContentUpdater
 {
     public function __construct(
         private Repository $repository,

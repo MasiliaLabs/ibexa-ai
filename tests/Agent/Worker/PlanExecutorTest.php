@@ -214,25 +214,6 @@ final class PlanExecutorTest extends TestCase
         self::assertSame(60, $result->locationId);
     }
 
-    public function testExecuteTrashContentSuccess(): void
-    {
-        $registry = $this->makeRegistry([
-            ToolName::TRASH_CONTENT => ToolResult::ok('Trashed', [
-                'content_id' => 99,
-                'location_id' => 100,
-                'trashed' => true,
-            ]),
-        ]);
-
-        $executor = new PlanExecutor($registry, new NullLogger());
-        $result = $executor->execute(new Plan(
-            intent: Plan::INTENT_TRASH_CONTENT,
-            contentId: 99,
-        ));
-
-        self::assertTrue($result->success);
-    }
-
     public function testExecuteReturnsToolUnavailableWhenToolMissing(): void
     {
         $registry = $this->makeRegistry([]);

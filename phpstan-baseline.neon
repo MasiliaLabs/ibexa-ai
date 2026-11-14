@@ -49,12 +49,6 @@ parameters:
 			path: src/bundle/Agent/Tool/FieldValueTransformer/RichTextTransformer.php
 
 		-
-			message: '#^Expression on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.expr
-			count: 1
-			path: src/bundle/Agent/Tool/Structural/TrashContentTool.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$tools$#'
 			identifier: parameter.notFound
 			count: 1

@@ -145,14 +145,6 @@ final class PlanBuilderTargetsTest extends TestCase
         self::assertNull($plan->language);
     }
 
-    public function testALanguageOnAPlanThatWritesNothingIsRefusedInsteadOfBeingIgnored(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('A language can only be set on a plan that writes content');
-
-        $this->builder()->build(['intent' => 'trash_content', 'content_id' => 1342, 'language' => 'fre-FR']);
-    }
-
     private function storeWithImageOf(int $userId): array
     {
         $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
