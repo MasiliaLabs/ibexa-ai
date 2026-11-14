@@ -1,5 +1,7 @@
 {% extends "@ibexadesign/ui/layout.html.twig" %}
 
+{% trans_default_domain 'masilia_ibexa_ai' %}
+
 {% block body_class %}ibexa-ai-settings-react-view{% endblock %}
 
 {% block stylesheets %}
@@ -8,16 +10,16 @@
 
 {% block breadcrumbs %}
     {% include '@ibexadesign/ui/breadcrumbs.html.twig' with { items: [
-        { value: 'Admin' },
-        { value: 'AI Assistant Settings' }
+        { value: 'breadcrumb.admin'|trans },
+        { value: 'settings.title'|trans }
     ]} %}
 {% endblock %}
 
-{% block title %}AI Assistant Settings{% endblock %}
+{% block title %}{{ 'settings.title'|trans }}{% endblock %}
 
 {% block header %}
     {% include '@ibexadesign/ui/page_title.html.twig' with {
-        title: 'AI Assistant Settings',
+        title: 'settings.title'|trans,
     } %}
 {% endblock %}
 

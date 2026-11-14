@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+    <body>
+      <trans-unit id="activity.done" resname="activity.done">
+        <source>activity.done</source>
+        <target>done</target>
+      </trans-unit>
+      <trans-unit id="activity.empty" resname="activity.empty">
+        <source>activity.empty</source>
+        <target>Nothing yet: the assistant records every change it makes, and every failure.</target>
+      </trans-unit>
+      <trans-unit id="activity.failed" resname="activity.failed">
+        <source>activity.failed</source>
+        <target>failed</target>
+      </trans-unit>
+      <trans-unit id="activity.result" resname="activity.result">
+        <source>activity.result</source>
+        <target>Result</target>
+      </trans-unit>
+      <trans-unit id="activity.title" resname="activity.title">
+        <source>activity.title</source>
+        <target>Latest activity</target>
+      </trans-unit>
+      <trans-unit id="activity.when" resname="activity.when">
+        <source>activity.when</source>
+        <target>When (UTC)</target>
+      </trans-unit>
+      <trans-unit id="activity.who" resname="activity.who">
+        <source>activity.who</source>
+        <target>Who</target>
+      </trans-unit>
+      <trans-unit id="answer.no" resname="answer.no">
+        <source>answer.no</source>
+        <target>no</target>
+      </trans-unit>
+      <trans-unit id="answer.yes" resname="answer.yes">
+        <source>answer.yes</source>
+        <target>yes</target>
+      </trans-unit>
+      <trans-unit id="breadcrumb.admin" resname="breadcrumb.admin">
+        <source>breadcrumb.admin</source>
+        <target>Admin</target>
+      </trans-unit>
+      <trans-unit id="capabilities.intro" resname="capabilities.intro">
+        <source>capabilities.intro</source>
+        <target>The assistant acts through capabilities: each one is a typed action on the content repository, run with the rights of whoever asks. Reading runs at once; anything that changes something is shown on an approval card first, and recorded.</target>
+      </trans-unit>
+      <trans-unit id="capabilities.title" resname="capabilities.title">
+        <source>capabilities.title</source>
+        <target>What the assistant can do</target>
+      </trans-unit>
+      <trans-unit id="column.capability" resname="column.capability">
+        <source>column.capability</source>
+        <target>Capability</target>
+      </trans-unit>
+      <trans-unit id="column.does" resname="column.does">
+        <source>column.does</source>
+        <target>Does</target>
+      </trans-unit>
+      <trans-unit id="column.needs" resname="column.needs">
+        <source>column.needs</source>
+        <target>Needs</target>
+      </trans-unit>
+      <trans-unit id="column.risk" resname="column.risk">
+        <source>column.risk</source>
+        <target>Risk</target>
+      </trans-unit>
+      <trans-unit id="column.you" resname="column.you">
+        <source>column.you</source>
+        <target>You</target>
+      </trans-unit>
+      <trans-unit id="coverage.check" resname="coverage.check">
+        <source>coverage.check</source>
+        <target>Check it with</target>
+      </trans-unit>
+      <trans-unit id="coverage.summary" resname="coverage.summary">
+        <source>coverage.summary</source>
+        <target>%routes% admin screens and actions of Ibexa: %covered% have a capability, %out% are not actions of an administrator (screens, redirects, sign-in flows), %planned% are planned, %unmapped% are unaccounted for.</target>
+      </trans-unit>
+      <trans-unit id="coverage.title" resname="coverage.title">
+        <source>coverage.title</source>
+        <target>Coverage of the admin</target>
+      </trans-unit>
+      <trans-unit id="coverage.unmapped.title" resname="coverage.unmapped.title">
+        <source>coverage.unmapped.title</source>
+        <target>No answer yet</target>
+      </trans-unit>
+      <trans-unit id="coverage.unmapped.why" resname="coverage.unmapped.why">
+        <source>coverage.unmapped.why</source>
+        <target>an Ibexa update or a new bundle added them</target>
+      </trans-unit>
+      <trans-unit id="domain.off" resname="domain.off">
+        <source>domain.off</source>
+        <target>off</target>
+      </trans-unit>
+      <trans-unit id="domain.off_note" resname="domain.off_note">
+        <source>domain.off_note</source>
+        <target>This domain is turned off, so the assistant does not see it. Turn it on with</target>
+      </trans-unit>
+      <trans-unit id="domain.on" resname="domain.on">
+        <source>domain.on</source>
+        <target>on</target>
+      </trans-unit>
+      <trans-unit id="domain.usable" resname="domain.usable">
+        <source>domain.usable</source>
+        <target>%usable% of %total% usable by you</target>
+      </trans-unit>
+      <trans-unit id="list.filter.label" resname="list.filter.label">
+        <source>list.filter.label</source>
+        <target>Filter the capabilities</target>
+      </trans-unit>
+      <trans-unit id="list.filter.placeholder" resname="list.filter.placeholder">
+        <source>list.filter.placeholder</source>
+        <target>Filter by name or words…</target>
+      </trans-unit>
+      <trans-unit id="list.only_usable" resname="list.only_usable">
+        <source>list.only_usable</source>
+        <target>only what I can use</target>
+      </trans-unit>
+      <trans-unit id="list.title" resname="list.title">
+        <source>list.title</source>
+        <target>Capabilities</target>
+      </trans-unit>
+      <trans-unit id="menu.ai_capabilities" resname="menu.ai_capabilities">
+        <source>menu.ai_capabilities</source>
+        <target>What the assistant can do</target>
+      </trans-unit>
+      <trans-unit id="menu.ai_settings" resname="menu.ai_settings">
+        <source>menu.ai_settings</source>
+        <target>AI Assistant</target>
+      </trans-unit>
+      <trans-unit id="settings.title" resname="settings.title">
+        <source>settings.title</source>
+        <target>AI Assistant Settings</target>
+      </trans-unit>
+      <trans-unit id="skills.help" resname="skills.help">
+        <source>skills.help</source>
+        <target>A skill teaches the assistant how sites are built here; it adds capabilities of its own.</target>
+      </trans-unit>
+      <trans-unit id="skills.title" resname="skills.title">
+        <source>skills.title</source>
+        <target>Installed skills</target>
+      </trans-unit>
+      <trans-unit id="stat.capabilities" resname="stat.capabilities">
+        <source>stat.capabilities</source>
+        <target>capabilities</target>
+      </trans-unit>
+      <trans-unit id="stat.covered" resname="stat.covered">
+        <source>stat.covered</source>
+        <target>admin actions covered</target>
+      </trans-unit>
+      <trans-unit id="stat.domains" resname="stat.domains">
+        <source>stat.domains</source>
+        <target>domains (%on% on)</target>
+      </trans-unit>
+      <trans-unit id="stat.usable" resname="stat.usable">
+        <source>stat.usable</source>
+        <target>you can use</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

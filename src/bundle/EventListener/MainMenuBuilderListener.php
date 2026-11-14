@@ -32,16 +32,16 @@ final class MainMenuBuilderListener implements EventSubscriberInterface
         $adminMenu->addChild('main__admin__ai_settings', [
             'route' => 'masilia.ibexa_ai.admin.settings_page',
         ])
-            ->setLabel('AI Assistant')
-            ->setExtra('translation_domain', 'ibexa_menu')
+            ->setLabel('menu.ai_settings')
+            ->setExtra('translation_domain', 'masilia_ibexa_ai')
             ->setExtra('icon', 'settings-block')
             ->setExtra('orderNumber', 150);
 
         $adminMenu->addChild('main__admin__ai_capabilities', [
             'route' => 'masilia.ibexa_ai.admin.capabilities_page',
         ])
-            ->setLabel('What the assistant can do')
-            ->setExtra('translation_domain', 'ibexa_menu')
+            ->setLabel('menu.ai_capabilities')
+            ->setExtra('translation_domain', 'masilia_ibexa_ai')
             ->setExtra('icon', 'settings-block')
             ->setExtra('orderNumber', 151);
     }
