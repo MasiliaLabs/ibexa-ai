@@ -40,11 +40,6 @@ final class EveryClassLoadsTest extends TestCase
                 if (str_contains($class, '\\Resources\\') || str_contains($class, '\\Migrations\\')) {
                     continue;
                 }
-                // An old name of a type of the public API: checked by ContractsTest, it says it is deprecated when loaded.
-                if (str_contains((string) file_get_contents($file->getPathname()), 'class_alias(')) {
-                    continue;
-                }
-
                 try {
                     if (class_exists($class) || interface_exists($class) || trait_exists($class) || enum_exists($class)) {
                         ++$loaded;
