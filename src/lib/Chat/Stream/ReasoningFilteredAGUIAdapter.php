@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Chat\Stream;
 
 use Masilia\Contracts\IbexaAi\Provider\ProviderConfigurationException;
-use Masilia\Contracts\IbexaAi\Llm\ReasoningFilter;
+use Masilia\IbexaAi\Llm\ReasoningFilter;
 use NeuronAI\Agent\Adapters\AGUIAdapter;
 use NeuronAI\Agent\Interrupt\ApprovalRequest;
 use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;

@@ -47,4 +47,22 @@ final class ContractsTest extends TestCase
         // A namespace declaration of the contracts themselves.
         return str_starts_with($name, 'Masilia\\Contracts\\');
     }
+
+    public function testTheContractsAreInterfacesEnumsExceptionsAbstractBasesAndValueObjectsOnly(): void
+    {
+        $impure = [];
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::ROOT, FilesystemIterator::SKIP_DOTS)) as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+            $class = 'Masilia\\Contracts\\IbexaAi\\' . str_replace('/', '\\', substr((string) $file->getRealPath(), strlen((string) realpath(self::ROOT)) + 1, -4));
+            $reflection = new \ReflectionClass($class);
+            $allowed = $reflection->isInterface() || $reflection->isEnum() || $reflection->isAbstract() || $reflection->isSubclassOf(\Throwable::class) || $reflection->isReadOnly();
+            if (!$allowed) {
+                $impure[] = $class . ' is a class with behaviour: the implementation belongs in src/lib';
+            }
+        }
+
+        self::assertSame([], $impure, implode("\n", $impure));
+    }
 }
