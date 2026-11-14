@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Relations;
 
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Relation;
 use Ibexa\Contracts\Core\Repository\Values\Content\RelationList\RelationListItemInterface;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 
-final class ListCapability extends BaseCapability
+final class ListCapability extends AbstractCapability
 {
     private const TYPES = [Relation::COMMON => 'common', Relation::EMBED => 'embed', Relation::LINK => 'link', Relation::FIELD => 'field', Relation::ASSET => 'asset'];
 

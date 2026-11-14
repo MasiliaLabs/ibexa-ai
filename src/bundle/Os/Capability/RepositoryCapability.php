@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability;
 
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Ibexa\Contracts\Core\Repository\Repository;
 
 /**
  * A capability written directly on the repository services.
  */
-abstract class RepositoryCapability extends BaseCapability
+abstract class RepositoryCapability extends AbstractCapability
 {
     public function __construct(protected readonly Repository $repository)
     {

@@ -13,30 +13,6 @@ parameters:
 			path: src/bundle/Agent/Stream/ReasoningFilteredAGUIAdapter.php
 
 		-
-			message: '#^Expression on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.expr
-			count: 1
-			path: src/bundle/Agent/Tool/Content/LoadContentTool.php
-
-		-
-			message: '#^If condition is always false\.$#'
-			identifier: if.alwaysFalse
-			count: 1
-			path: src/bundle/Agent/Tool/Control/BrowseLocationTool.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between '''' and '''' will always evaluate to false\.$#'
-			identifier: notIdentical.alwaysFalse
-			count: 1
-			path: src/bundle/Agent/Tool/Control/BrowseLocationTool.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between array\{\} and array\{\} will always evaluate to false\.$#'
-			identifier: notIdentical.alwaysFalse
-			count: 1
-			path: src/bundle/Agent/Tool/Control/BrowseLocationTool.php
-
-		-
 			message: '#^Ternary operator condition is always true\.$#'
 			identifier: ternary.alwaysTrue
 			count: 1
@@ -47,12 +23,6 @@ parameters:
 			identifier: instanceof.alwaysFalse
 			count: 1
 			path: src/bundle/Agent/Tool/FieldValueTransformer/RichTextTransformer.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$tools$#'
-			identifier: parameter.notFound
-			count: 1
-			path: src/bundle/Agent/Tool/ToolRegistry.php
 
 		-
 			message: '#^Anonymous function has an unused use \$stamp\.$#'

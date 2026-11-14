@@ -1,7 +1,5 @@
 services:
     _instanceof:
-        Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface:
-            tags: ['masilia.ibexa_ai.tool']
         Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerInterface:
             tags: ['masilia.ibexa_ai.field_value_transformer']
         Masilia\Contracts\IbexaAi\Os\Capability:
@@ -63,17 +61,6 @@ services:
         arguments:
             $capabilities: !tagged_iterator masilia.ibexa_ai.capability
 
-    # Capabilities that do what an existing tool does take that tool.
-    Masilia\Bundle\IbexaAi\Os\Capability\Content\SearchCapability:
-        arguments:
-            $searchTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\SearchContentTool'
-    Masilia\Bundle\IbexaAi\Os\Capability\Content\LoadCapability:
-        arguments:
-            $loadTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Content\LoadContentTool'
-    Masilia\Bundle\IbexaAi\Os\Capability\Tree\BrowseCapability:
-        arguments:
-            $browseTool: '@Masilia\Bundle\IbexaAi\Agent\Tool\Control\BrowseLocationTool'
-
     Masilia\IbexaAi\Provider\ProviderFactory: ~
 
     Masilia\IbexaAi\Security\SecretCipher:
@@ -106,10 +93,6 @@ services:
             - { name: kernel.event_listener, event: kernel.exception, method: onTerminate }
             - { name: kernel.event_listener, event: console.terminate, method: onTerminate }
 
-    Masilia\Bundle\IbexaAi\Agent\Tool\ToolRegistry:
-        arguments:
-            $sources: !tagged_iterator masilia.ibexa_ai.tool
-
     Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemaSource:
         alias: Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas
 
@@ -130,7 +113,6 @@ services:
             - '../../Agent/Neuron/'
             - '../../Agent/DTO/'
             - '../../Agent/Tool/ToolResult.php'
-            - '../../Agent/Tool/ToolRegistry.php'
             - '../../Agent/Tool/FieldValueTransformerRegistry.php'
 
     Masilia\Bundle\IbexaAi\Field\:

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Tree;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
+use Masilia\Bundle\IbexaAi\Content\Read\LocationBrowser;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 
-final class BrowseCapability extends BaseCapability
+final class BrowseCapability extends AbstractCapability
 {
-    public function __construct(private readonly ToolInterface $browseTool)
+    public function __construct(private readonly LocationBrowser $browser)
     {
     }
 
@@ -74,6 +74,8 @@ final class BrowseCapability extends BaseCapability
 
     public function execute(array $arguments): CapabilityResult
     {
-        return self::fromTool($this->browseTool->execute($arguments));
+        $browsed = $this->browser->browse($arguments);
+
+        return CapabilityResult::ok($browsed['message'], $browsed['data']);
     }
 }

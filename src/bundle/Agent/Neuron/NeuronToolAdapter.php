@@ -11,7 +11,7 @@ use Masilia\Bundle\IbexaAi\Agent\Tool\ToolResult;
 use NeuronAI\Tools\Tool;
 
 /**
- * Exposes one of the assistant's tools to the Neuron agent.
+ * Exposes one of the four tools the model sees (find, describe, run, propose: see Os\Tool) to the Neuron agent.
  *
  * The JSON schema and the result contract of the tool are kept as they are; the adapter only
  * bridges the call. Gated tools (see {@see GatedToolInterface}) make Neuron pause for approval,

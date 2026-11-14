@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
+use Masilia\Bundle\IbexaAi\Content\Read\ContentLoader;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 
-final class LoadCapability extends BaseCapability
+final class LoadCapability extends AbstractCapability
 {
-    public function __construct(private readonly ToolInterface $loadTool)
+    public function __construct(private readonly ContentLoader $loader)
     {
     }
 
@@ -61,6 +61,8 @@ final class LoadCapability extends BaseCapability
 
     public function execute(array $arguments): CapabilityResult
     {
-        return self::fromTool($this->loadTool->execute($arguments));
+        $content = $this->loader->load($arguments);
+
+        return CapabilityResult::ok(sprintf('Loaded content: %s (ID: %d)', $content['name'] ?? 'unnamed', $content['content_id']), $content);
     }
 }

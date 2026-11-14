@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Location;
 
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Location;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
 use Throwable;
 
 /**
  * What the location capabilities share: loading a location, and naming one for the person who approves.
  */
-abstract class LocationCapability extends BaseCapability
+abstract class LocationCapability extends AbstractCapability
 {
     public function __construct(protected readonly Repository $repository)
     {

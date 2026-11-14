@@ -118,6 +118,11 @@ final class OsSelftestCommand extends Command
             $step('show A', 'location.set_visibility', ['location_id' => $a['location_id'], 'visible' => true]);
             $step('priority of A', 'location.update', ['location_id' => $a['location_id'], 'priority' => 7]);
             $step('the extra location is not the main one', 'location.list', ['content_id' => $a['content_id']], static fn (array $d): ?string => array_filter($d['locations'], static fn (array $l): bool => $l['location_id'] === $a['location_id'] && $l['is_main']) !== [] ? null : 'the first location is not main');
+            // The three reads. Loading is read from the repository, so it is checked exactly; search and the tree come from the
+            // search index, which can lag a few seconds behind a write, so they are checked for their shape only.
+            $step('load A by its id', 'content.load', ['content_id' => $a['content_id']], static fn (array $d): ?string => ($d['content_id'] ?? null) === $a['content_id'] && ($d['name'] ?? null) === "Selftest A $stamp" && is_array($d['fields'] ?? null) ? null : 'A is not loaded as it was created');
+            $step('search answers with its results', 'content.search', ['name' => "Selftest A $stamp", 'limit' => 5], static fn (array $d): ?string => is_int($d['count'] ?? null) && is_array($d['results'] ?? null) ? null : 'no results list');
+            $step('the tree of the parent is read', 'tree.browse', ['location_id' => $parent, 'limit' => 5], static fn (array $d): ?string => is_int($d['total'] ?? null) && is_array($d['items'] ?? null) ? null : 'no items list');
             $step('A refers to nothing', 'relations.list', ['content_id' => $a['content_id']], static fn (array $d): ?string => $d['incoming_total'] === 0 ? null : 'unexpected incoming relation');
             $step('copy B below the parent', 'location.copy', ['location_id' => $b['location_id'], 'target_parent_location_id' => $parent], null, 'copy');
             // Copying B copied what is under it too (A, shown there): those copies are ours to delete.

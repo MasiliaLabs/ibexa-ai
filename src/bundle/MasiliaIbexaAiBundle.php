@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
 use Masilia\Bundle\IbexaAi\Os\Security\OsPolicyProvider;
 use Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario;
 use Masilia\Contracts\IbexaAi\Os\Capability;
@@ -23,7 +22,6 @@ final class MasiliaIbexaAiBundle extends Bundle
         $container->registerForAutoconfiguration(Capability::class)->addTag('masilia.ibexa_ai.capability');
         $container->registerForAutoconfiguration(Skill::class)->addTag('masilia.ibexa_ai.skill');
         $container->registerForAutoconfiguration(SelftestScenario::class)->addTag('masilia.ibexa_ai.selftest');
-        $container->registerForAutoconfiguration(ToolInterface::class)->addTag('masilia.ibexa_ai.tool');
 
         // The "masilia_ai" permissions: who may let the assistant write, remove, change access.
         /** @var \Ibexa\Bundle\Core\DependencyInjection\IbexaCoreExtension $core */

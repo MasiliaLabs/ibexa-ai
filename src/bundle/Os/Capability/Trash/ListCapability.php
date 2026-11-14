@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Trash;
 
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Contracts\Core\Repository\Values\Content\Query;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 
-final class ListCapability extends BaseCapability
+final class ListCapability extends AbstractCapability
 {
     public function __construct(private readonly Repository $repository)
     {

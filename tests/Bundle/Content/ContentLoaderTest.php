@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Masilia\IbexaAi\Tests\Agent\Tool\Content;
+namespace Masilia\IbexaAi\Tests\Bundle\Content;
 
 use Ibexa\Contracts\Core\Repository\ContentService;
 use Ibexa\Contracts\Core\Repository\Repository;
@@ -12,44 +12,42 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Field;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\ContentType;
 use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
 use Ibexa\Core\Repository\Values\Content\VersionInfo;
-use Masilia\Bundle\IbexaAi\Agent\Tool\Content\LoadContentTool;
+use Masilia\Bundle\IbexaAi\Content\Read\ContentLoader;
 use Masilia\Bundle\IbexaAi\Field\FieldValueStringifierInterface;
 use Masilia\Bundle\IbexaAi\Field\FieldValueStringifierRegistry;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 
-final class LoadContentToolTest extends TestCase
+final class ContentLoaderTest extends TestCase
 {
     public function testFieldsAreKeyedByFieldIdentifierAndLanguagesAreReported(): void
     {
-        $tool = $this->toolReturning($this->content(
+        $loader = $this->loaderReturning($this->content(
             languages: ['fre-FR'],
             mainLanguage: 'fre-FR',
             fields: ['title' => 'Nos objectifs', 'description' => 'Trois objectifs.'],
         ));
 
-        $result = $tool->execute(['content_id' => 1295]);
+        $result = $loader->load(['content_id' => 1295]);
 
-        self::assertTrue($result->success);
-        self::assertSame(['title' => 'Nos objectifs', 'description' => 'Trois objectifs.'], $result->data['fields']);
-        self::assertSame(['fre-FR'], $result->data['languages']);
-        self::assertSame('fre-FR', $result->data['language']);
+        self::assertSame(['title' => 'Nos objectifs', 'description' => 'Trois objectifs.'], $result['fields']);
+        self::assertSame(['fre-FR'], $result['languages']);
+        self::assertSame('fre-FR', $result['language']);
     }
 
     public function testAContentWithSeveralTranslationsListsThemAll(): void
     {
-        $tool = $this->toolReturning($this->content(
+        $loader = $this->loaderReturning($this->content(
             languages: ['eng-GB', 'fre-FR'],
             mainLanguage: 'fre-FR',
             fields: ['title' => 'Conditions'],
         ));
 
-        $result = $tool->execute(['content_id' => 1285]);
+        $result = $loader->load(['content_id' => 1285]);
 
-        self::assertSame(['eng-GB', 'fre-FR'], $result->data['languages']);
+        self::assertSame(['eng-GB', 'fre-FR'], $result['languages']);
     }
 
-    private function toolReturning(Content $content): LoadContentTool
+    private function loaderReturning(Content $content): ContentLoader
     {
         $contentService = $this->createMock(ContentService::class);
         $contentService->method('loadContent')->willReturn($content);
@@ -69,7 +67,7 @@ final class LoadContentToolTest extends TestCase
             }
         };
 
-        return new LoadContentTool($repository, new NullLogger(), new FieldValueStringifierRegistry([$stringifier]));
+        return new ContentLoader($repository, new FieldValueStringifierRegistry([$stringifier]));
     }
 
     /**

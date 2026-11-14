@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\ToolInterface;
-use Masilia\Bundle\IbexaAi\Os\Capability\BaseCapability;
+use Masilia\Bundle\IbexaAi\Content\Read\ContentSearch;
+use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 
-final class SearchCapability extends BaseCapability
+final class SearchCapability extends AbstractCapability
 {
-    public function __construct(private readonly ToolInterface $searchTool)
+    public function __construct(private readonly ContentSearch $search)
     {
     }
 
@@ -67,6 +67,8 @@ final class SearchCapability extends BaseCapability
 
     public function execute(array $arguments): CapabilityResult
     {
-        return self::fromTool($this->searchTool->execute($arguments));
+        $found = $this->search->search($arguments);
+
+        return CapabilityResult::ok(sprintf('Found %d results', $found['count']), $found);
     }
 }
