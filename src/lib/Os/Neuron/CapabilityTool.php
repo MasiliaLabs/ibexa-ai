@@ -18,15 +18,12 @@ use NeuronAI\Tools\Tool;
  */
 final class CapabilityTool extends Tool
 {
-    use CallBudget;
-
     public function __construct(
         private readonly Capability $capability,
         private readonly CapabilityRunner $runner,
     ) {
         $this->setName(self::toolName($capability->name()));
         $this->setDescription(self::describe($capability));
-        $this->startBudget();
     }
 
     public static function toolName(string $capability): string
@@ -64,18 +61,15 @@ final class CapabilityTool extends Tool
 
     public function execute(): void
     {
-        $refused = $this->overBudget();
-        [$capability, $args, $error] = $refused === null ? $this->runner->prepare($this->capability->name(), $this->getInputs()) : [null, [], null];
-        if ($refused !== null) {
-            $result = $refused;
-        } elseif ($capability === null || $error !== null) {
+        [$capability, $args, $error] = $this->runner->prepare($this->capability->name(), $this->getInputs());
+        if ($capability === null || $error !== null) {
             $result = ToolResult::error($error ?? 'Unknown capability.');
         } else {
             $outcome = $this->runner->run($capability, $args);
             $result = $outcome->success ? ToolResult::ok($outcome->message, $outcome->data) : ToolResult::error($outcome->message);
         }
 
-        $this->setResult(json_encode($result->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+        $this->setResult($result->toOutput());
     }
 
     private static function describe(Capability $capability): string

@@ -61,4 +61,15 @@ final class ToolResultTest extends TestCase
             'data' => [],
         ], $array);
     }
+
+    public function testItIsRecordedAsTheJsonTheChatReadsAndAFailureCarriesNeuronsErrorFlag(): void
+    {
+        $ok = ToolResult::ok('Done', ['id' => 5])->toOutput();
+        $failed = ToolResult::error('Nope')->toOutput();
+
+        self::assertFalse($ok->isError());
+        self::assertSame(['success' => true, 'message' => 'Done', 'data' => ['id' => 5]], json_decode((string) $ok, true));
+        self::assertTrue($failed->isError());
+        self::assertSame(['success' => false, 'message' => 'Nope', 'data' => []], json_decode((string) $failed, true));
+    }
 }

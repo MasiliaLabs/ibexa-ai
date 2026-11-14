@@ -22,8 +22,6 @@ use Throwable;
  */
 final class ProposeChangesTool extends Tool
 {
-    use CallBudget;
-
     public const MAX_STEPS = 15;
     private const ID = '/^[a-z][a-z0-9_]*$/';
 
@@ -33,7 +31,6 @@ final class ProposeChangesTool extends Tool
     ) {
         $this->setName('propose_changes');
         $this->setDescription(self::description());
-        $this->startBudget();
     }
 
     private static function description(): string
@@ -108,8 +105,7 @@ final class ProposeChangesTool extends Tool
 
     public function execute(): void
     {
-        $result = $this->overBudget() ?? $this->apply($this->getInputs());
-        $this->setResult(json_encode($result->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+        $this->setResult($this->apply($this->getInputs())->toOutput());
     }
 
     /**

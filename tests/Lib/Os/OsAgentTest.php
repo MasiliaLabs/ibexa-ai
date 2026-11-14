@@ -159,4 +159,41 @@ final class OsAgentTest extends TestCase
         self::assertSame([], $this->ran);
         self::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM app_ai_audit'));
     }
+
+    public function testAToolCalledPastItsBudgetIsNotRunAndTheModelIsToldToAnswer(): void
+    {
+        $permissions = $this->createMock(PermissionResolver::class);
+        $permissions->method('hasAccess')->willReturn(true);
+        $permissions->method('getCurrentUserReference')->willReturn(new UserReference(14));
+        $registry = new CapabilityRegistry([$this->capability('content.look', 'Look at a content.', Risk::READ)]);
+        $access = new CapabilityAccess($permissions, []);
+        $runner = new CapabilityRunner($registry, $access, new AuditLog($this->connection), new RunContext(), $permissions, new NullLogger());
+        $tools = (new CapabilityToolPool($registry, $access, $runner))->forCurrentUser();
+
+        // The model keeps calling the same tool, one call per message, one more time than it may.
+        $script = [];
+        for ($call = 1; $call <= OsAgent::CALL_BUDGET + 1; ++$call) {
+            $script[] = new ToolCallMessage('Again.', [new ToolCall('content__look', 'call-' . $call, ['id' => $call])]);
+        }
+        $script[] = new AssistantMessage('Here is what I found.');
+        $agent = $this->agent(new FakeAIProvider(...$script), []);
+        // The read tool is among the ones the agent starts with.
+        $agent->addTool($tools);
+        $agent->setThreadId('thread-aaaa-0003');
+
+        $state = $agent->chat(new UserMessage('Look at everything'));
+
+        self::assertSame(array_fill(0, OsAgent::CALL_BUDGET, 'content.look'), $this->ran, 'the call over the budget was not run');
+        self::assertSame('Here is what I found.', $state->getResponse()?->message()->getContent(), 'the turn went on to an answer, no exception');
+        $answers = [];
+        foreach ($state->getSteps() as $step) {
+            if ($step instanceof \NeuronAI\Chat\Messages\ToolResultMessage) {
+                foreach ($step->getToolCalls() as $result) {
+                    $answers[] = (string) $result->getResult();
+                }
+            }
+        }
+        self::assertStringContainsString('Call budget reached', end($answers));
+        self::assertStringContainsString('"success":false', end($answers), 'in the answer the chat reads');
+    }
 }

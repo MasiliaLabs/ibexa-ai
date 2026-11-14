@@ -306,19 +306,4 @@ final class OsToolsTest extends TestCase
         self::assertSame(500, mb_strlen($row['message']));
         self::assertSame('thread-aaaa-0001', $row['thread_id']);
     }
-
-    public function testACallPastTheBudgetIsRefusedWithAWordToTheModelNotRunNorThrown(): void
-    {
-        $tool = $this->tool($this->capability('content.look', Risk::READ));
-        $answers = [];
-        for ($call = 1; $call <= CapabilityTool::CALL_BUDGET + 2; ++$call) {
-            [, $answers[$call]] = $this->call(clone $tool, ['id' => $call]);
-        }
-
-        self::assertTrue($answers[CapabilityTool::CALL_BUDGET]['success']);
-        self::assertFalse($answers[CapabilityTool::CALL_BUDGET + 1]['success']);
-        self::assertStringContainsString('Call budget reached', $answers[CapabilityTool::CALL_BUDGET + 1]['message']);
-        self::assertCount(CapabilityTool::CALL_BUDGET, $this->ran, 'what is over the budget does not run');
-        self::assertSame(CapabilityTool::CALL_BUDGET + 4, $tool->getMaxRuns(), "Neuron's own limit stays above, against a loop");
-    }
 }

@@ -6,6 +6,9 @@ namespace Masilia\IbexaAi\Os\Neuron;
 
 use Masilia\IbexaAi\Chat\PageContext;
 use NeuronAI\Agent\Agent;
+use NeuronAI\Exceptions\ToolRunsExceededException;
+use NeuronAI\Tools\ToolCall;
+use NeuronAI\Tools\ToolOutput;
 use NeuronAI\Agent\Middleware\Summarization;
 use NeuronAI\Agent\Middleware\ToolSearchMiddleware;
 use NeuronAI\Chat\History\MessageStoreInterface;
@@ -26,6 +29,12 @@ class OsAgent extends Agent
     public const MESSAGES_TABLE = 'app_ai_agent_messages';
     public const WORKFLOW_TABLE = 'app_ai_agent_workflow';
 
+    /**
+     * How many times a tool may be called in a turn. Past it the tool is not run: the model is told to answer with what it has
+     * (Neuron counts, and gives the exception to the tool error handler, which turns it into this answer).
+     */
+    public const CALL_BUDGET = 8;
+
     /** How many tools one tool_search brings. */
     public const SEARCH_RESULTS = 8;
 
@@ -45,6 +54,15 @@ class OsAgent extends Agent
         private readonly string $systemPrompt = '',
     ) {
         parent::__construct();
+        $this->toolMaxRuns(self::CALL_BUDGET);
+        $this->toolErrorHandler(static fn (\Throwable $failure, ToolCall $call): ?ToolOutput => $failure instanceof ToolRunsExceededException
+            ? ToolResult::error(sprintf(
+                'Call budget reached: %s was already called %d times in this turn and was NOT run again. '
+                . 'Do not call it again. Answer the user now with what you found, and say plainly what you could not check.',
+                $call->getName(),
+                self::CALL_BUDGET,
+            ))->toOutput()
+            : null);
     }
 
     /**
