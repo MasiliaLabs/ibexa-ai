@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Os\Neuron;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Masilia\Contracts\IbexaAi\Observability\UsageRecorder;
 use Masilia\Contracts\IbexaAi\Provider\ChatProviders;
 use NeuronAI\Chat\History\SQLMessageStore;
 use PDO;
@@ -23,6 +24,7 @@ readonly class OsAgentFactory
 
     public function __construct(
         private ChatProviders $chat,
+        private UsageRecorder $usage,
         private EntityManagerInterface $entities,
         private CapabilityToolPool $pool,
         private ProposeChangesTool $proposeChanges,
@@ -45,7 +47,8 @@ readonly class OsAgentFactory
 
     public function create(string $siteaccess, string $threadId): OsAgent
     {
-        $llm = $this->chat->forSiteaccess($siteaccess)->provider;
+        $connection = $this->chat->forSiteaccess($siteaccess);
+        $llm = $connection->provider;
 
         // What the user may use, as tools: the few that look around are there from the start, the rest is found with tool_search.
         $always = [$this->proposeChanges];
@@ -59,6 +62,8 @@ readonly class OsAgentFactory
         }
 
         $agent = new OsAgent($llm, $always, $searchable, $this->pdo(), OsSystemPrompt::get($this->skills));
+
+        $this->usage->attach($agent, $connection, $siteaccess);
 
         return $agent->setThreadId($threadId);
     }

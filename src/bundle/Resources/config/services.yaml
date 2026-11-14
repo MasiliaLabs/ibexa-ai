@@ -82,8 +82,11 @@ services:
 
     Masilia\IbexaAi\Observability\:
         resource: '../../../lib/Observability/'
+        exclude: '../../../lib/Observability/ModelCallClock.php'
     Masilia\Contracts\IbexaAi\Observability\RequestLogger:
         alias: Masilia\IbexaAi\Observability\DoctrineRequestLogger
+    Masilia\Contracts\IbexaAi\Observability\UsageRecorder:
+        alias: Masilia\IbexaAi\Observability\ModelCallRecorder
 
     Masilia\Bundle\IbexaAi\Http\:
         resource: '../../Http/'
