@@ -1,10 +1,10 @@
 services:
     _instanceof:
-        Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerInterface:
-            tags: ['masilia.ibexa_ai.field_value_transformer']
+        Masilia\Bundle\IbexaAi\Ibexa\Field\Input\FieldInput:
+            tags: ['masilia.ibexa_ai.field_input']
         Masilia\Contracts\IbexaAi\Os\Capability:
             tags: ['masilia.ibexa_ai.capability']
-        Masilia\Bundle\IbexaAi\Field\FieldValueStringifierInterface:
+        Masilia\Bundle\IbexaAi\Ibexa\Field\Text\FieldValueStringifier:
             tags: ['masilia.ibexa_ai.stringifier']
 
     _defaults:
@@ -19,7 +19,12 @@ services:
 
     Masilia\Bundle\IbexaAi\Ibexa\:
         resource: '../../Ibexa/'
-        exclude: '../../Ibexa/ContentContext.php'
+        exclude:
+            - '../../Ibexa/ContentContext.php'
+            - '../../Ibexa/Field/FieldTypes.php'
+            - '../../Ibexa/Field/Text/FieldStringValue.php'
+            - '../../Ibexa/Field/Input/FieldInputs.php'
+            - '../../Ibexa/Field/Text/FieldTexts.php'
 
     Masilia\Bundle\IbexaAi\Repository\:
         resource: '../../Repository/'
@@ -31,15 +36,13 @@ services:
     Masilia\Contracts\IbexaAi\Image\ImageGenerator:
         alias: Masilia\Bundle\IbexaAi\Image\ProviderImageGenerator
     Masilia\Contracts\IbexaAi\Content\ContentWriter:
-        alias: Masilia\Bundle\IbexaAi\Content\Write\RepositoryContentWriter
+        alias: Masilia\Bundle\IbexaAi\Ibexa\Content\Write\RepositoryContentWriter
     Masilia\Contracts\IbexaAi\Content\ContentTypeSchemas:
-        alias: Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas
+        alias: Masilia\Bundle\IbexaAi\Ibexa\Schema\ContentTypeSchemas
     Masilia\Contracts\IbexaAi\Content\Languages:
-        alias: Masilia\Bundle\IbexaAi\Content\EnabledLanguages
+        alias: Masilia\Bundle\IbexaAi\Ibexa\Content\EnabledLanguages
     Masilia\Contracts\IbexaAi\Site\SiteLocations:
-        alias: Masilia\Bundle\IbexaAi\Agent\Tool\SiteaccessLocationResolver
-    Masilia\Bundle\IbexaAi\Content\:
-        resource: '../../Content/'
+        alias: Masilia\Bundle\IbexaAi\Ibexa\Site\SiteaccessLocationResolver
     Masilia\Bundle\IbexaAi\Provider\:
         resource: '../../Provider/'
 
@@ -94,14 +97,14 @@ services:
             - { name: kernel.event_listener, event: kernel.exception, method: onTerminate }
             - { name: kernel.event_listener, event: console.terminate, method: onTerminate }
 
-    Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemaSource:
-        alias: Masilia\Bundle\IbexaAi\Agent\Block\ContentTypeSchemas
+    Masilia\Bundle\IbexaAi\Ibexa\Schema\ContentTypeSchemaSource:
+        alias: Masilia\Bundle\IbexaAi\Ibexa\Schema\ContentTypeSchemas
 
-    Masilia\Bundle\IbexaAi\Agent\Tool\FieldValueTransformerRegistry:
+    Masilia\Bundle\IbexaAi\Ibexa\Field\Input\FieldInputs:
         arguments:
-            $transformers: !tagged_iterator masilia.ibexa_ai.field_value_transformer
+            $transformers: !tagged_iterator masilia.ibexa_ai.field_input
 
-    Masilia\Bundle\IbexaAi\Field\FieldValueStringifierRegistry:
+    Masilia\Bundle\IbexaAi\Ibexa\Field\Text\FieldTexts:
         arguments:
             $stringifiers: !tagged_iterator masilia.ibexa_ai.stringifier
 
@@ -111,23 +114,6 @@ services:
             - '../../Chat/RunRefused.php'
             - '../../Chat/StartedRun.php'
             - '../../Chat/DTO/'
-
-    Masilia\Bundle\IbexaAi\Agent\:
-        resource: '../../Agent/'
-        exclude:
-            - '../../Agent/Neuron/'
-            - '../../Agent/Tool/ToolResult.php'
-            - '../../Agent/Tool/FieldValueTransformerRegistry.php'
-
-    Masilia\Bundle\IbexaAi\Field\:
-        resource: '../../Field/'
-        exclude:
-            - '../../Field/FieldStringValue.php'
-            - '../../Field/FieldValueStringifierRegistry.php'
-            - '../../Field/Stringifier/'
-
-    Masilia\Bundle\IbexaAi\Field\Stringifier\:
-        resource: '../../Field/Stringifier/'
 
     Masilia\Bundle\IbexaAi\Os\Neuron\OsAgentFactory:
         public: true

@@ -16,13 +16,13 @@ parameters:
 			message: '#^Ternary operator condition is always true\.$#'
 			identifier: ternary.alwaysTrue
 			count: 1
-			path: src/bundle/Agent/Tool/FieldValueTransformer/MatrixTransformer.php
+			path: src/bundle/Ibexa/Field/Input/MatrixInput.php
 
 		-
 			message: '#^Instanceof between string and Ibexa\\FieldTypeRichText\\FieldType\\RichText\\Value will always evaluate to false\.$#'
 			identifier: instanceof.alwaysFalse
 			count: 1
-			path: src/bundle/Agent/Tool/FieldValueTransformer/RichTextTransformer.php
+			path: src/bundle/Ibexa/Field/Input/RichTextInput.php
 
 		-
 			message: '#^Anonymous function has an unused use \$stamp\.$#'
@@ -70,31 +70,31 @@ parameters:
 			message: '#^Call to function property_exists\(\) with Ibexa\\Core\\FieldType\\Image\\Value and ''alternativeText'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
-			path: src/bundle/Field/Stringifier/FileStringifier.php
+			path: src/bundle/Ibexa/Field/Text/FileStringifier.php
 
 		-
 			message: '#^Call to function property_exists\(\) with Ibexa\\Core\\FieldType\\Image\\Value and ''fileName'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
-			path: src/bundle/Field/Stringifier/FileStringifier.php
+			path: src/bundle/Ibexa/Field/Text/FileStringifier.php
 
 		-
 			message: '#^Strict comparison using \=\=\= between Ibexa\\Core\\FieldType\\Image\\Value and null will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1
-			path: src/bundle/Field/Stringifier/FileStringifier.php
+			path: src/bundle/Ibexa/Field/Text/FileStringifier.php
 
 		-
 			message: '#^Instanceof between Ibexa\\FieldTypeMatrix\\FieldType\\Value and Ibexa\\FieldTypeMatrix\\FieldType\\Value will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1
-			path: src/bundle/Field/Stringifier/MatrixStringifier.php
+			path: src/bundle/Ibexa/Field/Text/MatrixStringifier.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>textContent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: src/bundle/Field/Stringifier/RichTextStringifier.php
+			path: src/bundle/Ibexa/Field/Text/RichTextStringifier.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Tree;
 
-use Masilia\Bundle\IbexaAi\Content\Read\LocationBrowser;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Read\LocationBrowser;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;

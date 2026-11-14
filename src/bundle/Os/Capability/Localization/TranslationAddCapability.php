@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Localization;
 
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Agent\Tool\ContentUpdater;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\ContentUpdater;
 use Masilia\Bundle\IbexaAi\Os\Capability\RepositoryCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;

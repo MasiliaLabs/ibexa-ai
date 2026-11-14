@@ -7,7 +7,7 @@ namespace Masilia\IbexaAi\Tests\Bundle\Os;
 use Ibexa\Contracts\Core\Repository\ContentService;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Core\Base\Exceptions\NotFoundException;
-use Masilia\Bundle\IbexaAi\Content\Trash\ContentTrasher;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\ContentTrasher;
 use Masilia\Bundle\IbexaAi\Os\Capability\Content\TrashCapability;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 use PHPUnit\Framework\TestCase;

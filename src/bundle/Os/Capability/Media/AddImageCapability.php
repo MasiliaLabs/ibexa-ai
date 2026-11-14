@@ -7,7 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Os\Capability\Media;
 use Ibexa\Core\FieldType\Image\Value as ImageValue;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Masilia\Bundle\IbexaAi\Chat\Attachment\AttachmentStore;
-use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Contracts\IbexaAi\Content\Languages;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;

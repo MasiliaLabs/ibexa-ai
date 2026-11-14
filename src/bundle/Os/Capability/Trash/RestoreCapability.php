@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Trash;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\TrashRestorer;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\TrashRestorer;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Contracts\IbexaAi\Content\Languages;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;

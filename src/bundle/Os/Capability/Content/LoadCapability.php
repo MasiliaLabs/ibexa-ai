@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
-use Masilia\Bundle\IbexaAi\Content\Read\ContentLoader;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Read\ContentLoader;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Risk;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\IbexaAi\Tests\Bundle\Os;
 
-use Masilia\Bundle\IbexaAi\Agent\Tool\TrashRestorer;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\TrashRestorer;
 use Masilia\Bundle\IbexaAi\Os\Capability\Trash\RestoreCapability;
 use Masilia\Contracts\IbexaAi\Os\Risk;
 use PHPUnit\Framework\TestCase;

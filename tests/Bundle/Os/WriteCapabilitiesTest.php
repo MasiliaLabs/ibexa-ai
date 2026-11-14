@@ -13,7 +13,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo;
 use Ibexa\Contracts\Core\Repository\Values\Content\Location;
 use Ibexa\Contracts\Core\Repository\Values\Content\VersionInfo;
 use Ibexa\Core\FieldType\Image\Value as ImageValue;
-use Masilia\Bundle\IbexaAi\Content\Write\WriteChecks;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\Bundle\IbexaAi\Os\Capability\Content\CreateCapability;
 use Masilia\Bundle\IbexaAi\Os\Capability\Content\CreateFolderCapability;
 use Masilia\Bundle\IbexaAi\Os\Capability\Content\UpdateCapability;
@@ -21,7 +21,7 @@ use Masilia\Bundle\IbexaAi\Os\Capability\Media\AddImageCapability;
 use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Contracts\IbexaAi\Content\Languages;
 use Masilia\Contracts\IbexaAi\Content\PublishedContent;
-use Masilia\IbexaAi\Tests\Bundle\Content\WriteFixtures;
+use Masilia\IbexaAi\Tests\Ibexa\Content\WriteFixtures;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -148,8 +148,8 @@ final class WriteCapabilitiesTest extends TestCase
             $this->createBlockCatalog([]),
             $repository,
             $this->createMock(\Masilia\Contracts\IbexaAi\Site\SiteLocations::class),
-            $this->createMock(\Masilia\Bundle\IbexaAi\Agent\Tool\SiteLanguages::class),
-            new \Masilia\Bundle\IbexaAi\Content\EnabledLanguages($this->createMock(LanguageService::class)),
+            $this->createMock(\Masilia\Bundle\IbexaAi\Ibexa\Site\SiteLanguages::class),
+            new \Masilia\Bundle\IbexaAi\Ibexa\Content\EnabledLanguages($this->createMock(LanguageService::class)),
             $this->emptyStore(),
             $this->createMock(PermissionResolver::class),
         );

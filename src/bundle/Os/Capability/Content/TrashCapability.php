@@ -6,7 +6,7 @@ namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 
 use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
 use Ibexa\Contracts\Core\Repository\Repository;
-use Masilia\Bundle\IbexaAi\Content\Trash\ContentTrasher;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\ContentTrasher;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
