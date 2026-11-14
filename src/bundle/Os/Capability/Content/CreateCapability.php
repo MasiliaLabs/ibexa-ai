@@ -50,6 +50,7 @@ final class CreateCapability extends AbstractCapability
                 'fields' => ['type' => 'object', 'description' => 'Field identifier => value'],
                 'siteaccess' => ['type' => 'string', 'description' => 'The site the content is for: it gives the language'],
                 'language' => ['type' => 'string', 'description' => 'Language code or primary code ("fr", "fre-FR"), one of the site\'s'],
+                'publish' => ['type' => 'boolean', 'description' => 'false to save a draft instead of publishing ("Save draft" of the editing form); publish it later with content.publish. Default true.'],
             ],
         ];
     }
@@ -80,7 +81,8 @@ final class CreateCapability extends AbstractCapability
             return 'content.create requires non-empty fields.';
         }
 
-        return $this->checks->contentType($type, $fields)
+        return $this->checks->notAUserType($type)
+            ?? $this->checks->contentType($type, $fields)
             ?? $this->checks->parent((int) $arguments['parent_location_id'], $arguments['siteaccess'] ?? null)
             ?? $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null)[1];
     }
@@ -95,21 +97,31 @@ final class CreateCapability extends AbstractCapability
             isset($arguments['siteaccess']) ? ['Site', (string) $arguments['siteaccess']] : null,
             isset($arguments['language']) ? ['Language', (string) $arguments['language']] : null,
             ['Fields', implode(', ', array_slice(array_map('strval', $fields), 0, 14))],
-        ]));
+        ]), $this->publishes($arguments) ? [] : ['Saved as a draft: it is not shown until it is published.']);
     }
 
     public function execute(array $arguments): CapabilityResult
     {
         [$language] = $this->checks->language($arguments['language'] ?? null, $arguments['siteaccess'] ?? null);
         try {
-            $published = $this->writer->create((string) $arguments['content_type'], [(int) $arguments['parent_location_id']], (array) $arguments['fields'], $language ?? $this->languages->default());
+            $published = $this->writer->create((string) $arguments['content_type'], [(int) $arguments['parent_location_id']], (array) $arguments['fields'], $language ?? $this->languages->default(), $this->publishes($arguments));
         } catch (Throwable $e) {
             return CapabilityResult::error(sprintf('Failed to create content: %s', $e->getMessage()));
         }
 
-        return CapabilityResult::ok(sprintf('Created %s (ID: %d)', $arguments['content_type'], $published->content->getId()), [
-            'content_id' => $published->content->getId(),
-            'location_id' => $published->location?->getId(),
-        ]);
+        $draft = !$this->publishes($arguments);
+
+        return CapabilityResult::ok(
+            sprintf('%s %s (ID: %d)', $draft ? 'Saved a draft of' : 'Created', $arguments['content_type'], $published->content->getId()) . ($draft ? ': publish it with content.publish' : ''),
+            ['content_id' => $published->content->getId(), 'location_id' => $published->location?->getId()] + ($draft ? ['version_no' => $published->content->getVersionInfo()->getVersionNo()] : []),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     */
+    private function publishes(array $arguments): bool
+    {
+        return (bool) ($arguments['publish'] ?? true);
     }
 }

@@ -33,7 +33,7 @@ final readonly class RepositoryContentWriter implements ContentWriter
     ) {
     }
 
-    public function create(string $contentType, array $parentLocationIds, array $fields, string $language): PublishedContent
+    public function create(string $contentType, array $parentLocationIds, array $fields, string $language, bool $publish = true): PublishedContent
     {
         try {
             $type = $this->repository->getContentTypeService()->loadContentTypeByIdentifier($contentType);
@@ -50,7 +50,7 @@ final readonly class RepositoryContentWriter implements ContentWriter
         $this->repository->beginTransaction();
         try {
             $draft = $contents->createContent($struct, $parents);
-            $published = $contents->publishVersion($draft->getVersionInfo());
+            $published = $publish ? $contents->publishVersion($draft->getVersionInfo()) : $draft;
             $this->repository->commit();
         } catch (BadStateException|ContentFieldValidationException|ContentValidationException|IbexaInvalidArgumentException|UnauthorizedException $e) {
             $this->repository->rollback();
@@ -62,10 +62,10 @@ final readonly class RepositoryContentWriter implements ContentWriter
             throw $e;
         }
 
-        return new PublishedContent($published, $published->getContentInfo()->getMainLocation());
+        return new PublishedContent($published, $publish ? $published->getContentInfo()->getMainLocation() : null);
     }
 
-    public function update(int $contentId, array $fields, string $language): Content
+    public function update(int $contentId, array $fields, string $language, bool $publish = true, ?string $baseLanguage = null): Content
     {
         $contents = $this->repository->getContentService();
         $content = $contents->loadContent($contentId);
@@ -73,7 +73,11 @@ final readonly class RepositoryContentWriter implements ContentWriter
 
         $struct = $contents->newContentUpdateStruct();
         $struct->initialLanguageCode = $language;
-        if ($this->fill($struct, $type, $fields, $language) === 0) {
+        $set = $this->fill($struct, $type, $fields, $language);
+        if ($baseLanguage !== null && $baseLanguage !== $language) {
+            $set += $this->startFrom($struct, $contents->loadContent($contentId, [$baseLanguage]), $fields, $language, $baseLanguage);
+        }
+        if ($set === 0) {
             throw new \InvalidArgumentException(sprintf(
                 'No fields matched the provided attributes for content %d. Available fields: %s',
                 $contentId,
@@ -85,7 +89,7 @@ final readonly class RepositoryContentWriter implements ContentWriter
         try {
             $draft = $contents->createContentDraft($content->getContentInfo());
             $contents->updateContent($draft->getVersionInfo(), $struct);
-            $published = $contents->publishVersion($draft->getVersionInfo());
+            $published = $publish ? $contents->publishVersion($draft->getVersionInfo()) : $contents->loadContent($contentId, null, $draft->getVersionInfo()->getVersionNo());
             $this->repository->commit();
         } catch (Throwable $e) {
             $this->repository->rollback();
@@ -94,6 +98,27 @@ final readonly class RepositoryContentWriter implements ContentWriter
         }
 
         return $published;
+    }
+
+    /**
+     * A new translation starts from the translatable fields of another language, as the translation form of the admin does: what
+     * the model gave replaces them, and what it left out keeps the base text for the user to review.
+     *
+     * @param array<string, mixed> $given
+     *
+     * @return int How many fields started from the base language
+     */
+    private function startFrom(ContentUpdateStruct $struct, Content $base, array $given, string $language, string $baseLanguage): int
+    {
+        $started = 0;
+        foreach ($base->getContentType()->getFieldDefinitions() as $definition) {
+            if ($definition->isTranslatable() && !array_key_exists($definition->getIdentifier(), $given)) {
+                $struct->setField($definition->getIdentifier(), $base->getFieldValue($definition->getIdentifier(), $baseLanguage), $language);
+                ++$started;
+            }
+        }
+
+        return $started;
     }
 
     /**

@@ -157,8 +157,32 @@ final class WriteChecksTest extends TestCase
             new EnabledLanguages($this->createMock(LanguageService::class)),
             $this->emptyStore(),
             $this->createMock(PermissionResolver::class),
+            $this->config(),
         );
 
         self::assertSame('The content 9 does not exist.', $checks->content(9));
+    }
+
+    public function testUsersAreNotCreatedNorChangedAsContentsBecauseTheAdminHasAUserFormForThem(): void
+    {
+        $checks = $this->checks([]);
+
+        self::assertStringContainsString('access.user.create', (string) $checks->notAUserType('user'));
+        self::assertNull($checks->notAUserType('article'));
+    }
+
+    public function testAContentThatIsAUserIsSentToTheUserCapability(): void
+    {
+        $contents = $this->createMock(\Ibexa\Contracts\Core\Repository\ContentService::class);
+        $contents->method('loadContent')->willReturnCallback(fn (int $id) => $id === 5 ? $this->createMock(\Ibexa\Contracts\Core\Repository\Values\Content\Content::class) : throw new NotFoundException('content', (string) $id));
+        $users = $this->createMock(\Ibexa\Contracts\Core\Repository\UserService::class);
+        $users->method('isUser')->willReturn(true);
+        $repository = $this->createMock(Repository::class);
+        $repository->method('getContentService')->willReturn($contents);
+        $repository->method('getUserService')->willReturn($users);
+        $checks = new WriteChecks($this->createBlockCatalog([]), $repository, $this->createMock(SiteLocations::class), $this->createMock(SiteLanguages::class), new EnabledLanguages($this->createMock(LanguageService::class)), $this->emptyStore(), $this->createMock(PermissionResolver::class), $this->config());
+
+        self::assertSame('Content 5 is a user: use access.user.update (the admin has a user form for it), not a content change.', $checks->notAUser(5, 'access.user.update'));
+        self::assertNull($checks->notAUser(6, 'access.user.update'), 'a content that is not there is for the other checks to say');
     }
 }

@@ -44,11 +44,12 @@ final class TranslationAddCapability extends RepositoryCapability
     {
         return [
             'type' => 'object',
-            'required' => ['content_id', 'language_code', 'fields'],
+            'required' => ['content_id', 'language_code'],
             'properties' => [
                 'content_id' => ['type' => 'integer', 'minimum' => 1],
                 'language_code' => ['type' => 'string', 'minLength' => 2, 'maxLength' => 10, 'description' => 'Language code, e.g. fre-FR'],
                 'fields' => ['type' => 'object', 'description' => 'Field identifier => value, in the new language'],
+                'base_language_code' => ['type' => 'string', 'minLength' => 2, 'maxLength' => 10, 'description' => 'A language of the content the new translation starts from, as in the admin: the translatable fields you do not give start with its text, to be translated later'],
             ],
         ];
     }
@@ -70,8 +71,8 @@ final class TranslationAddCapability extends RepositoryCapability
 
     public function validate(array $arguments): ?string
     {
-        if ((array) $arguments['fields'] === []) {
-            return 'fields is empty: give the values to write in the new language.';
+        if ((array) ($arguments['fields'] ?? []) === [] && !isset($arguments['base_language_code'])) {
+            return 'fields is empty: give the values to write in the new language, or a base_language_code to start from.';
         }
         try {
             $content = $this->repository->getContentService()->loadContent((int) $arguments['content_id']);
@@ -85,6 +86,9 @@ final class TranslationAddCapability extends RepositoryCapability
         }
         if (!$language->isEnabled()) {
             return sprintf('The language "%s" is disabled: enable it with localization.language.update.', $arguments['language_code']);
+        }
+        if (isset($arguments['base_language_code']) && !in_array((string) $arguments['base_language_code'], $content->getVersionInfo()->languageCodes, true)) {
+            return sprintf('The content has no "%s" translation to start from (it has: %s).', $arguments['base_language_code'], implode(', ', $content->getVersionInfo()->languageCodes));
         }
         if (in_array($arguments['language_code'], $content->getVersionInfo()->languageCodes, true)) {
             return sprintf('The content already has a "%s" translation: change it with content.update.', $arguments['language_code']);
@@ -106,15 +110,15 @@ final class TranslationAddCapability extends RepositoryCapability
             [
                 ['Content', $name !== '' ? sprintf('%s (content %d)', $name, (int) $arguments['content_id']) : (string) (int) $arguments['content_id']],
                 ['Language', (string) $arguments['language_code']],
-                ['Fields', implode(', ', array_map('strval', array_slice(array_keys((array) $arguments['fields']), 0, 14)))],
-            ],
+                ['Fields', implode(', ', array_map('strval', array_slice(array_keys((array) ($arguments['fields'] ?? [])), 0, 14)))],
+            ] + (isset($arguments['base_language_code']) ? [['Starts from', (string) $arguments['base_language_code']]] : []),
             ['A new version is published.'],
         );
     }
 
     public function execute(array $arguments): CapabilityResult
     {
-        $content = $this->writer->update((int) $arguments['content_id'], (array) $arguments['fields'], (string) $arguments['language_code']);
+        $content = $this->writer->update((int) $arguments['content_id'], (array) ($arguments['fields'] ?? []), (string) $arguments['language_code'], true, isset($arguments['base_language_code']) ? (string) $arguments['base_language_code'] : null);
 
         return CapabilityResult::ok(
             sprintf('"%s" now has a "%s" translation', $content->getName(), $arguments['language_code']),

@@ -150,4 +150,66 @@ final class RepositoryContentWriterTest extends TestCase
 
         $this->writer()->update(7, ['title' => ''], 'eng-GB');
     }
+
+    public function testADraftIsSavedWithoutBeingPublishedAndHasNoLocationYet(): void
+    {
+        $this->contents->method('newContentCreateStruct')->willReturn(new ContentCreateStruct(['mainLanguageCode' => 'eng-GB', 'fields' => []]));
+        $this->contents->method('createContent')->willReturn($this->published());
+        $this->contents->expects(self::never())->method('publishVersion');
+        $this->repository->expects(self::once())->method('commit');
+
+        $saved = $this->writer()->create('article', [2], ['title' => 'Later'], 'eng-GB', false);
+
+        self::assertNull($saved->location, 'a draft has no location until it is published');
+    }
+
+    public function testAnUpdateCanLeaveItsChangesInADraft(): void
+    {
+        $current = $this->published();
+        $current->method('getContentType')->willReturn($this->type);
+        $this->contents->method('loadContent')->willReturn($current);
+        $this->contents->method('newContentUpdateStruct')->willReturn(new ContentUpdateStruct(['initialLanguageCode' => 'eng-GB', 'fields' => []]));
+        $this->contents->method('createContentDraft')->willReturn($this->published());
+        $this->contents->expects(self::once())->method('updateContent');
+        $this->contents->expects(self::never())->method('publishVersion');
+
+        $this->writer()->update(7, ['title' => 'Later'], 'eng-GB', false);
+    }
+
+    public function testANewTranslationStartsFromTheTranslatableFieldsOfTheBaseLanguageAndWhatIsGivenReplacesThem(): void
+    {
+        $title = $this->field('title', true);
+        $summary = $this->field('summary', true);
+        $code = $this->field('code', false);
+        $type = $this->createMock(ContentType::class);
+        $type->method('getFieldDefinitions')->willReturn(new \Ibexa\Core\Repository\Values\ContentType\FieldDefinitionCollection([$title, $summary, $code]));
+        $base = $this->published();
+        $base->method('getContentType')->willReturn($type);
+        $base->method('getFieldValue')->willReturnCallback(static fn (string $field, ?string $language): \Ibexa\Core\FieldType\TextLine\Value => new \Ibexa\Core\FieldType\TextLine\Value($field . ' in ' . $language));
+        $current = $this->published();
+        $current->method('getContentType')->willReturn($type);
+        $this->contents->method('loadContent')->willReturnCallback(static fn (int $id, ?array $languages = null) => $languages === ['eng-GB'] ? $base : $current);
+        $struct = new ContentUpdateStruct(['initialLanguageCode' => 'fre-FR', 'fields' => []]);
+        $this->contents->method('newContentUpdateStruct')->willReturn($struct);
+        $this->contents->method('createContentDraft')->willReturn($this->published());
+        $this->contents->method('publishVersion')->willReturn($this->published());
+
+        $this->writer()->update(7, ['title' => 'Bonjour'], 'fre-FR', true, 'eng-GB');
+
+        $values = [];
+        foreach ($struct->fields as $field) {
+            $values[$field->fieldDefIdentifier] = is_object($field->value) ? (string) $field->value : $field->value;
+        }
+        self::assertSame(['title' => 'Bonjour', 'summary' => 'summary in eng-GB'], $values, 'the given field wins, the other translatable one starts from the base, the one that is not translatable is left alone');
+    }
+
+    private function field(string $identifier, bool $translatable): FieldDefinition
+    {
+        $field = $this->createMock(FieldDefinition::class);
+        $field->method('getIdentifier')->willReturn($identifier);
+        $field->method('getFieldTypeIdentifier')->willReturn('ibexa_string');
+        $field->method('isTranslatable')->willReturn($translatable);
+
+        return $field;
+    }
 }

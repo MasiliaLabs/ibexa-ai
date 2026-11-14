@@ -7,7 +7,7 @@ namespace Masilia\Contracts\IbexaAi\Content;
 use Ibexa\Contracts\Core\Repository\Values\Content\Content;
 use Ibexa\Contracts\Core\Repository\Values\Content\Location;
 
-/** A content that was just created and published, and its main location (null for a content created without one). */
+/** A content that was just created (published, or a draft), and its main location (null for a draft or a content created without one). */
 final readonly class PublishedContent
 {
     public function __construct(

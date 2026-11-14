@@ -7,6 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Os\Capability\Content;
 use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\ContentTrasher;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\Bundle\IbexaAi\Ibexa\Rules\LocationRules;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
@@ -21,6 +22,7 @@ final class TrashCapability extends AbstractCapability
         private readonly Repository $repository,
         private readonly ContentTrasher $trasher,
         private readonly LocationRules $rules,
+        private readonly WriteChecks $checks,
     ) {
     }
 
@@ -70,6 +72,9 @@ final class TrashCapability extends AbstractCapability
         } catch (NotFoundException) {
             return sprintf('The content %d does not exist.', (int) $arguments['content_id']);
         }
+        if (($problem = $this->checks->notAUser((int) $arguments['content_id'], 'access.user.delete')) !== null) {
+            return $problem;
+        }
         $mainLocationId = $info->getMainLocationId();
         if ($mainLocationId !== null && $this->rules->isRoot($this->repository->getLocationService()->loadLocation($mainLocationId))) {
             return 'A root location cannot be trashed.';
@@ -81,6 +86,20 @@ final class TrashCapability extends AbstractCapability
     public function preview(array $arguments): Preview
     {
         $notes = ['Nothing is deleted: trash.restore brings it back.'];
+        try {
+            $warnings = array_merge(['children' => 0, 'reverse_relations' => 0, 'drafts' => 0], $this->trasher->warnings((int) $arguments['content_id']));
+        } catch (Throwable) {
+            $warnings = ['children' => 0, 'reverse_relations' => 0, 'drafts' => 0];
+        }
+        if ($warnings['children'] > 0) {
+            $notes[] = sprintf('%d item(s) directly below it go to the trash with it (and what is under them).', $warnings['children']);
+        }
+        if ($warnings['reverse_relations'] > 0) {
+            $notes[] = sprintf('%d content(s) point at it: they are unlinked from it first, and get a new version.', $warnings['reverse_relations']);
+        }
+        if ($warnings['drafts'] > 0) {
+            $notes[] = sprintf('Its %d draft(s) are trashed with it.', $warnings['drafts']);
+        }
         try {
             $assets = $this->trasher->uniqueAssets((int) $arguments['content_id']);
         } catch (Throwable) {

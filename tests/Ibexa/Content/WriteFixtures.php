@@ -83,7 +83,17 @@ trait WriteFixtures
             new EnabledLanguages($languageService),
             $attachments ?? $this->emptyStore(),
             $permissions,
+            $this->config(),
         );
+    }
+
+    /** The siteaccess configuration: the content types of the users are ["user"], a list, as Ibexa 5 configures them. */
+    private function config(): \Ibexa\Contracts\Core\SiteAccess\ConfigResolverInterface
+    {
+        $config = $this->createMock(\Ibexa\Contracts\Core\SiteAccess\ConfigResolverInterface::class);
+        $config->method('getParameter')->willReturnCallback(static fn (string $name): mixed => $name === 'user_content_type_identifier' ? ['user'] : null);
+
+        return $config;
     }
 
     private function emptyStore(): AttachmentStore

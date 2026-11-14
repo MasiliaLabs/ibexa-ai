@@ -11,6 +11,7 @@ use Ibexa\Contracts\Core\Repository\Values\Content\Location;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Core\Base\Exceptions\NotFoundException;
 use Masilia\Bundle\IbexaAi\Ibexa\Content\Trash\ContentTrasher;
+use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\Bundle\IbexaAi\Ibexa\Rules\LocationRules;
 use Masilia\Bundle\IbexaAi\Os\Capability\Content\TrashCapability;
 use Masilia\Contracts\IbexaAi\Os\Risk;
@@ -18,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 
 final class TrashCapabilityTest extends TestCase
 {
-    private function capability(ContentTrasher $trasher, bool $exists = true, bool $root = false): TrashCapability
+    private function capability(ContentTrasher $trasher, bool $exists = true, bool $root = false, bool $user = false): TrashCapability
     {
         $info = $this->createMock(ContentInfo::class);
         $info->method('getMainLocationId')->willReturn(2000);
@@ -32,7 +33,10 @@ final class TrashCapabilityTest extends TestCase
         $rules = $this->createMock(LocationRules::class);
         $rules->method('isRoot')->willReturn($root);
 
-        return new TrashCapability($repository, $trasher, $rules);
+        $checks = $this->createMock(WriteChecks::class);
+        $checks->method('notAUser')->willReturn($user ? 'Content 1 is a user: use access.user.delete (the admin has a user form for it), not a content change.' : null);
+
+        return new TrashCapability($repository, $trasher, $rules, $checks);
     }
 
     public function testItTrashesTheContentAndSaysWhatWasUnlinked(): void
@@ -105,5 +109,23 @@ final class TrashCapabilityTest extends TestCase
 
         self::assertStringContainsString('stay in the media (Hero image)', implode(' ', $capability->preview(['content_id' => 1])->notes));
         self::assertStringContainsString('go to the trash too: Hero image', implode(' ', $capability->preview(['content_id' => 1, 'with_assets' => true])->notes));
+    }
+
+    public function testAUserIsNotTrashedAsAContent(): void
+    {
+        $capability = $this->capability($this->createMock(ContentTrasher::class), true, false, true);
+
+        self::assertStringContainsString('use access.user.delete', (string) $capability->validate(['content_id' => 1]));
+    }
+
+    public function testThePreviewWarnsAsTheTrashFormOfTheAdminDoes(): void
+    {
+        $trasher = $this->createMock(ContentTrasher::class);
+        $trasher->method('warnings')->willReturn(['children' => 4, 'reverse_relations' => 2, 'drafts' => 1]);
+        $notes = implode("\n", $this->capability($trasher)->preview(['content_id' => 1])->notes);
+
+        self::assertStringContainsString('4 item(s) directly below it go to the trash', $notes);
+        self::assertStringContainsString('2 content(s) point at it', $notes);
+        self::assertStringContainsString('Its 1 draft(s)', $notes);
     }
 }

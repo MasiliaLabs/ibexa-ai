@@ -20,17 +20,22 @@ interface ContentWriter
      * @param list<int>            $parentLocationIds Where the content goes (its first parent is its main location)
      * @param array<string, mixed> $fields            Field identifier => value, as the assistant gives it
      * @param string               $language          The language the content is written in ("fre-FR")
+     * @param bool                 $publish           False to keep it as a draft ("Save draft" of the editing form): it has no location yet
+     *                                                and is published later (see Masilia\Contracts\IbexaAi\Content\PublishedContent)
      *
      * @throws \InvalidArgumentException For a content type that does not exist
      * @throws \RuntimeException         When Ibexa refuses the content (a field value it does not accept, no right to create it…)
      */
-    public function create(string $contentType, array $parentLocationIds, array $fields, string $language): PublishedContent;
+    public function create(string $contentType, array $parentLocationIds, array $fields, string $language, bool $publish = true): PublishedContent;
 
     /**
      * Changes the given fields of a content in one language (adding the translation when the content has none in it) and
      * publishes the new version. The fields not given keep their value.
      *
-     * @param array<string, mixed> $fields Field identifier => value, as the assistant gives it
+     * @param array<string, mixed> $fields       Field identifier => value, as the assistant gives it
+     * @param bool                 $publish      False to leave the changes in a new draft instead of publishing them
+     * @param string|null          $baseLanguage For a new translation: the language its translatable fields start from, as in the
+     *                                           translation form of the admin; what $fields gives replaces it
      */
-    public function update(int $contentId, array $fields, string $language): Content;
+    public function update(int $contentId, array $fields, string $language, bool $publish = true, ?string $baseLanguage = null): Content;
 }

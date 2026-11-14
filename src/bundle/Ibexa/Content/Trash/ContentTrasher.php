@@ -10,6 +10,7 @@ use Ibexa\AdminUi\Specification\Content\ContentHaveUniqueRelation;
 use Ibexa\Contracts\Core\Repository\Values\Content\ContentInfo;
 use Ibexa\Contracts\Core\Repository\Values\Content\Relation;
 use Ibexa\Contracts\Core\Repository\Values\Content\RelationType;
+use Ibexa\Contracts\Core\Repository\Values\Content\VersionInfo;
 use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,6 +52,25 @@ readonly class ContentTrasher
         }
 
         return ['content_id' => $contentId, 'location_id' => $locationId, 'trashed' => true, 'unlinked_from' => $unlinked, 'trashed_assets' => $trashedAssets];
+    }
+
+    /**
+     * What the admin warns about on its trash form: the items directly below that go with it, the contents that point at it, and its
+     * drafts. All three are only counted.
+     *
+     * @return array{children: int, reverse_relations: int, drafts: int}
+     */
+    public function warnings(int $contentId): array
+    {
+        $contents = $this->repository->getContentService();
+        $info = $contents->loadContentInfo($contentId);
+        $mainLocationId = $info->getMainLocationId();
+
+        return [
+            'children' => $mainLocationId !== null ? $this->repository->getLocationService()->getLocationChildCount($this->repository->getLocationService()->loadLocation($mainLocationId)) : 0,
+            'reverse_relations' => $contents->countReverseRelations($info),
+            'drafts' => count($contents->loadVersions($info, VersionInfo::STATUS_DRAFT)),
+        ];
     }
 
     /**

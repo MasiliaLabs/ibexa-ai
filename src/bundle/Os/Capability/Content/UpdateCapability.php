@@ -8,6 +8,7 @@ use Ibexa\Contracts\Core\Repository\Repository;
 use Masilia\Bundle\IbexaAi\Ibexa\Content\Write\WriteChecks;
 use Masilia\Contracts\IbexaAi\Content\ContentWriter;
 use Masilia\Contracts\IbexaAi\Content\Languages;
+use Ibexa\AdminUi\Specification\Content\ContentDraftHasConflict;
 use Masilia\Contracts\IbexaAi\Os\AbstractCapability;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
 use Masilia\Contracts\IbexaAi\Os\Preview;
@@ -51,6 +52,7 @@ final class UpdateCapability extends AbstractCapability
                 'content_id' => ['type' => 'integer', 'minimum' => 1],
                 'fields' => ['type' => 'object', 'description' => 'Field identifier => new value'],
                 'language' => ['type' => 'string', 'description' => 'Language code, e.g. "fre-FR"'],
+                'publish' => ['type' => 'boolean', 'description' => 'false to leave the changes in a new draft ("Save draft"); publish it later with content.publish. Default true.'],
             ],
         ];
     }
@@ -79,17 +81,26 @@ final class UpdateCapability extends AbstractCapability
             $name = '';
         }
 
+        $notes = [(bool) ($arguments['publish'] ?? true) ? 'A new version is published.' : 'The changes are kept in a draft: nothing is shown until it is published.'];
+        if ($this->hasNewerDraft($id, isset($arguments['language']) ? (string) $arguments['language'] : null)) {
+            // The admin asks before it lets two drafts of one language go on at the same time: the one published last wins.
+            $notes[] = 'Another draft of this content exists in this language (see workspace.drafts.list): publishing this change leaves it out of date.';
+        }
+
         return new Preview('Update content', [
             ['Content', $name !== '' ? sprintf('%s (%d)', $name, $id) : (string) $id],
             ['Language', isset($arguments['language']) ? (string) $arguments['language'] : 'its own language'],
             ['Fields', implode(', ', array_map('strval', array_keys((array) $arguments['fields'])))],
-        ], ['A new version is published.']);
+        ], $notes);
     }
 
     public function validate(array $arguments): ?string
     {
         $id = (int) $arguments['content_id'];
         if (($problem = $this->checks->content($id)) !== null) {
+            return $problem;
+        }
+        if (($problem = $this->checks->notAUser($id, 'access.user.update')) !== null) {
             return $problem;
         }
         if (isset($arguments['language']) && $this->languages->resolve((string) $arguments['language']) === null) {
@@ -107,14 +118,28 @@ final class UpdateCapability extends AbstractCapability
             ? $this->languages->resolve((string) $arguments['language'])
             : $this->repository->getContentService()->loadContentInfo($id)->getMainLanguageCode();
         try {
-            $published = $this->writer->update($id, (array) $arguments['fields'], (string) $language);
+            $published = $this->writer->update($id, (array) $arguments['fields'], (string) $language, (bool) ($arguments['publish'] ?? true));
         } catch (Throwable $e) {
             return CapabilityResult::error(sprintf('Update of content %d failed: %s', $id, $e->getMessage()));
         }
 
-        return CapabilityResult::ok(sprintf('Updated content %d', $id), [
+        return CapabilityResult::ok(sprintf('%s content %d', ($arguments['publish'] ?? true) ? 'Updated' : 'Saved a draft of', $id) . (($arguments['publish'] ?? true) ? '' : ': publish it with content.publish'), [
             'content_id' => $published->getId(),
             'version_no' => $published->getVersionInfo()->getVersionNo(),
         ]);
+    }
+
+    /** The admin's ContentDraftHasConflict: a draft newer than the published version, started in the same language. */
+    private function hasNewerDraft(int $contentId, ?string $language): bool
+    {
+        try {
+            $contents = $this->repository->getContentService();
+            $info = $contents->loadContentInfo($contentId);
+            $code = $language !== null ? ($this->languages->resolve($language) ?? $language) : $info->getMainLanguageCode();
+
+            return (new ContentDraftHasConflict($contents, $code))->isSatisfiedBy($info);
+        } catch (Throwable) {
+            return false;
+        }
     }
 }

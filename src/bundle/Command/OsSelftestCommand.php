@@ -139,6 +139,13 @@ final class OsSelftestCommand extends Command
             $step('there is no draft of A to publish yet', 'content.publish', ['content_id' => $a['content_id']], null, null, true);
             $step('start a draft of A', 'content.draft.create', ['content_id' => $a['content_id']], null, 'draft');
             $step('publish the draft of A', 'content.publish', ['content_id' => $a['content_id'], 'version_no' => $answers['draft']['version_no'] ?? 0], static fn (array $d): ?string => ($d['version_no'] ?? 0) === ($answers['draft']['version_no'] ?? -1) ? null : 'another version was published');
+            $step('change A in a draft, not published', 'content.update', ['content_id' => $a['content_id'], 'fields' => ['name' => "Selftest A draft $stamp"], 'publish' => false], null, 'saved');
+            $step('A is still published with its name', 'content.load', ['content_id' => $a['content_id']], static fn (array $d): ?string => ($d['name'] ?? null) === "Selftest A $stamp" ? null : 'the draft was published');
+            $step('publish that draft', 'content.publish', ['content_id' => $a['content_id']], static fn (array $d): ?string => ($d['version_no'] ?? 0) > ($answers['draft']['version_no'] ?? 0) ? null : 'an older version was published');
+            $step('A has its new name', 'content.load', ['content_id' => $a['content_id']], static fn (array $d): ?string => ($d['name'] ?? null) === "Selftest A draft $stamp" ? null : 'the name did not change');
+            // A user is changed and removed with the user capabilities, not as a content (the admin has a user form for it).
+            $step('the administrator is not changed as a content', 'content.update', ['content_id' => 14, 'fields' => ['first_name' => 'x']], null, null, true);
+            $step('the administrator is not trashed as a content', 'content.trash', ['content_id' => 14], null, null, true);
             $step('swap A and B', 'location.swap', ['location_id' => $a['location_id'], 'other_location_id' => $b['location_id']]);
             $step('move the copy under B', 'location.move', ['location_id' => $answers['copy']['location_id'] ?? 0, 'new_parent_location_id' => $b['location_id']]);
             $step('move B under itself is refused', 'location.move', ['location_id' => $b['location_id'], 'new_parent_location_id' => $answers['copy']['location_id'] ?? 0], null, null, true);
@@ -255,7 +262,8 @@ final class OsSelftestCommand extends Command
         $step('delete the group', 'state.group.delete', ['group' => $section]);
 
         $step('add a language', 'localization.language.create', ['language_code' => 'tst-ZZ', 'name' => 'Selftest language']);
-        $step('translate A into it', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => ['name' => 'Selftest translated']]);
+        $step('a translation cannot start from a language the content lacks', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'base_language_code' => 'ara-MA'], null, null, true);
+        $step('translate A into it, starting from its own language', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'base_language_code' => 'eng-GB', 'fields' => ['name' => 'Selftest translated']]);
         $step('A cannot be translated twice into it', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => ['name' => 'Again']], null, null, true);
         $step('an empty translation is refused', 'localization.translation.add', ['content_id' => $contentId, 'language_code' => 'tst-ZZ', 'fields' => new \stdClass()], null, null, true);
         $step('remove the translation', 'localization.translation.remove', ['content_id' => $contentId, 'language_code' => 'tst-ZZ']);

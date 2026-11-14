@@ -7,6 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Ibexa\Content\Write;
 use Ibexa\Contracts\Core\Repository\Exceptions\NotFoundException;
 use Ibexa\Contracts\Core\Repository\Exceptions\UnauthorizedException;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
+use Ibexa\Contracts\Core\SiteAccess\ConfigResolverInterface;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Masilia\Bundle\IbexaAi\Chat\Attachment\AttachmentStore;
 use Masilia\Bundle\IbexaAi\Ibexa\Site\SiteLanguages;
@@ -33,6 +34,7 @@ readonly class WriteChecks
         private Languages $languages,
         private AttachmentStore $attachments,
         private PermissionResolver $permissions,
+        private ConfigResolverInterface $config,
     ) {
     }
 
@@ -130,6 +132,38 @@ readonly class WriteChecks
             implode(', ', $site),
             $requested,
         )];
+    }
+
+    /**
+     * The admin does not create a user with the content form: it has a user form of its own (the access.user.* capabilities, in the
+     * "access" domain, which is off until the project turns it on).
+     */
+    public function notAUserType(string $identifier): ?string
+    {
+        // Ibexa 5 configures a list of content types for the users (['user']).
+        if (!in_array($identifier, array_map('strval', (array) $this->config->getParameter('user_content_type_identifier')), true)) {
+            return null;
+        }
+
+        return sprintf('"%s" is the content type of the users: they are created with access.user.create (the admin has a user form for it), not as a content.', $identifier);
+    }
+
+    /**
+     * Nor does it change or remove a user as a content: users are changed with access.user.update and removed with access.user.delete.
+     *
+     * @param string $instead The capability to use, e.g. "access.user.update"
+     */
+    public function notAUser(int $contentId, string $instead): ?string
+    {
+        try {
+            $content = $this->repository->getContentService()->loadContent($contentId);
+        } catch (NotFoundException) {
+            return null;
+        }
+
+        return $this->repository->getUserService()->isUser($content)
+            ? sprintf('Content %d is a user: use %s (the admin has a user form for it), not a content change.', $contentId, $instead)
+            : null;
     }
 
     /** The content exists. */

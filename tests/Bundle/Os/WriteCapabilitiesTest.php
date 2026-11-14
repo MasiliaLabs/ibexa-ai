@@ -152,6 +152,7 @@ final class WriteCapabilitiesTest extends TestCase
             new \Masilia\Bundle\IbexaAi\Ibexa\Content\EnabledLanguages($this->createMock(LanguageService::class)),
             $this->emptyStore(),
             $this->createMock(PermissionResolver::class),
+            $this->config(),
         );
         $capability = new UpdateCapability($checks, $this->createMock(ContentWriter::class), $this->languages(), $repository);
 
