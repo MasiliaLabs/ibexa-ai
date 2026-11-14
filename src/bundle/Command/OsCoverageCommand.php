@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi\Command;
 
-use Masilia\Bundle\IbexaAi\Os\Coverage\CoverageReport;
+use Masilia\IbexaAi\Os\Coverage\CoverageReport;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

@@ -21,8 +21,8 @@ final class MasiliaIbexaAiExtension extends Extension implements PrependExtensio
                     'MasiliaIbexaAi' => [
                         'type' => 'attribute',
                         'is_bundle' => false,
-                        'dir' => __DIR__ . '/../Entity',
-                        'prefix' => 'Masilia\Bundle\IbexaAi\Entity',
+                        'dir' => __DIR__ . '/../../lib/Persistence/Entity',
+                        'prefix' => 'Masilia\IbexaAi\Persistence\Entity',
                         'alias' => 'MasiliaIbexaAi',
                     ],
                 ],
@@ -44,6 +44,7 @@ final class MasiliaIbexaAiExtension extends Extension implements PrependExtensio
         $container->setParameter('ibexa_ai.encryption_key', $config['encryption_key']);
         $container->setParameter('ibexa_ai.os.domains', $config['os']['domains']);
 
+        $container->setParameter('masilia_ibexa_ai.os_coverage_file', __DIR__ . '/../Resources/config/os_coverage.yaml');
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Masilia\Bundle\IbexaAi;
 
-use Masilia\Bundle\IbexaAi\Os\Security\OsPolicyProvider;
+use Masilia\Bundle\IbexaAi\Security\OsPolicyProvider;
 use Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario;
 use Masilia\Contracts\IbexaAi\Os\Capability;
 use Masilia\Contracts\IbexaAi\Os\Skill;

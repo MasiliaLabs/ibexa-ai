@@ -7,7 +7,7 @@ namespace Masilia\Bundle\IbexaAi\Command;
 use Ibexa\Contracts\Core\Repository\PermissionResolver;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Ibexa\Core\Repository\Values\User\UserReference;
-use Masilia\Bundle\IbexaAi\Os\Execution\CapabilityRunner;
+use Masilia\IbexaAi\Os\Execution\CapabilityRunner;
 use Masilia\Contracts\IbexaAi\Os\Selftest\SelftestContext;
 use Masilia\Contracts\IbexaAi\Os\Selftest\SelftestScenario;
 use Symfony\Component\Console\Attribute\AsCommand;

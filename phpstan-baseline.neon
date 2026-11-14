@@ -1,28 +1,28 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Strict comparison using \=\=\= between Masilia\\Bundle\\IbexaAi\\Entity\\AiModel\|null and false will always evaluate to false\.$#'
+			message: '#^Strict comparison using \=\=\= between Masilia\\IbexaAi\\Persistence\\Entity\\AiModel\|null and false will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1
-			path: src/bundle/Provider/ProviderTester.php
+			path: src/lib/Provider/ProviderTester.php
 
 		-
 			message: '#^Call to an undefined static method NeuronAI\\Agent\\Adapters\\AGUIAdapter\:\:reset\(\)\.$#'
 			identifier: staticMethod.notFound
 			count: 1
-			path: src/bundle/Chat/Stream/ReasoningFilteredAGUIAdapter.php
+			path: src/lib/Chat/Stream/ReasoningFilteredAGUIAdapter.php
 
 		-
 			message: '#^Ternary operator condition is always true\.$#'
 			identifier: ternary.alwaysTrue
 			count: 1
-			path: src/bundle/Ibexa/Field/Input/MatrixInput.php
+			path: src/lib/Ibexa/Field/Input/MatrixInput.php
 
 		-
 			message: '#^Instanceof between string and Ibexa\\FieldTypeRichText\\FieldType\\RichText\\Value will always evaluate to false\.$#'
 			identifier: instanceof.alwaysFalse
 			count: 1
-			path: src/bundle/Ibexa/Field/Input/RichTextInput.php
+			path: src/lib/Ibexa/Field/Input/RichTextInput.php
 
 		-
 			message: '#^Anonymous function has an unused use \$stamp\.$#'
@@ -31,70 +31,70 @@ parameters:
 			path: src/bundle/Command/OsSelftestCommand.php
 
 		-
-			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiModel\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property Masilia\\IbexaAi\\Persistence\\Entity\\AiModel\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
-			path: src/bundle/Entity/AiModel.php
+			path: src/lib/Persistence/Entity/AiModel.php
 
 		-
-			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiProvider\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property Masilia\\IbexaAi\\Persistence\\Entity\\AiProvider\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
-			path: src/bundle/Entity/AiProvider.php
+			path: src/lib/Persistence/Entity/AiProvider.php
 
 		-
-			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$errorCode is never read, only written\.$#'
+			message: '#^Property Masilia\\IbexaAi\\Persistence\\Entity\\AiRequestLog\:\:\$errorCode is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
-			path: src/bundle/Entity/AiRequestLog.php
+			path: src/lib/Persistence/Entity/AiRequestLog.php
 
 		-
-			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$finishReason is never read, only written\.$#'
+			message: '#^Property Masilia\\IbexaAi\\Persistence\\Entity\\AiRequestLog\:\:\$finishReason is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
-			path: src/bundle/Entity/AiRequestLog.php
+			path: src/lib/Persistence/Entity/AiRequestLog.php
 
 		-
-			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property Masilia\\IbexaAi\\Persistence\\Entity\\AiRequestLog\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
-			path: src/bundle/Entity/AiRequestLog.php
+			path: src/lib/Persistence/Entity/AiRequestLog.php
 
 		-
-			message: '#^Property Masilia\\Bundle\\IbexaAi\\Entity\\AiRequestLog\:\:\$siteaccess is never read, only written\.$#'
+			message: '#^Property Masilia\\IbexaAi\\Persistence\\Entity\\AiRequestLog\:\:\$siteaccess is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
-			path: src/bundle/Entity/AiRequestLog.php
+			path: src/lib/Persistence/Entity/AiRequestLog.php
 
 		-
 			message: '#^Call to function property_exists\(\) with Ibexa\\Core\\FieldType\\Image\\Value and ''alternativeText'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
-			path: src/bundle/Ibexa/Field/Text/FileStringifier.php
+			path: src/lib/Ibexa/Field/Text/FileStringifier.php
 
 		-
 			message: '#^Call to function property_exists\(\) with Ibexa\\Core\\FieldType\\Image\\Value and ''fileName'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
-			path: src/bundle/Ibexa/Field/Text/FileStringifier.php
+			path: src/lib/Ibexa/Field/Text/FileStringifier.php
 
 		-
 			message: '#^Strict comparison using \=\=\= between Ibexa\\Core\\FieldType\\Image\\Value and null will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1
-			path: src/bundle/Ibexa/Field/Text/FileStringifier.php
+			path: src/lib/Ibexa/Field/Text/FileStringifier.php
 
 		-
 			message: '#^Instanceof between Ibexa\\FieldTypeMatrix\\FieldType\\Value and Ibexa\\FieldTypeMatrix\\FieldType\\Value will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1
-			path: src/bundle/Ibexa/Field/Text/MatrixStringifier.php
+			path: src/lib/Ibexa/Field/Text/MatrixStringifier.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>textContent" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: src/bundle/Ibexa/Field/Text/RichTextStringifier.php
+			path: src/lib/Ibexa/Field/Text/RichTextStringifier.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -106,97 +106,97 @@ parameters:
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: src/bundle/Image/ProviderImageGenerator.php
+			path: src/lib/Image/ProviderImageGenerator.php
 
 		-
 			message: '#^Parameter \#3 \$roleLimitation of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:assignRoleToUser\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\\RoleLimitation\|null, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\|null given\.$#'
 			identifier: argument.type
 			count: 1
-			path: src/bundle/Os/Capability/Access/AssignmentAddCapability.php
+			path: src/lib/Os/Capability/Access/AssignmentAddCapability.php
 
 		-
 			message: '#^Parameter \#3 \$roleLimitation of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:assignRoleToUserGroup\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\\RoleLimitation\|null, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Limitation\|null given\.$#'
 			identifier: argument.type
 			count: 1
-			path: src/bundle/Os/Capability/Access/AssignmentAddCapability.php
+			path: src/lib/Os/Capability/Access/AssignmentAddCapability.php
 
 		-
 			message: '#^Access to an undefined property Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy\:\:\$originalId\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/bundle/Os/Capability/Access/PolicyRemoveCapability.php
+			path: src/lib/Os/Capability/Access/PolicyRemoveCapability.php
 
 		-
 			message: '#^Parameter \#2 \$policyDraft of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:removePolicyByRoleDraft\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\PolicyDraft, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy given\.$#'
 			identifier: argument.type
 			count: 1
-			path: src/bundle/Os/Capability/Access/PolicyRemoveCapability.php
+			path: src/lib/Os/Capability/Access/PolicyRemoveCapability.php
 
 		-
 			message: '#^Access to an undefined property Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy\:\:\$originalId\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/bundle/Os/Capability/Access/PolicyUpdateCapability.php
+			path: src/lib/Os/Capability/Access/PolicyUpdateCapability.php
 
 		-
 			message: '#^Parameter \#2 \$policy of method Ibexa\\Contracts\\Core\\Repository\\RoleService\:\:updatePolicyByRoleDraft\(\) expects Ibexa\\Contracts\\Core\\Repository\\Values\\User\\PolicyDraft, Ibexa\\Contracts\\Core\\Repository\\Values\\User\\Policy given\.$#'
 			identifier: argument.type
 			count: 1
-			path: src/bundle/Os/Capability/Access/PolicyUpdateCapability.php
+			path: src/lib/Os/Capability/Access/PolicyUpdateCapability.php
 
 		-
 			message: '#^Call to an undefined method Ibexa\\Contracts\\Core\\Repository\\Values\\User\\RoleAssignment\:\:getUser\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: src/bundle/Os/Capability/Access/RoleDescribeCapability.php
+			path: src/lib/Os/Capability/Access/RoleDescribeCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\ContentType\\ContentType\:\:\$isContainer\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Structure/TypeDescribeCapability.php
+			path: src/lib/Os/Capability/Structure/TypeDescribeCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\ContentType\\ContentType\:\:\$isContainer\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Structure/TypeListCapability.php
+			path: src/lib/Os/Capability/Structure/TypeListCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$id\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Url/LinkListCapability.php
+			path: src/lib/Os/Capability/Url/LinkListCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$isValid\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Url/LinkListCapability.php
+			path: src/lib/Os/Capability/Url/LinkListCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$url\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Url/LinkListCapability.php
+			path: src/lib/Os/Capability/Url/LinkListCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$id\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Url/LinkUpdateCapability.php
+			path: src/lib/Os/Capability/Url/LinkUpdateCapability.php
 
 		-
 			message: '#^Access to protected property Ibexa\\Contracts\\Core\\Repository\\Values\\URL\\URL\:\:\$url\.$#'
 			identifier: property.protected
 			count: 1
-			path: src/bundle/Os/Capability/Url/LinkUpdateCapability.php
+			path: src/lib/Os/Capability/Url/LinkUpdateCapability.php
 
 		-
 			message: '#^Variable \$failure on left side of \?\?\= always exists and is always null\.$#'
 			identifier: nullCoalesce.variable
 			count: 1
-			path: src/bundle/Os/Neuron/ProposeChangesTool.php
+			path: src/lib/Os/Neuron/ProposeChangesTool.php
 
 		-
 			message: '#^Strict comparison using \=\=\= between non\-empty\-array\<mixed, mixed\> and array\{\} will always evaluate to false\.$#'

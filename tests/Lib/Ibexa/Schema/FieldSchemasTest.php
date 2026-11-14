@@ -1,0 +1,202 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Masilia\IbexaAi\Tests\Lib\Ibexa\Schema;
+
+use Ibexa\Core\Repository\Values\ContentType\FieldDefinitionCollection;
+use PHPUnit\Framework\TestCase;
+
+final class FieldSchemasTest extends TestCase
+{
+    use ContentCatalogFactoryTrait;
+
+    private function getSchemaForField(array $fieldConfig): array
+    {
+        $catalog = $this->createContentCatalog([
+            'Content' => [
+                'page' => [
+                    'name' => 'Page',
+                    'fields' => ['test_field' => $fieldConfig],
+                ],
+            ],
+        ]);
+
+        $schema = $catalog->schema('page');
+
+        self::assertNotNull($schema);
+
+        return $schema['fields']['test_field'];
+    }
+
+    public function testBaseShapeIncludesTypeRequiredTranslatable(): void
+    {
+        $info = $this->getSchemaForField(['type' => 'ibexa_string']);
+
+        self::assertSame('ibexa_string', $info['type']);
+        self::assertFalse($info['required']);
+        self::assertFalse($info['translatable']);
+    }
+
+    public function testDescriptionIncludedWhenNonEmpty(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_image',
+            'description' => 'Recommended: 1920x600 px',
+        ]);
+
+        self::assertSame('Recommended: 1920x600 px', $info['description']);
+    }
+
+    public function testDescriptionOmittedWhenEmpty(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_string',
+            'description' => '',
+        ]);
+
+        self::assertArrayNotHasKey('description', $info);
+    }
+
+    public function testEzstringMinMaxLength(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_string',
+            'validator' => [
+                'StringLengthValidator' => ['minStringLength' => 5, 'maxStringLength' => 200],
+            ],
+        ]);
+
+        self::assertSame(5, $info['minLength']);
+        self::assertSame(200, $info['maxLength']);
+    }
+
+    public function testEzstringOmitsLengthWhenNoValidator(): void
+    {
+        $info = $this->getSchemaForField(['type' => 'ibexa_string']);
+
+        self::assertArrayNotHasKey('minLength', $info);
+        self::assertArrayNotHasKey('maxLength', $info);
+    }
+
+    public function testEztextMinMaxLength(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_text',
+            'validator' => [
+                'StringLengthValidator' => ['minStringLength' => 10],
+            ],
+        ]);
+
+        self::assertSame(10, $info['minLength']);
+        self::assertArrayNotHasKey('maxLength', $info);
+    }
+
+    public function testEzimageMaxFileSizeAndAltText(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_image',
+            'validator' => [
+                'FileSizeValidator' => ['maxFileSize' => 10],
+                'AlternativeTextValidator' => ['required' => true],
+            ],
+        ]);
+
+        self::assertSame(10, $info['maxFileSize']);
+        self::assertTrue($info['altTextRequired']);
+    }
+
+    public function testEzimageOmitsConstraintsWhenNoValidator(): void
+    {
+        $info = $this->getSchemaForField(['type' => 'ibexa_image']);
+
+        self::assertArrayNotHasKey('maxFileSize', $info);
+        self::assertArrayNotHasKey('altTextRequired', $info);
+    }
+
+    public function testEzmatrixMinRowsMaxRows(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_matrix',
+            'settings' => [
+                'columns' => [['identifier' => 'title', 'name' => 'Title']],
+            ],
+            'validator' => [
+                'MatrixValueValidator' => ['minimumRowCount' => 1, 'maximumRowCount' => 5],
+            ],
+        ]);
+
+        self::assertSame(1, $info['minRows']);
+        self::assertSame(5, $info['maxRows']);
+    }
+
+    public function testEzmatrixOmitsRowsWhenNoValidator(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_matrix',
+            'settings' => [
+                'columns' => [['identifier' => 'title', 'name' => 'Title']],
+            ],
+        ]);
+
+        self::assertArrayHasKey('columns', $info);
+        self::assertArrayNotHasKey('minRows', $info);
+        self::assertArrayNotHasKey('maxRows', $info);
+    }
+
+    public function testRelationListMinItemsMaxItems(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_object_relation_list',
+            'settings' => ['selectionContentTypes' => ['card_item']],
+            'validator' => [
+                'RelationValidator' => ['minimumRelationLimit' => 1, 'maximumRelationLimit' => 10],
+            ],
+        ]);
+
+        self::assertSame(1, $info['minItems']);
+        self::assertSame(10, $info['maxItems']);
+    }
+
+    public function testRelationListOmitsItemsWhenNoValidator(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_object_relation_list',
+            'settings' => ['selectionContentTypes' => ['card_item']],
+        ]);
+
+        self::assertArrayHasKey('allowedTypes', $info);
+        self::assertArrayNotHasKey('minItems', $info);
+        self::assertArrayNotHasKey('maxItems', $info);
+    }
+
+    public function testTranslatableFlagExposed(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_string',
+            'translatable' => true,
+        ]);
+
+        self::assertTrue($info['translatable']);
+    }
+
+    public function testEzselectionOptionsUnchanged(): void
+    {
+        $info = $this->getSchemaForField([
+            'type' => 'ibexa_selection',
+            'settings' => ['options' => ['Dark', 'Light', 'Auto']],
+        ]);
+
+        self::assertSame(['Dark', 'Light', 'Auto'], $info['options']);
+        self::assertArrayNotHasKey('minLength', $info);
+    }
+
+    public function testTheSchemaOfAContentTypeStaysLeanForTheCataloguesOfThePackagesOnTheOs(): void
+    {
+        $info = $this->getSchemaForField(['type' => 'ibexa_string']);
+
+        // What to give for a field (its value schema and an example) is read with structure.type.describe, not repeated for every block type.
+        self::assertArrayNotHasKey('value', $info);
+        self::assertArrayNotHasKey('example', $info);
+    }
+}

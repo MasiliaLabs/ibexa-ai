@@ -1,10 +1,10 @@
 services:
     _instanceof:
-        Masilia\Bundle\IbexaAi\Ibexa\Field\Input\FieldInput:
+        Masilia\IbexaAi\Ibexa\Field\Input\FieldInput:
             tags: ['masilia.ibexa_ai.field_input']
         Masilia\Contracts\IbexaAi\Os\Capability:
             tags: ['masilia.ibexa_ai.capability']
-        Masilia\Bundle\IbexaAi\Ibexa\Field\Text\FieldValueStringifier:
+        Masilia\IbexaAi\Ibexa\Field\Text\FieldValueStringifier:
             tags: ['masilia.ibexa_ai.stringifier']
 
     _defaults:
@@ -16,41 +16,43 @@ services:
             $settings: '%ibexa_ai.connection%'
             $domains: '%ibexa_ai.os.domains%'
             $attachmentsDirectory: '%kernel.project_dir%/var/ai-attachments'
+            $matrixFile: '%masilia_ibexa_ai.os_coverage_file%'
 
-    Masilia\Bundle\IbexaAi\Ibexa\:
-        resource: '../../Ibexa/'
+    # The implementation lives in src/lib (as in the Ibexa packages); this file only wires it.
+    Masilia\IbexaAi\Ibexa\:
+        resource: '../../../lib/Ibexa/'
         exclude:
-            - '../../Ibexa/Field/FieldTypes.php'
-            - '../../Ibexa/Field/Text/FieldStringValue.php'
-            - '../../Ibexa/Field/Input/FieldInputs.php'
-            - '../../Ibexa/Field/Text/FieldTexts.php'
+            - '../../../lib/Ibexa/Field/FieldTypes.php'
+            - '../../../lib/Ibexa/Field/Text/FieldStringValue.php'
+            - '../../../lib/Ibexa/Field/Input/FieldInputs.php'
+            - '../../../lib/Ibexa/Field/Text/FieldTexts.php'
 
-    Masilia\Bundle\IbexaAi\Repository\:
-        resource: '../../Repository/'
+    Masilia\IbexaAi\Persistence\Repository\:
+        resource: '../../../lib/Persistence/Repository/'
 
-    Masilia\Bundle\IbexaAi\Image\:
-        resource: '../../Image/'
+    Masilia\IbexaAi\Image\:
+        resource: '../../../lib/Image/'
 
     # The public API (Masilia\Contracts\IbexaAi): what other packages type-hint.
     Masilia\Contracts\IbexaAi\Image\ImageGenerator:
-        alias: Masilia\Bundle\IbexaAi\Image\ProviderImageGenerator
+        alias: Masilia\IbexaAi\Image\ProviderImageGenerator
     Masilia\Contracts\IbexaAi\Content\ContentWriter:
-        alias: Masilia\Bundle\IbexaAi\Ibexa\Content\Write\RepositoryContentWriter
+        alias: Masilia\IbexaAi\Ibexa\Content\Write\RepositoryContentWriter
     Masilia\Contracts\IbexaAi\Content\ContentTypeSchemas:
-        alias: Masilia\Bundle\IbexaAi\Ibexa\Schema\ContentTypeSchemas
+        alias: Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemas
     Masilia\Contracts\IbexaAi\Content\FieldTexts:
-        alias: Masilia\Bundle\IbexaAi\Ibexa\Field\Text\FieldTexts
+        alias: Masilia\IbexaAi\Ibexa\Field\Text\FieldTexts
     Masilia\Contracts\IbexaAi\Content\Languages:
-        alias: Masilia\Bundle\IbexaAi\Ibexa\Content\EnabledLanguages
+        alias: Masilia\IbexaAi\Ibexa\Content\EnabledLanguages
     Masilia\Contracts\IbexaAi\Site\SiteLocations:
-        alias: Masilia\Bundle\IbexaAi\Ibexa\Site\SiteaccessLocationResolver
-    Masilia\Bundle\IbexaAi\Provider\:
-        resource: '../../Provider/'
+        alias: Masilia\IbexaAi\Ibexa\Site\SiteaccessLocationResolver
+    Masilia\IbexaAi\Provider\:
+        resource: '../../../lib/Provider/'
 
     # The AI OS: capabilities (tagged), their registry, access, audit and the three tools the model sees.
-    Masilia\Bundle\IbexaAi\Os\:
-        resource: '../../Os/'
-        exclude: ['../../Os/Neuron/OsAgent.php', '../../Os/Neuron/OsSystemPrompt.php', '../../Os/Neuron/CapabilityTool.php', '../../Os/Neuron/ToolResult.php']
+    Masilia\IbexaAi\Os\:
+        resource: '../../../lib/Os/'
+        exclude: ['../../../lib/Os/Neuron/OsAgent.php', '../../../lib/Os/Neuron/OsSystemPrompt.php', '../../../lib/Os/Neuron/CapabilityTool.php', '../../../lib/Os/Neuron/ToolResult.php']
 
     Masilia\IbexaAi\Os\CapabilityRegistry:
         arguments:
@@ -59,7 +61,7 @@ services:
     Masilia\IbexaAi\Provider\ProviderFactory: ~
 
     Masilia\Contracts\IbexaAi\Provider\ChatProviders:
-        alias: Masilia\Bundle\IbexaAi\Provider\SiteaccessChatProviders
+        alias: Masilia\IbexaAi\Provider\SiteaccessChatProviders
 
     Masilia\IbexaAi\Security\SecretCipher:
         factory: ['Masilia\IbexaAi\Security\SecretCipher', 'fromConfiguration']
@@ -67,16 +69,21 @@ services:
             $configuredKey: '%ibexa_ai.encryption_key%'
             $appSecret: '%kernel.secret%'
 
-    Masilia\Bundle\IbexaAi\Security\:
-        resource: '../../Security/'
+    Masilia\IbexaAi\Security\:
+        resource: '../../../lib/Security/'
+        exclude: ['../../../lib/Security/SecretCipher.php', '../../../lib/Security/SecretDecryptionException.php']
 
     Masilia\Bundle\IbexaAi\Command\:
         resource: '../../Command/'
 
-    Masilia\Bundle\IbexaAi\Observability\:
-        resource: '../../Observability/'
+    # The menu item and the guards of the admin API (found by what they implement), and the flush of the request log.
+    Masilia\Bundle\IbexaAi\EventListener\:
+        resource: '../../EventListener/'
+
+    Masilia\IbexaAi\Observability\:
+        resource: '../../../lib/Observability/'
     Masilia\Contracts\IbexaAi\Observability\RequestLogger:
-        alias: Masilia\Bundle\IbexaAi\Observability\DoctrineRequestLogger
+        alias: Masilia\IbexaAi\Observability\DoctrineRequestLogger
 
     Masilia\Bundle\IbexaAi\Http\:
         resource: '../../Http/'
@@ -88,31 +95,31 @@ services:
         public: true
         tags: ['controller.service_arguments']
 
-    Masilia\Bundle\IbexaAi\Observability\RequestLogFlushListener:
+    Masilia\Bundle\IbexaAi\EventListener\RequestLogFlushListener:
         tags:
             - { name: kernel.event_listener, event: kernel.terminate, method: onTerminate }
             - { name: kernel.event_listener, event: kernel.exception, method: onTerminate }
             - { name: kernel.event_listener, event: console.terminate, method: onTerminate }
 
-    Masilia\Bundle\IbexaAi\Ibexa\Schema\ContentTypeSchemaSource:
-        alias: Masilia\Bundle\IbexaAi\Ibexa\Schema\ContentTypeSchemas
+    Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemaSource:
+        alias: Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemas
 
-    Masilia\Bundle\IbexaAi\Ibexa\Field\Input\FieldInputs:
+    Masilia\IbexaAi\Ibexa\Field\Input\FieldInputs:
         arguments:
             $adapters: !tagged_iterator masilia.ibexa_ai.field_input
 
-    Masilia\Bundle\IbexaAi\Ibexa\Field\Text\FieldTexts:
+    Masilia\IbexaAi\Ibexa\Field\Text\FieldTexts:
         arguments:
             $stringifiers: !tagged_iterator masilia.ibexa_ai.stringifier
 
-    Masilia\Bundle\IbexaAi\Chat\:
-        resource: '../../Chat/'
+    Masilia\IbexaAi\Chat\:
+        resource: '../../../lib/Chat/'
         exclude:
-            - '../../Chat/RunRefused.php'
-            - '../../Chat/StartedRun.php'
-            - '../../Chat/DTO/'
+            - '../../../lib/Chat/RunRefused.php'
+            - '../../../lib/Chat/StartedRun.php'
+            - '../../../lib/Chat/DTO/'
 
-    Masilia\Bundle\IbexaAi\Os\Neuron\OsAgentFactory:
+    Masilia\IbexaAi\Os\Neuron\OsAgentFactory:
         public: true
         arguments:
             $skills: !tagged_iterator masilia.ibexa_ai.skill

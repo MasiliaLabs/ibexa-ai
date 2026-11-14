@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Masilia\IbexaAi\Chat;
+
+use Masilia\Contracts\IbexaAi\Api\ApiError;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
+
+/** A chat request the server does not run, and what to tell the client: the error and the HTTP status. */
+final class RunRefused extends RuntimeException
+{
+    public function __construct(public readonly ApiError $error, public readonly int $status)
+    {
+        parent::__construct($error->message);
+    }
+
+    public static function invalid(string $message): self
+    {
+        return new self(ApiError::validation($message), Response::HTTP_BAD_REQUEST);
+    }
+}

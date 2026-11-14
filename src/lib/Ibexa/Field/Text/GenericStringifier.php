@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Masilia\IbexaAi\Ibexa\Field\Text;
+
+use Ibexa\Contracts\Core\Repository\FieldTypeService;
+use Ibexa\Contracts\Core\Repository\Values\Content\Field;
+use Ibexa\Contracts\Core\Repository\Values\ContentType\FieldDefinition;
+use Masilia\IbexaAi\Ibexa\Field\Text\FieldValueStringifier;
+use Masilia\IbexaAi\Ibexa\Field\Text\FieldTexts;
+use Throwable;
+
+/**
+ * Fallback stringifier: attempts FieldTypeService::toHash(), then __toString().
+ *
+ * Registered with the special `_fallback` pseudo-type so the registry uses it
+ * when no field-type-specific stringifier matches.
+ */
+final readonly class GenericStringifier implements FieldValueStringifier
+{
+    public function __construct(
+        private FieldTypeService $fieldTypeService,
+    )
+    {
+    }
+
+    public static function getSupportedFieldTypes(): array
+    {
+        return [FieldTexts::FALLBACK_TYPE];
+    }
+
+    public function toString(Field $field, FieldDefinition $fieldDefinition): string
+    {
+        $value = $field->getValue();
+
+        if ($value === null) {
+            return '';
+        }
+
+        try {
+            $fieldType = $this->fieldTypeService->getFieldType($fieldDefinition->getFieldTypeIdentifier());
+            $hash = $fieldType->toHash($value);
+
+            return $this->hashToString($hash);
+        } catch (Throwable) {
+            if (method_exists($value, '__toString')) {
+                return trim((string)$value);
+            }
+
+            return '';
+        }
+    }
+
+    /**
+     * Recursively converts a hash (from FieldTypeService::toHash()) into
+     * a flat, comma-separated string suitable for AI context.
+     *
+     * Nested arrays are handled recursively: each leaf value is converted
+     * to a string and joined with ", ". Array keys are preserved as prefixes
+     * for associative arrays. This is acceptable for the fallback
+     * stringifier's purpose (providing context to the LLM);
+     * field-type-specific stringifiers handle structured data properly.
+     */
+    private function hashToString(mixed $hash): string
+    {
+        if (is_string($hash)) {
+            return trim($hash);
+        }
+
+        if (is_scalar($hash)) {
+            return trim((string)$hash);
+        }
+
+        if (is_array($hash)) {
+            $parts = [];
+            foreach ($hash as $key => $val) {
+                $str = $this->hashToString($val);
+                if ($str !== '') {
+                    $parts[] = is_int($key) ? $str : "$key: $str";
+                }
+            }
+
+            return implode(', ', $parts);
+        }
+
+        return '';
+    }
+}
