@@ -39,7 +39,9 @@ function Shell() {
 
 function mount(): void {
     const client = (window as unknown as { ReactDOMClient?: ReactDomClient }).ReactDOMClient;
-    if (client === undefined || document.getElementById(ROOT_ID) !== null) {
+    // The button is only there for who the role lets use the assistant (see ChatAccessConfig).
+    const allowed = (window as unknown as { ibexa?: { adminUiConfig?: { masiliaAi?: { canUse?: boolean } } } }).ibexa?.adminUiConfig?.masiliaAi?.canUse === true;
+    if (!allowed || client === undefined || document.getElementById(ROOT_ID) !== null) {
         return;
     }
 

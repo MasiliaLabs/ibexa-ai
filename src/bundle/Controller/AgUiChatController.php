@@ -58,11 +58,14 @@ final class AgUiChatController extends Controller implements CsrfProtectedContro
     ) {
     }
 
-    /** The chat is the administrators': it acts on the site with their rights, and what it does is shown to them first. */
+    /**
+     * The chat is for whoever the role lets use the assistant (masilia_ai/use). Each capability then asks for its own rights, and runs
+     * with those of the user: an editor only changes what the role lets them change, and what changes is shown to them first.
+     */
     public function performAccessCheck(): void
     {
         parent::performAccessCheck();
-        $this->denyAccessUnlessGranted(new Attribute('setup', 'administrate'));
+        $this->denyAccessUnlessGranted(new Attribute('masilia_ai', 'use'));
     }
 
     #[Route('/api/ai/agent/agui', name: 'masilia.ibexa_ai.agent.agui', methods: ['POST'], options: ['expose' => true])]

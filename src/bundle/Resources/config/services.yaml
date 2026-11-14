@@ -99,6 +99,10 @@ services:
             - { name: kernel.event_listener, event: kernel.exception, method: onTerminate }
             - { name: kernel.event_listener, event: console.terminate, method: onTerminate }
 
+    Masilia\IbexaAi\Chat\ChatAccessConfig:
+        tags:
+            - { name: ibexa.admin_ui.config.provider, key: 'masiliaAi' }
+
     Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemaSource:
         alias: Masilia\IbexaAi\Ibexa\Schema\ContentTypeSchemas
 
