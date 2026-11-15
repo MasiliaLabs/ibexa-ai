@@ -96,12 +96,14 @@ export function useAguiRuntime(): ChatRuntime {
         // Read when a run starts: the editor may have moved to another page since the widget opened.
         getRunContext: () => (sharesPage() ? runContext(window.location.pathname) : []),
         onError: (error) => {
-            // The server is the source of truth: a decision that came too late (decided in another window) leaves
-            // the view out of date, so it is read again. Other errors are shown with the answer, as they are.
+            // The server is the source of truth. Whatever went wrong (a decision that came too late, a gateway that dropped the
+            // stream), the view may no longer match it: a change still waiting for its decision, or already decided, would
+            // block the next message ("pending interrupt not addressed by resume"). So the conversation is read again. The error
+            // is shown with the answer, as it is; only a late decision is announced here.
             if (isStaleDecision(error.message)) {
                 notify('info', error.message);
-                void loadConversation(current.current).then((loaded) => holder.current?.reset(loaded.messages));
             }
+            void loadConversation(current.current).then((loaded) => holder.current?.reset(loaded.messages)).catch(() => undefined);
         },
     });
     holder.current = { reset: (messages) => runtime.thread.reset(messages), cancel: () => runtime.thread.cancelRun() };
