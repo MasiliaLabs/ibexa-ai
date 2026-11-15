@@ -38,4 +38,4 @@ jobs:
               with:
                   node-version: '24'
             # The tests need no package: Node reads the TypeScript sources as they are.
-            - run: node --experimental-strip-types --import ./test-hooks/register.mjs --test shared/*.test.ts settings/*.test.ts chat/*.test.ts chat/runtime/*.test.ts
+            - run: node --experimental-strip-types --import ./test-hooks/register.mjs --test shared/*.test.ts settings/*.test.ts capabilities/*.test.ts chat/*.test.ts chat/runtime/*.test.ts

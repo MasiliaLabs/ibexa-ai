@@ -31,6 +31,9 @@ final class MasiliaIbexaAiExtension extends Extension implements PrependExtensio
             ],
         ]);
 
+        // The texts of the capabilities page (React) come from the translation domain of this bundle, published to the scripts of the admin.
+        $container->prependExtensionConfig('bazinga_js_translation', ['active_domains' => ['masilia_ibexa_ai']]);
+
         $container->prependExtensionConfig('doctrine_migrations', [
             'migrations_paths' => [
                 'Masilia\\Bundle\\IbexaAi\\Migrations' => __DIR__ . '/../Migrations',

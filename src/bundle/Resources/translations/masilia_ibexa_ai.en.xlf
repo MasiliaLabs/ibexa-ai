@@ -158,6 +158,70 @@
         <source>stat.usable</source>
         <target>you can use</target>
       </trans-unit>
+      <trans-unit id="tab.capabilities" resname="tab.capabilities">
+        <source>tab.capabilities</source>
+        <target>Capabilities</target>
+      </trans-unit>
+      <trans-unit id="tab.coverage" resname="tab.coverage">
+        <source>tab.coverage</source>
+        <target>Coverage</target>
+      </trans-unit>
+      <trans-unit id="tab.activity" resname="tab.activity">
+        <source>tab.activity</source>
+        <target>Activity</target>
+      </trans-unit>
+      <trans-unit id="list.filter.clear" resname="list.filter.clear">
+        <source>list.filter.clear</source>
+        <target>Clear the search</target>
+      </trans-unit>
+      <trans-unit id="list.filter.risk" resname="list.filter.risk">
+        <source>list.filter.risk</source>
+        <target>Risk</target>
+      </trans-unit>
+      <trans-unit id="list.filter.domain" resname="list.filter.domain">
+        <source>list.filter.domain</source>
+        <target>Domain</target>
+      </trans-unit>
+      <trans-unit id="list.filter.availability" resname="list.filter.availability">
+        <source>list.filter.availability</source>
+        <target>Availability</target>
+      </trans-unit>
+      <trans-unit id="list.filter.all" resname="list.filter.all">
+        <source>list.filter.all</source>
+        <target>All</target>
+      </trans-unit>
+      <trans-unit id="list.filter.usable" resname="list.filter.usable">
+        <source>list.filter.usable</source>
+        <target>What I can use</target>
+      </trans-unit>
+      <trans-unit id="list.empty" resname="list.empty">
+        <source>list.empty</source>
+        <target>No capability matches these filters.</target>
+      </trans-unit>
+      <trans-unit id="coverage.none" resname="coverage.none">
+        <source>coverage.none</source>
+        <target>Every admin action has an answer.</target>
+      </trans-unit>
+      <trans-unit id="ids.dropdown.placeholder" resname="ids.dropdown.placeholder">
+        <source>ids.dropdown.placeholder</source>
+        <target>Select</target>
+      </trans-unit>
+      <trans-unit id="ids.dropdown.search.placeholder" resname="ids.dropdown.search.placeholder">
+        <source>ids.dropdown.search.placeholder</source>
+        <target>Search…</target>
+      </trans-unit>
+      <trans-unit id="ids.clear_btn.label" resname="ids.clear_btn.label">
+        <source>ids.clear_btn.label</source>
+        <target>Clear</target>
+      </trans-unit>
+      <trans-unit id="ibexa.expander.label.collapse" resname="ibexa.expander.label.collapse">
+        <source>ibexa.expander.label.collapse</source>
+        <target>Hide</target>
+      </trans-unit>
+      <trans-unit id="ibexa.expander.label.expand" resname="ibexa.expander.label.expand">
+        <source>ibexa.expander.label.expand</source>
+        <target>Show</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
