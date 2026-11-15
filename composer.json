@@ -72,5 +72,11 @@
     },
     "config": {
         "sort-packages": true
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:masilia/ibexa-admin-kit.git"
+        }
+    ]
 }
