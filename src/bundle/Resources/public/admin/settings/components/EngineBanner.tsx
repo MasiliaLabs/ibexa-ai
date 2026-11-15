@@ -38,6 +38,7 @@ export function EngineBanner({ summary, siteaccess, onRefresh, checking = false 
     return (
         <section aria-label="AI engine status">
             <TableHeader
+                plain
                 headline="AI engine"
                 notice={`Siteaccess: ${siteaccess} · Chat: ${answer(summary.chat)} · Image: ${answer(summary.image)}`}
                 actions={(
