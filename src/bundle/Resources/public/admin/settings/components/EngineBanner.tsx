@@ -4,7 +4,6 @@ import type { TagType } from '@masilia-admin-kit/ids';
 import { IconButton } from '@masilia-admin-kit/IconButton';
 import { IconSvg } from '@masilia-admin-kit/IconSvg';
 import { Notice } from '@masilia-admin-kit/Notice';
-import { StatTile } from '@masilia-admin-kit/StatTile';
 import { TableHeader } from '@masilia-admin-kit/Table';
 import { Tag } from '@masilia-admin-kit/ids';
 import type { EngineSummary } from '../providers';
@@ -40,7 +39,7 @@ export function EngineBanner({ summary, siteaccess, onRefresh, checking = false 
         <section aria-label="AI engine status">
             <TableHeader
                 headline="AI engine"
-                notice={`Siteaccess: ${siteaccess}`}
+                notice={`Siteaccess: ${siteaccess} · Chat: ${answer(summary.chat)} · Image: ${answer(summary.image)}`}
                 actions={(
                     <>
                         <span role="status"><Tag type={checking ? 'neutral' : STATE_TAG[summary.state]} size="small">{checking ? STATE_LABEL.unknown : STATE_LABEL[summary.state]}</Tag></span>
@@ -48,10 +47,6 @@ export function EngineBanner({ summary, siteaccess, onRefresh, checking = false 
                     </>
                 )}
             />
-            <div className="masilia-kit-stats">
-                <StatTile value={answer(summary.chat)} label="Chat" />
-                <StatTile value={answer(summary.image)} label="Image" />
-            </div>
             {summary.state === 'offline' && summary.message !== '' ? <div className="ibexa-alert ibexa-alert--error" role="alert">{summary.message}</div> : null}
             {summary.guidance !== null ? <Notice>{summary.guidance}</Notice> : null}
         </section>
