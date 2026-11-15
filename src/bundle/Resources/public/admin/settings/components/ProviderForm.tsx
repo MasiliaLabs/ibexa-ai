@@ -94,6 +94,7 @@ export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, 
                     <MultiDropdownField
                         label="Use it on"
                         placeholder="No siteaccess"
+                        hint="A siteaccess uses one provider: choosing it here takes it away from the others."
                         values={draft.siteaccesses}
                         options={siteaccesses.map((name) => ({ value: name, label: name === currentSiteaccess ? `${name} (current)` : name }))}
                         onChange={(selected) => patch({ siteaccesses: selected })}

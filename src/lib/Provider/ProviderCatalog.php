@@ -122,7 +122,8 @@ final readonly class ProviderCatalog
     }
 
     /**
-     * Replaces all siteaccess assignments of a provider.
+     * Replaces all siteaccess assignments of a provider. A siteaccess is answered by one provider: the ones given here are taken
+     * away from every other provider.
      *
      * @param list<mixed> $siteaccesses
      */
@@ -130,18 +131,27 @@ final readonly class ProviderCatalog
     {
         $provider = $this->providers->find($providerId) ?? throw new \InvalidArgumentException('Provider not found.');
 
+        $names = [];
+        foreach ($siteaccesses as $name) {
+            $name = is_string($name) ? trim($name) : '';
+            if ($name !== '') {
+                $names[$name] = $name;
+            }
+        }
+        $names = array_values($names);
+
         foreach ($provider->getSiteaccesses()->toArray() as $assignment) {
             $this->entities->remove($assignment);
         }
         $this->entities->flush();
 
-        $seen = [];
-        foreach ($siteaccesses as $name) {
-            $name = is_string($name) ? trim($name) : '';
-            if ($name === '' || isset($seen[$name])) {
-                continue;
-            }
-            $seen[$name] = true;
+        if ($names !== []) {
+            $this->entities->createQuery(
+                'DELETE ' . AiProviderSiteaccess::class . ' a WHERE a.siteaccess IN (:names) AND a.provider <> :provider',
+            )->setParameter('names', $names)->setParameter('provider', $provider)->execute();
+        }
+
+        foreach ($names as $name) {
             $this->entities->persist(new AiProviderSiteaccess($provider, $name));
         }
         $this->entities->flush();

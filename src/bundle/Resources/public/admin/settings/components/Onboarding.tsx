@@ -59,6 +59,7 @@ export function Onboarding({ types, siteaccesses, currentSiteaccess, onFinish }:
                 <MultiDropdownField
                         label="Use it on"
                         placeholder="No siteaccess"
+                        hint="A siteaccess uses one provider: choosing it here takes it away from the others."
                         values={selected}
                         options={siteaccesses.map((name) => ({ value: name, label: name === currentSiteaccess ? `${name} (current)` : name }))}
                         onChange={setSelected}

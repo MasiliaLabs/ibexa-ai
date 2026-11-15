@@ -111,6 +111,7 @@ export function ProviderCard(props: ProviderCardProps): React.ReactElement {
                 <MultiDropdownField
                     label="Used on these siteaccesses"
                     placeholder="No siteaccess"
+                    hint="A siteaccess uses one provider: choosing it here takes it away from the others."
                     values={provider.siteaccesses}
                     options={props.siteaccesses.map((name) => ({ value: name, label: name === props.currentSiteaccess ? `${name} (current)` : name }))}
                     onChange={props.onSetSiteaccesses}
