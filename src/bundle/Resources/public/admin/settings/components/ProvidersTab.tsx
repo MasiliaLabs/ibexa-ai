@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { Button, Icon } from '../../shared/ids';
+import { ConfirmDialog } from '@masilia-admin-kit/ConfirmDialog';
+import { FilterCard } from '@masilia-admin-kit/FilterCard';
+import { SearchInput } from '@masilia-admin-kit/SearchInput';
+import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
 import { emptyModelDraft, emptyProviderDraft, modelToDraft, providerToDraft } from '../forms';
 import type { ModelDraft, ProviderDraft } from '../forms';
 import { providerLabel, searchProviders } from '../providers';
 import type { SettingsController } from '../useSettings';
 import type { Model, Provider } from '../types';
-import { ConfirmDialog } from './ConfirmDialog';
 import { ModelForm } from './ModelForm';
 import { Onboarding } from './Onboarding';
 import { ProviderCard } from './ProviderCard';
@@ -28,34 +30,14 @@ interface Pending {
     run: () => void;
 }
 
-export function ProvidersTab({ settings }: ProvidersTabProps) {
+export function ProvidersTab({ settings }: ProvidersTabProps): React.ReactElement {
     const { snapshot } = settings;
     const { providers, models, providerTypes, siteaccesses, currentSiteaccess } = snapshot;
     const [query, setQuery] = useState('');
-    const [expanded, setExpanded] = useState<Set<number>>(new Set());
     const [editing, setEditing] = useState<Editing>(null);
     const [pending, setPending] = useState<Pending | null>(null);
 
     const found = useMemo(() => searchProviders(providers, models, providerTypes, query), [providers, models, providerTypes, query]);
-
-    // A search that matches a model opens its provider.
-    useEffect(() => {
-        if (found.matchingProviderIds.size === 0) {
-            return;
-        }
-        setExpanded((current) => new Set([...current, ...found.matchingProviderIds]));
-    }, [found.matchingProviderIds]);
-
-    const toggle = (id: number) => setExpanded((current) => {
-        const next = new Set(current);
-        if (next.has(id)) {
-            next.delete(id);
-        } else {
-            next.add(id);
-        }
-
-        return next;
-    });
 
     const askDeleteProvider = (provider: Provider) => {
         const count = models.filter((model) => model.providerId === provider.id).length;
@@ -83,26 +65,23 @@ export function ProvidersTab({ settings }: ProvidersTabProps) {
     const hasProviders = providers.length > 0;
 
     return (
-        <div>
-            <div className="masilia-settings-toolbar">
-                <div className="masilia-settings-search">
-                    <Icon name="search" size="small" />
-                    <input
-                        type="search"
-                        className="masilia-settings-input"
-                        placeholder="Search providers and models"
-                        aria-label="Search providers and models"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                    />
-                </div>
-                <div className="masilia-settings-toolbar__actions">
-                    {hasProviders ? <Button type="secondary" onClick={() => addModel(null)}>Add a model</Button> : null}
-                    <Button type="primary" icon="add" onClick={() => setEditing({ kind: 'provider', draft: emptyProviderDraft(providerTypes[0]?.value ?? 'openai', currentSiteaccess !== '' ? [currentSiteaccess] : []), hasStoredKey: false })}>
-                        Add a provider
-                    </Button>
-                </div>
-            </div>
+        <>
+            <FilterCard
+                search={<SearchInput value={query} onChange={setQuery} placeholder="Search providers and models" clearLabel="Clear the search" />}
+                actions={(
+                    <>
+                        {hasProviders ? <button type="button" className="btn ibexa-btn ibexa-btn--secondary ibexa-adaptive-filters__submit-btn" onClick={() => addModel(null)}>Add a model</button> : null}
+                        <button
+                            type="button"
+                            className="btn ibexa-btn ibexa-btn--primary ibexa-adaptive-filters__submit-btn"
+                            onClick={() => setEditing({ kind: 'provider', draft: emptyProviderDraft(providerTypes[0]?.value ?? 'openai', currentSiteaccess !== '' ? [currentSiteaccess] : []), hasStoredKey: false })}
+                        >
+                            Add a provider
+                        </button>
+                    </>
+                )}
+            />
+            <TableHeader headline="Providers" count={found.providers.length} />
 
             {!hasProviders ? (
                 <Onboarding
@@ -116,36 +95,36 @@ export function ProvidersTab({ settings }: ProvidersTabProps) {
                     })}
                 />
             ) : found.providers.length === 0 ? (
-                <div className="masilia-settings-empty">
-                    <p>No provider or model matches “{query}”.</p>
-                    <Button type="tertiary" onClick={() => setQuery('')}>Clear the search</Button>
-                </div>
+                <DataTable
+                    columns={[]}
+                    rows={[]}
+                    rowKey={() => ''}
+                    empty={{ info: `No provider or model matches “${query}”.`, action: <button type="button" className="btn ibexa-btn ibexa-btn--ghost" onClick={() => setQuery('')}>Clear the search</button> }}
+                    label="Providers"
+                />
             ) : (
-                <ul className="masilia-settings-cards">
-                    {found.providers.map((provider) => (
-                        <ProviderCard
-                            key={provider.id}
-                            provider={provider}
-                            models={models}
-                            types={providerTypes}
-                            siteaccesses={siteaccesses}
-                            currentSiteaccess={currentSiteaccess}
-                            expanded={expanded.has(provider.id)}
-                            testing={settings.testing === provider.id}
-                            testResult={settings.tests[provider.id] ?? null}
-                            onToggle={() => toggle(provider.id)}
-                            onTest={() => void settings.testProvider(provider.id)}
-                            onEdit={() => editProvider(provider)}
-                            onDelete={() => askDeleteProvider(provider)}
-                            onSetSiteaccesses={(selected) => void settings.setSiteaccesses(provider.id, selected)}
-                            onSetChatModel={(modelId) => void settings.setChatModel(provider.id, modelId)}
-                            onSetImageModel={(modelId) => void settings.setImageModel(provider.id, modelId)}
-                            onAddModel={() => addModel(provider.id)}
-                            onEditModel={(model) => setEditing({ kind: 'model', draft: modelToDraft(model), fixedProvider: true })}
-                            onDeleteModel={askDeleteModel}
-                        />
-                    ))}
-                </ul>
+                found.providers.map((provider) => (
+                    <ProviderCard
+                        key={provider.id}
+                        provider={provider}
+                        models={models}
+                        types={providerTypes}
+                        siteaccesses={siteaccesses}
+                        currentSiteaccess={currentSiteaccess}
+                        open={found.matchingProviderIds.has(provider.id)}
+                        testing={settings.testing === provider.id}
+                        testResult={settings.tests[provider.id] ?? null}
+                        onTest={() => void settings.testProvider(provider.id)}
+                        onEdit={() => editProvider(provider)}
+                        onDelete={() => askDeleteProvider(provider)}
+                        onSetSiteaccesses={(selected) => void settings.setSiteaccesses(provider.id, selected)}
+                        onSetChatModel={(modelId) => void settings.setChatModel(provider.id, modelId)}
+                        onSetImageModel={(modelId) => void settings.setImageModel(provider.id, modelId)}
+                        onAddModel={() => addModel(provider.id)}
+                        onEditModel={(model) => setEditing({ kind: 'model', draft: modelToDraft(model), fixedProvider: true })}
+                        onDeleteModel={askDeleteModel}
+                    />
+                ))
             )}
 
             {editing?.kind === 'provider' ? (
@@ -171,16 +150,19 @@ export function ProvidersTab({ settings }: ProvidersTabProps) {
             {pending !== null ? (
                 <ConfirmDialog
                     title={pending.title}
-                    description={pending.description}
                     confirmLabel={pending.confirmLabel}
+                    cancelLabel="Cancel"
+                    danger
                     onCancel={() => setPending(null)}
                     onConfirm={() => {
                         const run = pending.run;
                         setPending(null);
                         run();
                     }}
-                />
+                >
+                    {pending.description}
+                </ConfirmDialog>
             ) : null}
-        </div>
+        </>
     );
 }

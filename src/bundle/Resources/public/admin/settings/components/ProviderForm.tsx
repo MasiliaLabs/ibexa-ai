@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 
-import { Button } from '../../shared/ids';
+import { CheckboxGroup } from '@masilia-admin-kit/Checkbox';
+import { Dialog } from '@masilia-admin-kit/Dialog';
+import { DropdownField } from '@masilia-admin-kit/Dropdown';
+import { TextField } from '@masilia-admin-kit/Field';
+import { Button } from '@masilia-admin-kit/ids';
 import { validateProvider } from '../forms';
 import type { Errors, ProviderDraft } from '../forms';
 import { providerLabel } from '../providers';
 import type { ProviderType } from '../types';
-import { Dialog } from './Dialog';
-import { SelectField, TextField } from './fields';
-import { SiteaccessPicker } from './SiteaccessPicker';
 
 interface ProviderFormProps {
     initial: ProviderDraft;
@@ -20,7 +21,7 @@ interface ProviderFormProps {
     onClose: () => void;
 }
 
-export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, hasStoredKey, onSave, onClose }: ProviderFormProps) {
+export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, hasStoredKey, onSave, onClose }: ProviderFormProps): React.ReactElement {
     const [draft, setDraft] = useState(initial);
     const [errors, setErrors] = useState<Errors>({});
     const [serverError, setServerError] = useState<string | null>(null);
@@ -59,10 +60,10 @@ export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, 
                 </>
             )}
         >
-            <form className="masilia-settings-form" onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
-                {serverError !== null ? <div className="masilia-settings-alert masilia-settings-alert--error" role="alert">{serverError}</div> : null}
+            <form onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
+                {serverError !== null ? <div className="ibexa-alert ibexa-alert--error" role="alert">{serverError}</div> : null}
 
-                <SelectField
+                <DropdownField
                     label="Provider"
                     required
                     value={draft.identifier}
@@ -91,11 +92,10 @@ export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, 
                     onChange={(apiUrl) => patch({ apiUrl })}
                 />
                 {isNew ? (
-                    <SiteaccessPicker
-                        legend="Use it on"
-                        siteaccesses={siteaccesses}
+                    <CheckboxGroup
+                        label="Use it on"
+                        choices={siteaccesses.map((name) => ({ value: name, label: name, note: name === currentSiteaccess ? 'current' : undefined }))}
                         selected={draft.siteaccesses}
-                        currentSiteaccess={currentSiteaccess}
                         onChange={(selected) => patch({ siteaccesses: selected })}
                     />
                 ) : null}

@@ -1,12 +1,15 @@
-import React, { useId } from 'react';
+import React from 'react';
 
-import { Button, Icon } from '../../shared/ids';
+import { CheckboxGroup } from '@masilia-admin-kit/Checkbox';
+import { DropdownField } from '@masilia-admin-kit/Dropdown';
+import { IconButton } from '@masilia-admin-kit/IconButton';
+import { Button, Tag } from '@masilia-admin-kit/ids';
+import { Notice } from '@masilia-admin-kit/Notice';
+import { Section } from '@masilia-admin-kit/Section';
+import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
+import type { Column } from '@masilia-admin-kit/Table';
 import { modelOptionLabel, modelsOf, providerLabel } from '../providers';
 import type { Model, Provider, ProviderType, TestResult } from '../types';
-import { StatusIcon } from './EngineBanner';
-import { SelectField } from './fields';
-import { ModelRow } from './ModelRow';
-import { SiteaccessPicker } from './SiteaccessPicker';
 
 interface ProviderCardProps {
     provider: Provider;
@@ -14,10 +17,10 @@ interface ProviderCardProps {
     types: ProviderType[];
     siteaccesses: string[];
     currentSiteaccess: string;
-    expanded: boolean;
+    /** The search found something in this provider: its section opens */
+    open: boolean;
     testing: boolean;
     testResult: TestResult | null;
-    onToggle: () => void;
     onTest: () => void;
     onEdit: () => void;
     onDelete: () => void;
@@ -29,106 +32,107 @@ interface ProviderCardProps {
     onDeleteModel: (model: Model) => void;
 }
 
-export function ProviderCard(props: ProviderCardProps) {
-    const { provider, models, types, expanded, testing, testResult } = props;
-    const bodyId = useId();
+function ProviderTitle({ provider, types, count, serves }: { provider: Provider; types: ProviderType[]; count: number; serves: boolean }): React.ReactElement {
+    const type = types.find((candidate) => candidate.value === provider.identifier);
+
+    return (
+        <span className="masilia-settings-title">
+            <strong>{provider.name}</strong>
+            {providerLabel(types, provider.identifier) !== provider.name ? <Tag type="neutral" size="small">{providerLabel(types, provider.identifier)}</Tag> : null}
+            {serves ? <Tag type="success" size="small">Current siteaccess</Tag> : null}
+            {provider.apiKey === null && type?.requiresApiKey !== false ? <Tag type="warning" size="small">No API key</Tag> : null}
+            <span className="masilia-settings-muted">
+                {provider.siteaccesses.length > 0 ? provider.siteaccesses.join(', ') : 'Not used on any siteaccess'} · {count} {count === 1 ? 'model' : 'models'}
+            </span>
+        </span>
+    );
+}
+
+/** A provider: its summary as the title of a section, its settings, its models and what it answers for inside. */
+export function ProviderCard(props: ProviderCardProps): React.ReactElement {
+    const { provider, models, types, testing, testResult } = props;
     const own = modelsOf(models, provider.id);
     const imageModels = own.filter((model) => model.supportsImage);
     const serves = provider.siteaccesses.includes(props.currentSiteaccess);
     const noModel = own.length === 0;
 
+    const columns: Column<Model>[] = [
+        {
+            key: 'name',
+            header: 'Model',
+            render: (model) => (
+                <>
+                    <strong>{model.name}</strong>{' '}
+                    {model.id === provider.activeChatModelId ? <Tag type="primary" size="small">Chat</Tag> : null}{' '}
+                    {model.id === provider.activeImageModelId ? <Tag type="primary-alt" size="small">Image</Tag> : null}{' '}
+                    {model.supportsImage && model.id !== provider.activeImageModelId ? <Tag type="neutral" size="small">Image capable</Tag> : null}{' '}
+                    {model.supportsVision ? <Tag type="neutral" size="small">Vision</Tag> : null}
+                </>
+            ),
+        },
+        { key: 'identifier', header: 'Identifier', render: (model) => <code>{model.identifier}</code> },
+        { key: 'temperature', header: 'Temperature', render: (model) => model.temperature },
+        { key: 'tokens', header: 'Tokens', render: (model) => model.maxTokens.toLocaleString('en-US') },
+        {
+            key: 'actions',
+            header: <span className="visually-hidden">Actions</span>,
+            actions: true,
+            render: (model) => (
+                <>
+                    <IconButton icon="edit" label={`Edit ${model.name}`} onClick={() => props.onEditModel(model)} />
+                    <IconButton icon="trash" label={`Delete ${model.name}`} onClick={() => props.onDeleteModel(model)} />
+                </>
+            ),
+        },
+    ];
+
     return (
-        <li className={`masilia-settings-card${serves ? ' masilia-settings-card--current' : ''}`}>
-            <div className="masilia-settings-card__header">
-                <button type="button" className="masilia-settings-card__toggle" aria-expanded={expanded} aria-controls={bodyId} onClick={props.onToggle}>
-                    <span className={`masilia-settings-card__chevron${expanded ? ' masilia-settings-card__chevron--open' : ''}`} aria-hidden="true">
-                        <Icon name="arrow-chevron-down" size="small" />
-                    </span>
-                    <span className="masilia-settings-card__info">
-                        <span className="masilia-settings-card__name">{provider.name}</span>
-                        <span className="masilia-settings-card__meta">
-                            {providerLabel(types, provider.identifier) !== provider.name ? <span className="masilia-settings-tag">{providerLabel(types, provider.identifier)}</span> : null}
-                            <span>{provider.siteaccesses.length > 0 ? provider.siteaccesses.join(', ') : 'Not used on any siteaccess'}</span>
-                            <span>{own.length} {own.length === 1 ? 'model' : 'models'}</span>
-                            {provider.apiKey === null && types.find((type) => type.value === provider.identifier)?.requiresApiKey !== false ? <span className="masilia-settings-warn">No API key</span> : null}
-                        </span>
-                    </span>
-                </button>
-                <div className="masilia-settings-card__actions">
-                    <Button type="secondary" size="small" disabled={testing} onClick={props.onTest}>{testing ? 'Testing…' : 'Test'}</Button>
-                    <Button type="tertiary" size="small" icon="edit" ariaLabel={`Edit ${provider.name}`} title="Edit" onClick={props.onEdit} />
-                    <Button type="tertiary" size="small" icon="trash" ariaLabel={`Delete ${provider.name}`} title="Delete" onClick={props.onDelete} />
-                </div>
-            </div>
-
-            {testing ? <p className="masilia-settings-test" role="status">Testing the connection…</p> : null}
+        <Section title={<ProviderTitle provider={provider} types={types} count={own.length} serves={serves} />} open={props.open}>
+            <TableHeader
+                headline="Settings"
+                notice={`Endpoint: ${provider.apiUrl ?? types.find((type) => type.value === provider.identifier)?.defaultApiUrl ?? 'provider default'} · API key: ${provider.apiKey !== null ? 'stored' : 'not set'}`}
+                actions={(
+                    <>
+                        <Button type="secondary" size="small" disabled={testing} onClick={props.onTest}>{testing ? 'Testing…' : 'Test'}</Button>
+                        <IconButton icon="edit" label={`Edit ${provider.name}`} onClick={props.onEdit} />
+                        <IconButton icon="trash" label={`Delete ${provider.name}`} onClick={props.onDelete} />
+                    </>
+                )}
+            />
+            {testing ? <Notice role="status">Testing the connection…</Notice> : null}
             {testResult !== null ? (
-                <p className={`masilia-settings-test masilia-settings-test--${testResult.success ? 'ok' : 'fail'}`} role="status">
-                    <StatusIcon ok={testResult.success} />
-                    <span>
-                        {testResult.message}
-                        {testResult.streamTested && testResult.streamOk === false ? ' Streaming did not work.' : ''}
-                    </span>
-                </p>
-            ) : null}
-
-            {expanded ? (
-                <div className="masilia-settings-card__body" id={bodyId}>
-                    <dl className="masilia-settings-card__details">
-                        <div><dt>Endpoint</dt><dd>{provider.apiUrl ?? types.find((type) => type.value === provider.identifier)?.defaultApiUrl ?? 'Provider default'}</dd></div>
-                        <div><dt>API key</dt><dd>{provider.apiKey !== null ? 'Stored' : 'Not set'}</dd></div>
-                    </dl>
-
-                    <SiteaccessPicker
-                        legend="Used on these siteaccesses"
-                        siteaccesses={props.siteaccesses}
-                        selected={provider.siteaccesses}
-                        currentSiteaccess={props.currentSiteaccess}
-                        onChange={props.onSetSiteaccesses}
-                    />
-
-                    <div className="masilia-settings-form__row">
-                        <SelectField
-                            label="Chat model"
-                            value={provider.activeChatModelId === null ? '' : String(provider.activeChatModelId)}
-                            disabled={noModel}
-                            options={[{ value: '', label: 'None' }, ...own.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))]}
-                            onChange={(value) => props.onSetChatModel(value === '' ? null : Number(value))}
-                        />
-                        <SelectField
-                            label="Image model"
-                            value={provider.activeImageModelId === null ? '' : String(provider.activeImageModelId)}
-                            disabled={imageModels.length === 0}
-                            hint={imageModels.length === 0 && !noModel ? 'No model of this provider can generate images.' : undefined}
-                            options={[{ value: '', label: 'None' }, ...imageModels.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))]}
-                            onChange={(value) => props.onSetImageModel(value === '' ? null : Number(value))}
-                        />
-                    </div>
-
-                    <div className="masilia-settings-models">
-                        <div className="masilia-settings-models__head">
-                            <h3>Models ({own.length})</h3>
-                            <Button type="secondary" size="small" icon="add" onClick={props.onAddModel}>Add a model</Button>
-                        </div>
-                        {noModel ? (
-                            <p className="masilia-settings-muted">This provider has no model yet. Add one to use it.</p>
-                        ) : (
-                            <ul className="masilia-settings-models__list">
-                                {own.map((model) => (
-                                    <ModelRow
-                                        key={model.id}
-                                        model={model}
-                                        chatActive={model.id === provider.activeChatModelId}
-                                        imageActive={model.id === provider.activeImageModelId}
-                                        onEdit={props.onEditModel}
-                                        onDelete={props.onDeleteModel}
-                                    />
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                <div className={`ibexa-alert ibexa-alert--${testResult.success ? 'success' : 'error'}`} role="status">
+                    {testResult.message}
+                    {testResult.streamTested && testResult.streamOk === false ? ' Streaming did not work.' : ''}
                 </div>
             ) : null}
-        </li>
+
+            <CheckboxGroup
+                label="Used on these siteaccesses"
+                choices={props.siteaccesses.map((name) => ({ value: name, label: name, note: name === props.currentSiteaccess ? 'current' : undefined }))}
+                selected={provider.siteaccesses}
+                onChange={props.onSetSiteaccesses}
+            />
+            <DropdownField
+                label="Chat model"
+                value={provider.activeChatModelId === null ? '' : String(provider.activeChatModelId)}
+                disabled={noModel}
+                emptyLabel="None"
+                options={own.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))}
+                onChange={(value) => props.onSetChatModel(value === '' ? null : Number(value))}
+            />
+            <DropdownField
+                label="Image model"
+                value={provider.activeImageModelId === null ? '' : String(provider.activeImageModelId)}
+                disabled={imageModels.length === 0}
+                hint={imageModels.length === 0 && !noModel ? 'No model of this provider can generate images.' : undefined}
+                emptyLabel="None"
+                options={imageModels.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))}
+                onChange={(value) => props.onSetImageModel(value === '' ? null : Number(value))}
+            />
+
+            <TableHeader headline="Models" count={own.length} actions={<Button type="secondary" size="small" icon="add" onClick={props.onAddModel}>Add a model</Button>} />
+            <DataTable columns={columns} rows={own} rowKey={(model) => String(model.id)} empty={{ info: 'This provider has no model yet. Add one to use it.' }} label={`Models of ${provider.name}`} />
+        </Section>
     );
 }

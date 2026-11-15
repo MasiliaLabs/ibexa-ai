@@ -1,6 +1,12 @@
 import React from 'react';
 
-import { Button, Icon } from '../../shared/ids';
+import type { TagType } from '@masilia-admin-kit/ids';
+import { IconButton } from '@masilia-admin-kit/IconButton';
+import { IconSvg } from '@masilia-admin-kit/IconSvg';
+import { Notice } from '@masilia-admin-kit/Notice';
+import { StatTile } from '@masilia-admin-kit/StatTile';
+import { TableHeader } from '@masilia-admin-kit/Table';
+import { Tag } from '@masilia-admin-kit/ids';
 import type { EngineSummary } from '../providers';
 
 const STATE_LABEL: Record<EngineSummary['state'], string> = {
@@ -8,6 +14,13 @@ const STATE_LABEL: Record<EngineSummary['state'], string> = {
     offline: 'Offline',
     not_configured: 'Not configured',
     unknown: 'Checking…',
+};
+
+const STATE_TAG: Record<EngineSummary['state'], TagType> = {
+    online: 'success',
+    offline: 'error',
+    not_configured: 'warning',
+    unknown: 'neutral',
 };
 
 interface EngineBannerProps {
@@ -19,38 +32,31 @@ interface EngineBannerProps {
 /**
  * What answers on the current siteaccess right now, and what to do when nothing does.
  */
-export function EngineBanner({ summary, siteaccess, onRefresh }: EngineBannerProps) {
+export function EngineBanner({ summary, siteaccess, onRefresh }: EngineBannerProps): React.ReactElement {
+    const answer = (active: EngineSummary['chat']): string => (active !== null ? `${active.provider.name} / ${active.model.name}` : 'None');
+
     return (
-        <section className={`masilia-settings-engine masilia-settings-engine--${summary.state}`} aria-label="AI engine status">
-            <div className="masilia-settings-engine__main">
-                <div className="masilia-settings-engine__head">
-                    <h2 className="masilia-settings-engine__title">AI engine</h2>
-                    <span className="masilia-settings-chip">siteaccess: {siteaccess}</span>
-                </div>
-                <dl className="masilia-settings-engine__rows">
-                    <div>
-                        <dt>Chat</dt>
-                        <dd>{summary.chat !== null ? `${summary.chat.provider.name} / ${summary.chat.model.name}` : <span className="masilia-settings-muted">Not configured</span>}</dd>
-                    </div>
-                    <div>
-                        <dt>Image</dt>
-                        <dd>{summary.image !== null ? `${summary.image.provider.name} / ${summary.image.model.name}` : <span className="masilia-settings-muted">Not configured</span>}</dd>
-                    </div>
-                </dl>
-                {summary.state === 'offline' && summary.message !== '' ? <p className="masilia-settings-engine__text masilia-settings-engine__text--error">{summary.message}</p> : null}
-                {summary.guidance !== null ? <p className="masilia-settings-engine__text">{summary.guidance}</p> : null}
+        <section aria-label="AI engine status">
+            <TableHeader
+                headline="AI engine"
+                notice={`Siteaccess: ${siteaccess}`}
+                actions={(
+                    <>
+                        <span role="status"><Tag type={STATE_TAG[summary.state]} size="small">{STATE_LABEL[summary.state]}</Tag></span>
+                        <IconButton icon="arrows-reload" label="Check again" onClick={onRefresh} />
+                    </>
+                )}
+            />
+            <div className="masilia-kit-stats">
+                <StatTile value={answer(summary.chat)} label="Chat" />
+                <StatTile value={answer(summary.image)} label="Image" />
             </div>
-            <div className="masilia-settings-engine__status">
-                <span className="masilia-settings-status" role="status">
-                    <span className="masilia-settings-status__dot" aria-hidden="true" />
-                    {STATE_LABEL[summary.state]}
-                </span>
-                <Button type="tertiary" icon="arrows-reload" ariaLabel="Check again" title="Check again" onClick={onRefresh} />
-            </div>
+            {summary.state === 'offline' && summary.message !== '' ? <div className="ibexa-alert ibexa-alert--error" role="alert">{summary.message}</div> : null}
+            {summary.guidance !== null ? <Notice>{summary.guidance}</Notice> : null}
         </section>
     );
 }
 
-export function StatusIcon({ ok }: { ok: boolean }) {
-    return <Icon name={ok ? 'check-circle' : 'alert-error'} size="small" />;
+export function StatusIcon({ ok }: { ok: boolean }): React.ReactElement {
+    return <IconSvg name={ok ? 'check-circle' : 'alert-error'} size="small" />;
 }

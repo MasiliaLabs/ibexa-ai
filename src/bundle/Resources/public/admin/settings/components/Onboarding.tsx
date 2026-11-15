@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 
-import { Button } from '../../shared/ids';
+import { CheckboxGroup } from '@masilia-admin-kit/Checkbox';
+import { DropdownField } from '@masilia-admin-kit/Dropdown';
+import { TextField } from '@masilia-admin-kit/Field';
+import { Button, Tag } from '@masilia-admin-kit/ids';
+import { TableHeader } from '@masilia-admin-kit/Table';
 import type { ProviderType } from '../types';
-import { TextField } from './fields';
-import { SiteaccessPicker } from './SiteaccessPicker';
 
 interface OnboardingProps {
     types: ProviderType[];
@@ -17,7 +19,7 @@ const STEPS = ['Provider', 'API key', 'Siteaccess'];
 /**
  * First start, nothing configured yet: three short steps, then the provider form opens pre-filled.
  */
-export function Onboarding({ types, siteaccesses, currentSiteaccess, onFinish }: OnboardingProps) {
+export function Onboarding({ types, siteaccesses, currentSiteaccess, onFinish }: OnboardingProps): React.ReactElement {
     const [step, setStep] = useState(0);
     const [identifier, setIdentifier] = useState('');
     const [apiKey, setApiKey] = useState('');
@@ -26,39 +28,28 @@ export function Onboarding({ types, siteaccesses, currentSiteaccess, onFinish }:
 
     // A provider that needs no key skips the key step.
     const lastStep = 2;
-    const next = () => setStep((current) => (current === 0 && type?.requiresApiKey === false ? 2 : current + 1));
-    const back = () => setStep((current) => (current === 2 && type?.requiresApiKey === false ? 0 : current - 1));
+    const next = (): void => setStep((current) => (current === 0 && type?.requiresApiKey === false ? 2 : current + 1));
+    const back = (): void => setStep((current) => (current === 2 && type?.requiresApiKey === false ? 0 : current - 1));
     const canContinue = step === 0 ? identifier !== '' : step === 1 ? apiKey.trim() !== '' : true;
 
     return (
-        <section className="masilia-settings-onboarding" aria-labelledby="masilia-settings-onboarding-title">
-            <h2 id="masilia-settings-onboarding-title">Set up your first AI provider</h2>
-            <p className="masilia-settings-muted">Three short steps. You can change everything later.</p>
-
-            <ol className="masilia-settings-steps" aria-label="Steps">
-                {STEPS.map((label, index) => (
-                    <li key={label} className={index === step ? 'is-current' : index < step ? 'is-done' : ''} aria-current={index === step ? 'step' : undefined}>
-                        <span className="masilia-settings-steps__number">{index + 1}</span>
-                        {label}
-                    </li>
-                ))}
-            </ol>
+        <section aria-label="Set up your first AI provider">
+            <TableHeader
+                headline="Set up your first AI provider"
+                notice="Three short steps. You can change everything later."
+                actions={(
+                    <ol className="masilia-settings-steps" aria-label="Steps">
+                        {STEPS.map((label, index) => (
+                            <li key={label} aria-current={index === step ? 'step' : undefined}>
+                                <Tag type={index === step ? 'primary' : index < step ? 'success' : 'neutral'} size="small">{`${index + 1}. ${label}`}</Tag>
+                            </li>
+                        ))}
+                    </ol>
+                )}
+            />
 
             {step === 0 ? (
-                <fieldset className="masilia-settings-choices">
-                    <legend className="visually-hidden">Choose a provider</legend>
-                    {types.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            className={`masilia-settings-choice${identifier === option.value ? ' is-selected' : ''}`}
-                            aria-pressed={identifier === option.value}
-                            onClick={() => setIdentifier(option.value)}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
-                </fieldset>
+                <DropdownField label="Provider" required placeholder="Choose a provider" value={identifier} options={types.map((option) => ({ value: option.value, label: option.label }))} onChange={setIdentifier} />
             ) : null}
 
             {step === 1 ? (
@@ -66,7 +57,12 @@ export function Onboarding({ types, siteaccesses, currentSiteaccess, onFinish }:
             ) : null}
 
             {step === 2 ? (
-                <SiteaccessPicker legend="Use it on" siteaccesses={siteaccesses} selected={selected} currentSiteaccess={currentSiteaccess} onChange={setSelected} />
+                <CheckboxGroup
+                    label="Use it on"
+                    choices={siteaccesses.map((name) => ({ value: name, label: name, note: name === currentSiteaccess ? 'current' : undefined }))}
+                    selected={selected}
+                    onChange={setSelected}
+                />
             ) : null}
 
             <div className="masilia-settings-onboarding__footer">
