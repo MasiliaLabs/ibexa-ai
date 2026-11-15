@@ -89,6 +89,7 @@ export function ProviderCard(props: ProviderCardProps): React.ReactElement {
         <Section title={<ProviderTitle provider={provider} types={types} count={own.length} serves={serves} />} open={props.open}>
             <TableHeader
                 headline="Settings"
+                plain
                 notice={`Endpoint: ${provider.apiUrl ?? types.find((type) => type.value === provider.identifier)?.defaultApiUrl ?? 'provider default'} · API key: ${provider.apiKey !== null ? 'stored' : 'not set'}`}
                 actions={(
                     <>
