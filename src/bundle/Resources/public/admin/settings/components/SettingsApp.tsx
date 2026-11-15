@@ -37,7 +37,7 @@ export function SettingsApp(): React.ReactElement {
     return (
         <TranslatorProvider value={{ trans: (id) => t(id) }}>
             <AssetsProvider value={{ getIconPath: iconPath }}>
-                <EngineBanner summary={summary} siteaccess={snapshot.currentSiteaccess} onRefresh={() => void settings.refreshHealth()} />
+                <EngineBanner summary={summary} siteaccess={snapshot.currentSiteaccess} checking={settings.checking} onRefresh={() => void settings.refreshHealth()} />
                 <Tabs
                     label="AI settings"
                     active={tab}

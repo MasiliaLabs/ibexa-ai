@@ -27,12 +27,13 @@ interface EngineBannerProps {
     summary: EngineSummary;
     siteaccess: string;
     onRefresh: () => void;
+    checking?: boolean;
 }
 
 /**
  * What answers on the current siteaccess right now, and what to do when nothing does.
  */
-export function EngineBanner({ summary, siteaccess, onRefresh }: EngineBannerProps): React.ReactElement {
+export function EngineBanner({ summary, siteaccess, onRefresh, checking = false }: EngineBannerProps): React.ReactElement {
     const answer = (active: EngineSummary['chat']): string => (active !== null ? `${active.provider.name} / ${active.model.name}` : 'None');
 
     return (
@@ -42,8 +43,8 @@ export function EngineBanner({ summary, siteaccess, onRefresh }: EngineBannerPro
                 notice={`Siteaccess: ${siteaccess}`}
                 actions={(
                     <>
-                        <span role="status"><Tag type={STATE_TAG[summary.state]} size="small">{STATE_LABEL[summary.state]}</Tag></span>
-                        <IconButton icon="arrows-reload" label="Check again" onClick={onRefresh} />
+                        <span role="status"><Tag type={checking ? 'neutral' : STATE_TAG[summary.state]} size="small">{checking ? STATE_LABEL.unknown : STATE_LABEL[summary.state]}</Tag></span>
+                        <IconButton icon="arrows-reload" label={checking ? 'Checking…' : 'Check again'} busy={checking} onClick={onRefresh} />
                     </>
                 )}
             />

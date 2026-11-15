@@ -19,6 +19,8 @@ export interface SettingsController {
     tests: Record<number, TestResult>;
     reload: () => Promise<void>;
     refreshHealth: () => Promise<void>;
+    /** The engine status is being checked (the button of the banner turns meanwhile) */
+    checking: boolean;
     /** Saves a provider. Resolves to an error message to show in the form, or null on success. */
     saveProvider: (draft: ProviderDraft) => Promise<string | null>;
     deleteProvider: (id: number) => Promise<void>;
@@ -38,6 +40,7 @@ export function useSettings(): SettingsController {
     const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
     const [health, setHealth] = useState<Health | null>(null);
     const [loading, setLoading] = useState(true);
+    const [checking, setChecking] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [testing, setTesting] = useState<number | null>(null);
     const [tests, setTests] = useState<Record<number, TestResult>>({});
@@ -52,9 +55,14 @@ export function useSettings(): SettingsController {
     }, []);
 
     const refreshHealth = useCallback(async () => {
-        const result = await api.health();
-        if (mounted.current && result.ok) {
-            setHealth(result.data);
+        setChecking(true);
+        // A fast answer would be gone before it is seen: the animation lasts a little at least.
+        const [result] = await Promise.all([api.health(), new Promise((resolve) => setTimeout(resolve, 700))]);
+        if (mounted.current) {
+            if (result.ok) {
+                setHealth(result.data);
+            }
+            setChecking(false);
         }
     }, []);
 
@@ -163,7 +171,7 @@ export function useSettings(): SettingsController {
     ), [assign]);
 
     return {
-        snapshot, health, loading, loadError, testing, tests,
+        snapshot, health, loading, loadError, testing, tests, checking,
         reload, refreshHealth, saveProvider, deleteProvider, testProvider,
         setSiteaccesses, setChatModel, setImageModel, saveModel, deleteModel,
     };
