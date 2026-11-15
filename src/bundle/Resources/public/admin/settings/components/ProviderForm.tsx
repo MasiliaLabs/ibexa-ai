@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
-import { CheckboxGroup } from '@masilia-admin-kit/Checkbox';
 import { Dialog } from '@masilia-admin-kit/Dialog';
-import { DropdownField } from '@masilia-admin-kit/Dropdown';
+import { DropdownField, MultiDropdownField } from '@masilia-admin-kit/Dropdown';
 import { TextField } from '@masilia-admin-kit/Field';
 import { Button } from '@masilia-admin-kit/ids';
 import { validateProvider } from '../forms';
@@ -92,10 +91,11 @@ export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, 
                     onChange={(apiUrl) => patch({ apiUrl })}
                 />
                 {isNew ? (
-                    <CheckboxGroup
+                    <MultiDropdownField
                         label="Use it on"
-                        choices={siteaccesses.map((name) => ({ value: name, label: name, note: name === currentSiteaccess ? 'current' : undefined }))}
-                        selected={draft.siteaccesses}
+                        placeholder="No siteaccess"
+                        values={draft.siteaccesses}
+                        options={siteaccesses.map((name) => ({ value: name, label: name === currentSiteaccess ? `${name} (current)` : name }))}
                         onChange={(selected) => patch({ siteaccesses: selected })}
                     />
                 ) : null}

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
-import { CheckboxGroup } from '@masilia-admin-kit/Checkbox';
-import { DropdownField } from '@masilia-admin-kit/Dropdown';
+import { DropdownField, MultiDropdownField } from '@masilia-admin-kit/Dropdown';
 import { TextField } from '@masilia-admin-kit/Field';
 import { Button, Tag } from '@masilia-admin-kit/ids';
 import { TableHeader } from '@masilia-admin-kit/Table';
@@ -57,12 +56,13 @@ export function Onboarding({ types, siteaccesses, currentSiteaccess, onFinish }:
             ) : null}
 
             {step === 2 ? (
-                <CheckboxGroup
-                    label="Use it on"
-                    choices={siteaccesses.map((name) => ({ value: name, label: name, note: name === currentSiteaccess ? 'current' : undefined }))}
-                    selected={selected}
-                    onChange={setSelected}
-                />
+                <MultiDropdownField
+                        label="Use it on"
+                        placeholder="No siteaccess"
+                        values={selected}
+                        options={siteaccesses.map((name) => ({ value: name, label: name === currentSiteaccess ? `${name} (current)` : name }))}
+                        onChange={setSelected}
+                    />
             ) : null}
 
             <div className="masilia-settings-onboarding__footer">

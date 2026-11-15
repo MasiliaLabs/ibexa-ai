@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { CheckboxGroup } from '@masilia-admin-kit/Checkbox';
-import { DropdownField } from '@masilia-admin-kit/Dropdown';
+import { DropdownField, MultiDropdownField } from '@masilia-admin-kit/Dropdown';
 import { IconButton } from '@masilia-admin-kit/IconButton';
 import { Button, Tag } from '@masilia-admin-kit/ids';
 import { Notice } from '@masilia-admin-kit/Notice';
@@ -107,29 +106,32 @@ export function ProviderCard(props: ProviderCardProps): React.ReactElement {
                 </div>
             ) : null}
 
-            <CheckboxGroup
-                label="Used on these siteaccesses"
-                choices={props.siteaccesses.map((name) => ({ value: name, label: name, note: name === props.currentSiteaccess ? 'current' : undefined }))}
-                selected={provider.siteaccesses}
-                onChange={props.onSetSiteaccesses}
-            />
-            <DropdownField
-                label="Chat model"
-                value={provider.activeChatModelId === null ? '' : String(provider.activeChatModelId)}
-                disabled={noModel}
-                emptyLabel="None"
-                options={own.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))}
-                onChange={(value) => props.onSetChatModel(value === '' ? null : Number(value))}
-            />
-            <DropdownField
-                label="Image model"
-                value={provider.activeImageModelId === null ? '' : String(provider.activeImageModelId)}
-                disabled={imageModels.length === 0}
-                hint={imageModels.length === 0 && !noModel ? 'No model of this provider can generate images.' : undefined}
-                emptyLabel="None"
-                options={imageModels.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))}
-                onChange={(value) => props.onSetImageModel(value === '' ? null : Number(value))}
-            />
+            <div className="masilia-kit-row">
+                <MultiDropdownField
+                    label="Used on these siteaccesses"
+                    placeholder="No siteaccess"
+                    values={provider.siteaccesses}
+                    options={props.siteaccesses.map((name) => ({ value: name, label: name === props.currentSiteaccess ? `${name} (current)` : name }))}
+                    onChange={props.onSetSiteaccesses}
+                />
+                <DropdownField
+                    label="Chat model"
+                    value={provider.activeChatModelId === null ? '' : String(provider.activeChatModelId)}
+                    disabled={noModel}
+                    emptyLabel="None"
+                    options={own.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))}
+                    onChange={(value) => props.onSetChatModel(value === '' ? null : Number(value))}
+                />
+                <DropdownField
+                    label="Image model"
+                    value={provider.activeImageModelId === null ? '' : String(provider.activeImageModelId)}
+                    disabled={imageModels.length === 0}
+                    hint={imageModels.length === 0 && !noModel ? 'No model of this provider can generate images.' : undefined}
+                    emptyLabel="None"
+                    options={imageModels.map((model) => ({ value: String(model.id), label: modelOptionLabel(model) }))}
+                    onChange={(value) => props.onSetImageModel(value === '' ? null : Number(value))}
+                />
+            </div>
 
             <TableHeader headline="Models" count={own.length} actions={<Button type="secondary" size="small" icon="add" onClick={props.onAddModel}>Add a model</Button>} />
             <DataTable columns={columns} rows={own} rowKey={(model) => String(model.id)} empty={{ info: 'This provider has no model yet. Add one to use it.' }} label={`Models of ${provider.name}`} />
