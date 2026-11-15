@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import { FilterCard, FilterSelect, FilterZone } from '@masilia-admin-kit/FilterCard';
+import { FilterCard, FilterSelect } from '@masilia-admin-kit/FilterCard';
 import { iconPath } from '@masilia-admin-kit/icons';
 import { AssetsProvider, Tag, TranslatorProvider } from '@masilia-admin-kit/ids';
 import { SearchInput } from '@masilia-admin-kit/SearchInput';
@@ -64,19 +64,10 @@ function CapabilitiesTab({ data }: { data: PageData }): React.ReactElement {
                     <span className="masilia-caps__muted">{t('skills.help')}</span>
                 </div>
             ) : null}
-            <FilterCard>
-                <FilterZone>
-                    <SearchInput value={filters.query} onChange={(query) => set({ query })} placeholder={t('list.filter.placeholder')} clearLabel={t('list.filter.clear')} />
-                </FilterZone>
-                <FilterZone>
-                    <FilterSelect label={t('list.filter.risk')} value={filters.risk} emptyLabel={t('list.filter.all')} options={risks.map((risk) => ({ value: risk, label: risk }))} onChange={(risk) => set({ risk })} />
-                </FilterZone>
-                <FilterZone>
-                    <FilterSelect label={t('list.filter.domain')} value={filters.domain} emptyLabel={t('list.filter.all')} options={overview.domains.map((domain) => ({ value: domain.name, label: domain.name }))} onChange={(domain) => set({ domain })} />
-                </FilterZone>
-                <FilterZone>
-                    <FilterSelect label={t('list.filter.availability')} value={filters.availability} emptyLabel={t('list.filter.all')} options={[{ value: 'usable', label: t('list.filter.usable') }]} onChange={(availability) => set({ availability })} />
-                </FilterZone>
+            <FilterCard search={<SearchInput value={filters.query} onChange={(query) => set({ query })} placeholder={t('list.filter.placeholder')} clearLabel={t('list.filter.clear')} />}>
+                <FilterSelect label={t('list.filter.risk')} value={filters.risk} emptyLabel={t('list.filter.all')} options={risks.map((risk) => ({ value: risk, label: risk }))} onChange={(risk) => set({ risk })} />
+                <FilterSelect label={t('list.filter.domain')} value={filters.domain} emptyLabel={t('list.filter.all')} options={overview.domains.map((domain) => ({ value: domain.name, label: domain.name }))} onChange={(domain) => set({ domain })} />
+                <FilterSelect label={t('list.filter.availability')} value={filters.availability} emptyLabel={t('list.filter.all')} options={[{ value: 'usable', label: t('list.filter.usable') }]} onChange={(availability) => set({ availability })} />
             </FilterCard>
             <TableHeader headline={t('list.title')} count={countCapabilities(shown)} />
             {shown.length === 0 ? (
