@@ -4,6 +4,7 @@ import { FilterCard, FilterSelect } from '@masilia-admin-kit/FilterCard';
 import { iconPath } from '@masilia-admin-kit/icons';
 import { AssetsProvider, Tag, TranslatorProvider } from '@masilia-admin-kit/ids';
 import { SearchInput } from '@masilia-admin-kit/SearchInput';
+import { Notice } from '@masilia-admin-kit/Notice';
 import { Section } from '@masilia-admin-kit/Section';
 import { StatTile } from '@masilia-admin-kit/StatTile';
 import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
@@ -61,7 +62,7 @@ function CapabilitiesTab({ data }: { data: PageData }): React.ReactElement {
                 <div className="masilia-caps__skills">
                     <strong>{t('skills.title')}</strong>
                     {overview.skills.map((skill) => <Tag key={skill.name} type="primary" size="small">{`${skill.name} (${skill.package})`}</Tag>)}
-                    <span className="masilia-caps__muted">{t('skills.help')}</span>
+                    <Notice>{t('skills.help')}</Notice>
                 </div>
             ) : null}
             <FilterCard search={<SearchInput value={filters.query} onChange={(query) => set({ query })} placeholder={t('list.filter.placeholder')} clearLabel={t('list.filter.clear')} />}>
@@ -75,9 +76,7 @@ function CapabilitiesTab({ data }: { data: PageData }): React.ReactElement {
             ) : shown.map((domain) => (
                 <Section key={domain.name} title={<DomainHeader domain={domain} total={overview.domains.find((full) => full.name === domain.name)?.capabilities.length ?? domain.capabilities.length} />} open={startsOpen(domain, filters)}>
                     {domain.enabled ? null : (
-                        <div className="ibexa-alert ibexa-alert--info" role="note">
-                            <span>{t('domain.off_note')} <code>{`masilia_ibexa_ai.os.domains.${domain.name}: true`}</code>.</span>
-                        </div>
+                        <Notice>{t('domain.off_note')} <code>{`masilia_ibexa_ai.os.domains.${domain.name}: true`}</code>.</Notice>
                     )}
                     <DataTable columns={columns} rows={domain.capabilities} rowKey={(capability) => capability.name} empty={{ info: t('list.empty') }} label={domain.name} />
                 </Section>
@@ -90,10 +89,10 @@ function CoverageTab({ coverage }: { coverage: CoverageDto }): React.ReactElemen
     return (
         <>
             <TableHeader headline={t('coverage.title')} />
-            <p className="masilia-caps__muted">
+            <Notice>
                 {t('coverage.summary', { routes: coverage.routes, covered: coverage.covered, out: coverage.out_of_scope, planned: coverage.planned, unmapped: coverage.unmapped.length })}
                 {' '}{t('coverage.check')} <code>masilia:ai:os:coverage --strict</code>
-            </p>
+            </Notice>
             {coverage.unmapped.length > 0 ? (
                 <div className="ibexa-alert ibexa-alert--warning" role="note">
                     <strong>{t('coverage.unmapped.title')}</strong> ({t('coverage.unmapped.why')}): {coverage.unmapped.join(', ')}
@@ -145,7 +144,7 @@ export function CapabilitiesApp({ data }: { data: PageData }): React.ReactElemen
         <TranslatorProvider value={{ trans: (id) => t(id) }}>
             <AssetsProvider value={{ getIconPath: iconPath }}>
                 <div className="masilia-caps">
-                    <p className="masilia-caps__muted">{t('capabilities.intro')}</p>
+                    <Notice>{t('capabilities.intro')}</Notice>
                     <div className="masilia-kit-stats">
                         <StatTile value={overview.totals.capabilities} label={t('stat.capabilities')} />
                         <StatTile value={overview.totals.domains} label={t('stat.domains', { on: overview.totals.enabled_domains })} />
