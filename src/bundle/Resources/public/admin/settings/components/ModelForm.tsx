@@ -83,7 +83,7 @@ export function ModelForm({ initial, providers, fixedProvider, onSave, onClose }
                     onChange={(identifier) => patch({ identifier })}
                 />
                                     <TextField label="Temperature" required type="number" step="0.1" min="0" max="2" value={draft.temperature} error={errors.temperature} hint="0 is precise, 2 is creative." onChange={(temperature) => patch({ temperature })} />
-                    <TextField label="Maximum tokens" required type="number" min="1" step="1" value={draft.maxTokens} error={errors.maxTokens} hint="Length limit of an answer." onChange={(maxTokens) => patch({ maxTokens })} />
+                <TextField label="Maximum tokens" required type="number" min="1" step="1" value={draft.maxTokens} error={errors.maxTokens} hint="Length limit of an answer." onChange={(maxTokens) => patch({ maxTokens })} />
                 <CheckboxField label="Can generate images" checked={draft.supportsImage} hint="Check it for an image model." onChange={(supportsImage) => patch({ supportsImage })} />
                 <CheckboxField label="Can read images" checked={draft.supportsVision} hint="Check it when the model accepts images in a message (vision). The assistant sends it the images attached to a message only then." onChange={(supportsVision) => patch({ supportsVision })} />
             </form>
