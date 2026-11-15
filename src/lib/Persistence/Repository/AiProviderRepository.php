@@ -28,6 +28,9 @@ class AiProviderRepository extends ServiceEntityRepository
             ->innerJoin('p.activeChatModel', 'm')
             ->where('sa.siteaccess = :siteaccess')
             ->setParameter('siteaccess', $siteaccess)
+            // Several providers can be assigned to a siteaccess: the first by name answers, as the settings page shows it.
+            ->orderBy('p.name', 'ASC')
+            ->addOrderBy('p.id', 'ASC')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -43,6 +46,9 @@ class AiProviderRepository extends ServiceEntityRepository
             ->innerJoin('p.activeImageModel', 'm')
             ->where('sa.siteaccess = :siteaccess')
             ->setParameter('siteaccess', $siteaccess)
+            // Several providers can be assigned to a siteaccess: the first by name answers, as the settings page shows it.
+            ->orderBy('p.name', 'ASC')
+            ->addOrderBy('p.id', 'ASC')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

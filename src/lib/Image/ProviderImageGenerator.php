@@ -126,7 +126,8 @@ final readonly class ProviderImageGenerator implements ImageGenerator
         ]);
 
         if ($response->getStatusCode() !== 200) {
-            throw new RuntimeException(sprintf('The image API answered HTTP %d.', $response->getStatusCode()));
+            // What the provider says about the refusal (an unknown model, a size it does not take…) is the only way to fix it.
+            throw new RuntimeException(sprintf('The image API answered HTTP %d: %s', $response->getStatusCode(), mb_substr(trim($response->getContent(false)), 0, 500)));
         }
 
         return $response->toArray(false);
