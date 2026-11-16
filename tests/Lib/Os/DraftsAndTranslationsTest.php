@@ -64,7 +64,7 @@ final class DraftsAndTranslationsTest extends TestCase
         $writer->expects(self::once())->method('create')->with('article', [1018], ['title' => 'Later'], 'eng-GB', false)->willReturn($this->draft());
         $capability = new CreateCapability($this->checks($this->article()), $writer, $this->languages());
 
-        $result = $capability->execute(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => 'Later'], 'publish' => false, 'siteaccess' => 'fossil_exit']);
+        $result = $capability->execute(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => 'Later'], 'publish' => false, 'siteaccess' => 'acme']);
 
         self::assertTrue($result->success);
         self::assertStringContainsString('Saved a draft of article (ID: 500): publish it with content.publish', $result->message);

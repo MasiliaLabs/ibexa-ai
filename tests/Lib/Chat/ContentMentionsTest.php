@@ -20,11 +20,11 @@ final class ContentMentionsTest extends TestCase
     public function testNamesThatStartWithWhatWasTypedComeFirst(): void
     {
         $ranked = ContentMentions::rank(
-            [['name' => 'The page about fossils'], ['name' => 'Fossil exit'], ['name' => 'About fossils'], ['name' => 'fossil fuels']],
-            'Fossil',
+            [['name' => 'The page about acmes'], ['name' => 'Acme bags'], ['name' => 'About acmes'], ['name' => 'acme fuels']],
+            'Acme',
         );
 
-        self::assertSame(['Fossil exit', 'fossil fuels', 'About fossils', 'The page about fossils'], array_column($ranked, 'name'));
+        self::assertSame(['Acme bags', 'acme fuels', 'About acmes', 'The page about acmes'], array_column($ranked, 'name'));
     }
 
     public function testADocumentIsNotPartOfTheTitle(): void

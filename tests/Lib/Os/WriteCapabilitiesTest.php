@@ -71,7 +71,7 @@ final class WriteCapabilitiesTest extends TestCase
             ->willReturn($this->published(500));
 
         $result = (new CreateCapability($this->checks(['article' => ['name' => 'Article', 'fields' => ['title' => 'ibexa_string']]]), $writer, $this->languages()))
-            ->execute(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => 'Hello'], 'siteaccess' => 'fossil_exit']);
+            ->execute(['content_type' => 'article', 'parent_location_id' => 1018, 'fields' => ['title' => 'Hello'], 'siteaccess' => 'acme']);
 
         self::assertTrue($result->success);
         self::assertSame(['content_id' => 500, 'location_id' => 501], $result->data);

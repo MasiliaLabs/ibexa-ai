@@ -59,9 +59,9 @@ final class ProviderCatalogTest extends TestCase
         });
 
         $catalog = new ProviderCatalog($entities, $providers, $this->createMock(AiModelRepository::class), new ProviderKeys(SecretCipher::fromConfiguration(null, 'secret')));
-        $catalog->setSiteaccesses(4, [' admin_fossil_exit ', 'admin', 'admin', '', 7]);
+        $catalog->setSiteaccesses(4, [' admin_acme ', 'admin', 'admin', '', 7]);
 
-        self::assertSame(['admin_fossil_exit', 'admin'], $persisted);
+        self::assertSame(['admin_acme', 'admin'], $persisted);
     }
 
     public function testNoSiteaccessTakesNothingFromTheOthers(): void

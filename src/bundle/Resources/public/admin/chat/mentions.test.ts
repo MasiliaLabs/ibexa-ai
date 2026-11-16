@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { cleanName, encodeMentions, insertMention, labelFor, mentionHref, mentionTrigger, splitMentions, tokenFor } from './mentions';
 import type { Picked } from './mentions';
 
-const atouts: Picked = { contentId: 1353, locationId: 1343, name: 'Les atouts de la sortie des combustibles fossiles', label: 'Les atouts de la sortie des' };
+const atouts: Picked = { contentId: 1353, locationId: 1343, name: 'The strengths of our new product range', label: 'The strengths of our new' };
 const about: Picked = { contentId: 9, locationId: null, name: 'About', label: 'About' };
 
 test('an "@" that starts a word at the caret opens a mention, with what follows as the query', () => {
@@ -31,9 +31,9 @@ test('choosing a content puts its label after the "@" and the caret after it', (
 });
 
 test('the label is the name, short; the same label for two contents is told apart by the id', () => {
-    assert.equal(labelFor('Les atouts de la sortie des combustibles fossiles', 1353, []), 'Les atouts de la sortie des');
-    assert.equal(labelFor('Les atouts de la sortie des combustibles', 1355, [atouts]), 'Les atouts de la sortie des #1355');
-    assert.equal(labelFor('Les atouts de la sortie des combustibles fossiles', 1353, [atouts]), 'Les atouts de la sortie des');
+    assert.equal(labelFor('The strengths of our new product range', 1353, []), 'The strengths of our new');
+    assert.equal(labelFor('The strengths of our new product lines', 1355, [atouts]), 'The strengths of our new #1355');
+    assert.equal(labelFor('The strengths of our new product range', 1353, [atouts]), 'The strengths of our new');
     assert.equal(labelFor('[()]', 7, []), 'content 7');
 });
 
@@ -44,9 +44,9 @@ test('a name cannot end the token early', () => {
 });
 
 test('on sending, each picked "@label" still in the text becomes its token', () => {
-    const text = encodeMentions('Translate @Les atouts de la sortie des into French, and check @About.', [atouts, about]);
+    const text = encodeMentions('Translate @The strengths of our new into French, and check @About.', [atouts, about]);
 
-    assert.equal(text, 'Translate @[Les atouts de la sortie des combustibles fossiles](content:1353/1343) into French, and check @[About](content:9).');
+    assert.equal(text, 'Translate @[The strengths of our new product range](content:1353/1343) into French, and check @[About](content:9).');
 });
 
 test('a label the user edited, deleted, or that is part of a longer word is left alone', () => {

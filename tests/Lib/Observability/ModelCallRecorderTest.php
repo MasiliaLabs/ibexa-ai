@@ -64,7 +64,7 @@ final class ModelCallRecorderTest extends TestCase
                 return $this->memoryPersistence ??= new InMemoryPersistence();
             }
         };
-        (new ModelCallRecorder($logger))->attach($agent, new ChatConnection($model, 'openai', 'gpt-test', false), 'fossil_exit');
+        (new ModelCallRecorder($logger))->attach($agent, new ChatConnection($model, 'openai', 'gpt-test', false), 'acme');
         $agent->setThreadId('thread-rec-0001');
 
         return $agent;
@@ -80,7 +80,7 @@ final class ModelCallRecorderTest extends TestCase
 
         self::assertCount(1, $this->logged);
         $log = $this->logged[0];
-        self::assertSame(['openai', 'gpt-test', 'fossil_exit', true], [$log->providerIdentifier, $log->modelIdentifier, $log->siteaccess, $log->success]);
+        self::assertSame(['openai', 'gpt-test', 'acme', true], [$log->providerIdentifier, $log->modelIdentifier, $log->siteaccess, $log->success]);
         self::assertSame([120, 30], [$log->tokensIn, $log->tokensOut]);
         self::assertGreaterThanOrEqual(0, $log->latencyMs);
         self::assertNull($log->errorCode);

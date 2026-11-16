@@ -70,10 +70,10 @@ final class AgentThreadsTest extends TestCase
     public function testTheHistoryIsPerSiteaccess(): void
     {
         $this->threads->claim('thread-aaaa-0001', 14, 'admin', 'A', $this->at('2026-11-13 10:00:00'));
-        $this->threads->claim('thread-bbbb-0002', 14, 'admin_fossil_exit', 'B', $this->at('2026-11-13 11:00:00'));
+        $this->threads->claim('thread-bbbb-0002', 14, 'admin_acme', 'B', $this->at('2026-11-13 11:00:00'));
 
-        self::assertSame(['thread-bbbb-0002'], array_map(static fn ($t): string => $t->id, $this->threads->list(14, 'admin_fossil_exit')));
-        self::assertNull($this->threads->latest(14, 'admin_mattcch'));
+        self::assertSame(['thread-bbbb-0002'], array_map(static fn ($t): string => $t->id, $this->threads->list(14, 'admin_acme')));
+        self::assertNull($this->threads->latest(14, 'admin_partner'));
     }
 
     public function testRenamingChangesTheTitleAndKeepsTheConversationWhereItWas(): void

@@ -57,7 +57,7 @@ final class FieldValueShapes
             ['oneOf' => [['type' => 'string'], ['type' => 'object', 'required' => ['description'], 'properties' => ['description' => ['type' => 'string'], 'size' => ['type' => 'string'], 'quality' => ['type' => 'string']]]]],
             'a photo of a sunset over the ocean',
         ],
-        'ibexa_keyword' => ['a comma-separated string ("fossil, exit") or a list of words.', ['oneOf' => [['type' => 'string'], ['type' => 'array', 'items' => ['type' => 'string']]]], 'fossil, exit, environment'],
+        'ibexa_keyword' => ['a comma-separated string ("acme, exit") or a list of words.', ['oneOf' => [['type' => 'string'], ['type' => 'array', 'items' => ['type' => 'string']]]], 'acme, exit, environment'],
         'ibexa_gmap_location' => ['{latitude, longitude, address} (also lat / lng).', ['type' => 'object', 'required' => ['latitude', 'longitude'], 'properties' => ['latitude' => ['type' => 'number'], 'longitude' => ['type' => 'number'], 'address' => ['type' => 'string']]], ['latitude' => 33.5731, 'longitude' => -7.5898, 'address' => 'Casablanca']],
         'ibexa_object_relation' => ['the integer id of the target content.', ['type' => 'integer', 'minimum' => 1], 1176],
         'ibexa_url' => ['a URL string, or {link, text}.', ['oneOf' => [['type' => 'string', 'format' => 'uri'], ['type' => 'object', 'required' => ['link'], 'properties' => ['link' => ['type' => 'string'], 'text' => ['type' => 'string']]]]], ['link' => 'https://example.org', 'text' => 'Our site']],

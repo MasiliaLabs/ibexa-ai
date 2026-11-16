@@ -22,8 +22,8 @@ use Masilia\Contracts\IbexaAi\Site\SiteLocations;
 use Masilia\IbexaAi\Tests\Lib\Ibexa\Schema\BlockCatalogFactoryTrait;
 
 /**
- * What the write tests are built on: the checks as they are in a Fossil Exit installation, and a store with an image of a user.
- * Locations: 1018 is the Fossil Exit site's home, 1304 another page of it, 311 another site, 43 the media root.
+ * What the write tests are built on: the checks as they are in a Acme Shop installation, and a store with an image of a user.
+ * Locations: 1018 is the Acme Shop site's home, 1304 another page of it, 311 another site, 43 the media root.
  *
  * @internal test-only
  */
@@ -34,7 +34,7 @@ trait WriteFixtures
     /** @param array<string, list<string>> $languagesBySiteaccess */
     private function checks(array $types = [], array $languagesBySiteaccess = [], ?AttachmentStore $attachments = null, int $userId = 14): WriteChecks
     {
-        $languagesBySiteaccess = $languagesBySiteaccess ?: ['fossil_exit' => ['eng-GB'], 'fossil_exit_fr' => ['fre-FR'], 'fossil_exit_ar' => ['ara-MA']];
+        $languagesBySiteaccess = $languagesBySiteaccess ?: ['acme' => ['eng-GB'], 'acme_fr' => ['fre-FR'], 'acme_ar' => ['ara-MA']];
         $paths = [1018 => '/1/2/1016/1018/', 1304 => '/1/2/1016/1304/', 311 => '/1/2/311/', 43 => '/1/43/'];
 
         $locations = $this->createMock(LocationService::class);

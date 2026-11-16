@@ -25,7 +25,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * What must be true before the assistant writes: the content type exists and its values fit it, the parent is in the
  * site of the siteaccess, the language is one the site is served in, the image is the user's own. Locations: 1018 is the
- * Fossil Exit site's home, 1304 another page of it, 311 another site, 43 the media root (outside every site).
+ * Acme Shop site's home, 1304 another page of it, 311 another site, 43 the media root (outside every site).
  */
 final class WriteChecksTest extends TestCase
 {
@@ -64,38 +64,38 @@ final class WriteChecksTest extends TestCase
 
     public function testAParentThatDoesNotExistIsRefused(): void
     {
-        self::assertStringContainsString('Parent location 9999 does not exist', (string) $this->checks()->parent(9999, 'fossil_exit'));
+        self::assertStringContainsString('Parent location 9999 does not exist', (string) $this->checks()->parent(9999, 'acme'));
     }
 
     public function testAParentInAnotherSiteIsRefused(): void
     {
-        self::assertStringContainsString('they are in different sites', (string) $this->checks()->parent(311, 'fossil_exit'));
+        self::assertStringContainsString('they are in different sites', (string) $this->checks()->parent(311, 'acme'));
     }
 
     public function testAParentUnderTheSiteOrOutsideEverySiteIsAccepted(): void
     {
         $checks = $this->checks();
 
-        self::assertNull($checks->parent(1304, 'fossil_exit'), 'another page of the same site');
-        self::assertNull($checks->parent(43, 'fossil_exit'), 'the media library belongs to no site');
+        self::assertNull($checks->parent(1304, 'acme'), 'another page of the same site');
+        self::assertNull($checks->parent(43, 'acme'), 'the media library belongs to no site');
         self::assertNull($checks->parent(1018, null), 'without a siteaccess there is nothing to compare with');
     }
 
     public function testWithoutALanguageTheSitesOwnLanguageIsUsed(): void
     {
-        self::assertSame(['eng-GB', null], $this->checks()->language(null, 'fossil_exit'));
+        self::assertSame(['eng-GB', null], $this->checks()->language(null, 'acme'));
         self::assertSame([null, null], $this->checks()->language(null, null), 'no site and no language: the repository default');
     }
 
     public function testAFrenchCodeOnTheSiteIsMappedToTheSitesFrenchLanguage(): void
     {
-        self::assertSame(['fre-FR', null], $this->checks()->language('fr', 'fossil_exit'));
-        self::assertSame(['fre-FR', null], $this->checks()->language('fre-FR', 'fossil_exit'));
+        self::assertSame(['fre-FR', null], $this->checks()->language('fr', 'acme'));
+        self::assertSame(['fre-FR', null], $this->checks()->language('fre-FR', 'acme'));
     }
 
     public function testAnUnknownLanguageIsRefused(): void
     {
-        [$language, $problem] = $this->checks()->language('xx', 'fossil_exit');
+        [$language, $problem] = $this->checks()->language('xx', 'acme');
 
         self::assertNull($language);
         self::assertStringContainsString('Language "xx" does not exist', (string) $problem);
@@ -103,10 +103,10 @@ final class WriteChecksTest extends TestCase
 
     public function testALanguageTheSiteIsNotServedInIsRefusedInsteadOfWritingItAsAnotherOne(): void
     {
-        [$language, $problem] = $this->checks([], ['fossil_exit' => ['eng-GB']])->language('fre-FR', 'fossil_exit');
+        [$language, $problem] = $this->checks([], ['acme' => ['eng-GB']])->language('fre-FR', 'acme');
 
         self::assertNull($language);
-        self::assertStringContainsString('The site of siteaccess "fossil_exit" has no "fre-FR" language', (string) $problem);
+        self::assertStringContainsString('The site of siteaccess "acme" has no "fre-FR" language', (string) $problem);
     }
 
     public function testAnImageOfAnotherUserOrOneThatIsGoneIsRefused(): void

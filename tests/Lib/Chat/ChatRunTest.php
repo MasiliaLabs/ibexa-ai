@@ -94,10 +94,10 @@ final class ChatRunTest extends TestCase
     public function testTheThreadIsClaimedForTheUserAndTheSiteaccessWithTheFirstMessage(): void
     {
         $chat = $this->chatRun();
-        $this->threads->expects(self::once())->method('claim')->with(self::THREAD, 14, 'fossil_exit', 'What is on the home page?');
+        $this->threads->expects(self::once())->method('claim')->with(self::THREAD, 14, 'acme', 'What is on the home page?');
         $this->agents->method('create')->willThrowException(new ProviderConfigurationException('no provider'));
 
-        $chat->start($this->input('  What is on the home page?  '), 14, 'fossil_exit');
+        $chat->start($this->input('  What is on the home page?  '), 14, 'acme');
     }
 
     public function testARunThatCannotStartIsToldAsAFailedRunNotAnHttpError(): void

@@ -53,7 +53,7 @@ final class ThreadTitleTest extends TestCase
     public static function ids(): iterable
     {
         yield 'a uuid' => ['3f2b8c1e-5d6a-4e7f-9a10-2b3c4d5e6f70', true];
-        yield 'the former id of a conversation' => ['agent-14-admin_fossil_exit', true];
+        yield 'the former id of a conversation' => ['agent-14-admin_acme', true];
         yield 'too short' => ['abc', false];
         yield 'too long' => [str_repeat('a', 65), false];
         yield 'a slash' => ['../../etc/passwd-x', false];

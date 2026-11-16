@@ -165,12 +165,12 @@ final class ImageInputTest extends TestCase
         $client = $this->makeImageClient(true, new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
         $client->expects(self::once())
             ->method('generate')
-            ->with('A photo of a fossil exit', null, null)
+            ->with('A photo of a acme shop', null, null)
             ->willReturn(new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
 
         $sut = new ImageInput($client, new NullLogger());
 
-        $result = $sut->transform($this->makeFieldDef(), 'A photo of a fossil exit');
+        $result = $sut->transform($this->makeFieldDef(), 'A photo of a acme shop');
 
         self::assertInstanceOf(ImageValue::class, $result);
         self::assertSame('png', pathinfo((string)$result->inputUri, PATHINFO_EXTENSION));
@@ -183,13 +183,13 @@ final class ImageInputTest extends TestCase
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
-            ->with('A photo of a fossil exit', '1024x1024', 'hd')
+            ->with('A photo of a acme shop', '1024x1024', 'hd')
             ->willReturn(new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
 
         $sut = new ImageInput($client, new NullLogger());
 
         $result = $sut->transform($this->makeFieldDef(), [
-            'description' => 'A photo of a fossil exit',
+            'description' => 'A photo of a acme shop',
             'size'        => '1024x1024',
             'quality'     => 'hd',
         ]);
@@ -203,12 +203,12 @@ final class ImageInputTest extends TestCase
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
-            ->with('A photo of a fossil exit', null, null)
+            ->with('A photo of a acme shop', null, null)
             ->willReturn(new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
 
         $sut = new ImageInput($client, new NullLogger());
 
-        $sut->transform($this->makeFieldDef(), ['prompt' => 'A photo of a fossil exit']);
+        $sut->transform($this->makeFieldDef(), ['prompt' => 'A photo of a acme shop']);
     }
 
     public function testObjectWithAltKeyIsNormalized(): void
@@ -217,12 +217,12 @@ final class ImageInputTest extends TestCase
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
-            ->with('A photo of a fossil exit', null, null)
+            ->with('A photo of a acme shop', null, null)
             ->willReturn(new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
 
         $sut = new ImageInput($client, new NullLogger());
 
-        $sut->transform($this->makeFieldDef(), ['alt' => 'A photo of a fossil exit']);
+        $sut->transform($this->makeFieldDef(), ['alt' => 'A photo of a acme shop']);
     }
 
     public function testObjectWithoutDescriptionReturnsOriginalValue(): void
@@ -244,13 +244,13 @@ final class ImageInputTest extends TestCase
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
-            ->with('A photo of a fossil exit', null, null)
+            ->with('A photo of a acme shop', null, null)
             ->willReturn(new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
 
         $sut = new ImageInput($client, new NullLogger());
 
         $sut->transform($this->makeFieldDef(), [
-            'description' => 'A photo of a fossil exit',
+            'description' => 'A photo of a acme shop',
             'size'        => 123,
             'quality'     => ['hd'],
         ]);
@@ -262,13 +262,13 @@ final class ImageInputTest extends TestCase
         $client->method('isConfigured')->willReturn(true);
         $client->expects(self::once())
             ->method('generate')
-            ->with('A photo of a fossil exit', null, null)
+            ->with('A photo of a acme shop', null, null)
             ->willReturn(new ImageGenerationResult(self::TINY_PNG_BASE64, 'image/png'));
 
         $sut = new ImageInput($client, new NullLogger());
 
         $sut->transform($this->makeFieldDef(), [
-            'description' => 'A photo of a fossil exit',
+            'description' => 'A photo of a acme shop',
             'size'        => '',
             'quality'     => '',
         ]);
@@ -296,9 +296,9 @@ final class ImageInputTest extends TestCase
             new NullLogger(),
         );
 
-        $result = $sut->transform($this->makeFieldDef(), 'A photo of a fossil exit');
+        $result = $sut->transform($this->makeFieldDef(), 'A photo of a acme shop');
 
-        self::assertSame('A photo of a fossil exit', $result);
+        self::assertSame('A photo of a acme shop', $result);
         self::assertSame([], TempFileRegistry::tracked());
     }
 
@@ -307,7 +307,7 @@ final class ImageInputTest extends TestCase
         $client = $this->makeImageClient(true, null, new RuntimeException('API down'));
         $sut = new ImageInput($client, new NullLogger());
 
-        $result = $sut->transform($this->makeFieldDef(), 'A photo of a fossil exit');
+        $result = $sut->transform($this->makeFieldDef(), 'A photo of a acme shop');
 
         self::assertNull($result);
         self::assertSame([], TempFileRegistry::tracked());
@@ -318,7 +318,7 @@ final class ImageInputTest extends TestCase
         $client = $this->makeImageClient(true, new ImageGenerationResult('!!!not-valid-base64!!!', 'image/png'));
         $sut = new ImageInput($client, new NullLogger());
 
-        $result = $sut->transform($this->makeFieldDef(), 'A photo of a fossil exit');
+        $result = $sut->transform($this->makeFieldDef(), 'A photo of a acme shop');
 
         self::assertNull($result);
     }
@@ -329,7 +329,7 @@ final class ImageInputTest extends TestCase
         $client = $this->makeImageClient(true, new ImageGenerationResult($base64, 'image/png'));
         $sut = new ImageInput($client, new NullLogger());
 
-        $sut->transform($this->makeFieldDef(), 'A photo of a fossil exit');
+        $sut->transform($this->makeFieldDef(), 'A photo of a acme shop');
 
         $tracked = TempFileRegistry::tracked();
         self::assertCount(1, $tracked);
