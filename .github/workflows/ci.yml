@@ -23,7 +23,6 @@ jobs:
             - run: composer validate --strict
             - run: composer install --no-interaction --prefer-dist --no-progress
             - run: vendor/bin/phpunit
-            # The remarks known when the baseline was made are in phpstan-baseline.neon; a new one fails the build.
             - run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
 
     admin:
@@ -32,8 +31,15 @@ jobs:
         defaults:
             run:
                 working-directory: src/bundle/Resources/public/admin
+        env:
+            MASILIA_ADMIN_KIT: ${{ github.workspace }}/ibexa-admin-kit/src/bundle/Resources/public/admin
         steps:
             - uses: actions/checkout@v4
+            # The components of the admin: the sources of masilia/ibexa-admin-kit, next to this repository.
+            - uses: actions/checkout@v4
+              with:
+                  repository: MasiliaLabs/ibexa-admin-kit
+                  path: ibexa-admin-kit
             - uses: actions/setup-node@v4
               with:
                   node-version: '24'

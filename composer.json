@@ -1,8 +1,32 @@
 {
     "name": "masilia/ibexa-ai",
     "description": "AI assistant for Ibexa CMS 5: provider layer, content suggestions, agent with approval flow (Neuron AI)",
+    "keywords": [
+        "ibexa",
+        "ibexa-dxp",
+        "ibexa-5",
+        "symfony-bundle",
+        "ai",
+        "llm",
+        "assistant",
+        "agent",
+        "neuron-ai",
+        "ag-ui"
+    ],
+    "homepage": "https://github.com/MasiliaLabs/ibexa-ai",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "MasiliaLabs",
+            "homepage": "https://github.com/MasiliaLabs"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/MasiliaLabs/ibexa-ai/issues",
+        "source": "https://github.com/MasiliaLabs/ibexa-ai",
+        "security": "https://github.com/MasiliaLabs/ibexa-ai/security/policy"
+    },
     "type": "ibexa-bundle",
-    "license": "proprietary",
     "require": {
         "php": ">=8.3",
         "doctrine/doctrine-bundle": "^2.18",
