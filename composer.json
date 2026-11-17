@@ -104,7 +104,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "git@github.com:MasiliaLabs/ibexa-admin-kit.git"
+            "url": "https://github.com/MasiliaLabs/ibexa-admin-kit.git"
         }
     ]
 }
