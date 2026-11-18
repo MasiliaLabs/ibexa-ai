@@ -16,26 +16,83 @@ $dock-top: calculateRem(59px); // under the admin's top bar
     z-index: 1000;
 }
 
+// The launcher: a round button in the primary colour of the admin, with the mark of the assistant (a speech bubble holding a sparkle).
 .masilia-chat__launcher {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: calculateRem(48px);
-    height: calculateRem(48px);
-    background: ibexa.$ibexa-color-primary;
-    border: 0;
+    width: calculateRem(52px);
+    height: calculateRem(52px);
+    background: linear-gradient(145deg, ibexa.$ibexa-color-primary-400 0%, ibexa.$ibexa-color-primary 55%, ibexa.$ibexa-color-primary-600 100%);
+    border: calculateRem(2px) solid ibexa.$ibexa-color-white;
     border-radius: 50%;
-    box-shadow: 0 calculateRem(4px) calculateRem(12px) rgba(19, 28, 38, 0.25);
+    box-shadow: 0 calculateRem(6px) calculateRem(16px) rgba(19, 28, 38, 0.28), 0 0 0 calculateRem(1px) ibexa.$ibexa-color-primary-600;
     color: ibexa.$ibexa-color-white;
     cursor: pointer;
+    transition: transform ibexa.$ibexa-admin-transition-duration ibexa.$ibexa-admin-transition, box-shadow ibexa.$ibexa-admin-transition-duration ibexa.$ibexa-admin-transition;
 
-    svg {
-        fill: currentColor;
+    // A halo that says "I am here", twice when the page opens, never again.
+    &::after {
+        content: '';
+        position: absolute;
+        inset: calculateRem(-2px);
+        border-radius: 50%;
+        border: calculateRem(2px) solid ibexa.$ibexa-color-primary-300;
+        opacity: 0;
+        animation: masilia-chat-halo 1.8s ease-out 0.6s 2;
+        pointer-events: none;
+    }
+
+    &:hover {
+        transform: translateY(calculateRem(-2px)) scale(1.06);
+        box-shadow: 0 calculateRem(10px) calculateRem(22px) rgba(19, 28, 38, 0.32), 0 0 0 calculateRem(1px) ibexa.$ibexa-color-primary-700;
+    }
+
+    &:active {
+        transform: scale(0.97);
     }
 
     &:focus-visible {
-        outline: calculateRem(2px) solid ibexa.$ibexa-color-primary-200;
-        outline-offset: calculateRem(2px);
+        outline: calculateRem(3px) solid ibexa.$ibexa-color-primary-200;
+        outline-offset: calculateRem(3px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+
+        &::after {
+            animation: none;
+        }
+    }
+}
+
+.masilia-chat__mark {
+    display: block;
+    overflow: visible;
+
+    &-bubble {
+        fill: ibexa.$ibexa-color-white;
+    }
+
+    &-spark {
+        fill: ibexa.$ibexa-color-primary;
+    }
+
+    &-spark-small {
+        fill: ibexa.$ibexa-color-primary-300;
+    }
+}
+
+@keyframes masilia-chat-halo {
+    0% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.55);
     }
 }
 

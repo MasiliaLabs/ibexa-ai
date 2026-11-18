@@ -3,10 +3,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { AssetsBridge } from './bridge';
 import { Thread } from './components/Thread';
-import { Icon } from '../shared/ids';
 import { runContext } from './runtime/pageContext';
 import type { ChatRuntime } from './runtime/types';
 import { createSuggestionsConfig } from './suggestions';
+import { AssistantMark } from './AssistantMark';
 
 interface ChatWidgetProps {
     chat: ChatRuntime;
@@ -97,7 +97,7 @@ export function ChatWidget({ chat }: ChatWidgetProps) {
                 ) : (
                     <div className="masilia-chat__anchor">
                         <button ref={launcher} type="button" className="masilia-chat__launcher" title="Content assistant" aria-label="Open the assistant" onClick={() => setOpen(true)}>
-                            <Icon name="ai" size="medium" />
+                            <AssistantMark />
                         </button>
                     </div>
                 )}

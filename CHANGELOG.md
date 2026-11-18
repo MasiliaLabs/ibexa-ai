@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Changed
+- The launcher of the chat is redrawn: a round button in the primary colour of the admin with an SVG mark (a speech bubble holding a sparkle), a halo when the page opens, and a lift on hover. Reduced-motion preferences are respected.
+
 ## [2.3.0] - 2026-11-17
 
 ### Added
