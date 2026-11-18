@@ -1,7 +1,7 @@
 import React, { StrictMode, Suspense, lazy, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { Icon } from '../shared/ids';
+import { AssistantMark } from './AssistantMark';
 import { AssetsBridge } from './bridge';
 import { loadChatApp } from './loader';
 
@@ -19,7 +19,7 @@ function Launcher({ loading, onClick }: { loading: boolean; onClick: () => void 
     return (
         <div className="masilia-chat__anchor">
             <button type="button" className="masilia-chat__launcher" title="Content assistant" aria-label="Open the assistant" aria-busy={loading} onClick={onClick}>
-                <Icon name="ai" size="medium" />
+                <AssistantMark />
             </button>
         </div>
     );
