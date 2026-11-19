@@ -55,7 +55,7 @@ $assistant-dark: ibexa.$ibexa-color-primary-600;
     &__label {
         padding: calculateRem(7px) calculateRem(14px);
         background: ibexa.$ibexa-color-white;
-        border: calculateRem(2px) solid $assistant;
+        border: calculateRem(1px) solid $assistant;
         border-radius: calculateRem(14px) calculateRem(14px) calculateRem(4px) calculateRem(14px);
         color: $assistant-dark;
         font-size: calculateRem(14px);
@@ -71,7 +71,7 @@ $assistant-dark: ibexa.$ibexa-color-primary-600;
         width: 0;
         overflow: hidden;
         white-space: nowrap;
-        border-right: calculateRem(2px) solid $assistant;
+        border-right: calculateRem(1px) solid $assistant;
         animation: masilia-launcher-type 6s steps(17) 0.8s 1 both;
     }
 
@@ -84,7 +84,7 @@ $assistant-dark: ibexa.$ibexa-color-primary-600;
     &__shape {
         fill: ibexa.$ibexa-color-white;
         stroke: $assistant;
-        stroke-width: 4;
+        stroke-width: 2;
         stroke-linejoin: round;
     }
 
