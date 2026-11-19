@@ -4,6 +4,11 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-11-19
+
+### Added
+- An agent skill, `skills/masilia-ibexa-ai`, for AI coding agents that work with the package; the README says how to install it.
+
 ## [2.3.1] - 2026-11-19
 
 ### Added
@@ -125,7 +130,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.1...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.2...HEAD
+[2.3.2]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.2.0...2.3.0
 [2.2.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.1.0...2.2.0
