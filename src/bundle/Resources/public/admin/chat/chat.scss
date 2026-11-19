@@ -16,10 +16,10 @@ $dock-top: calculateRem(59px); // under the admin's top bar
     z-index: 1000;
 }
 
-// The launcher: a chatty speech bubble in the red of the assistant, with a label typed above it once. The robot below (.masilia-bot)
+// The launcher: an outlined chatty speech bubble in the primary colour of the admin, with a label typed above it once. The robot below (.masilia-bot)
 // is kept for another look; AssistantLauncher.tsx and AssistantMark.tsx are the two drawings.
-$assistant: #db0032;
-$assistant-dark: #a80027;
+$assistant: ibexa.$ibexa-color-primary;
+$assistant-dark: ibexa.$ibexa-color-primary-600;
 
 .masilia-chat__launcher {
     display: inline-flex;
@@ -80,14 +80,16 @@ $assistant-dark: #a80027;
         overflow: visible;
     }
 
+    // Outlined: a white bubble drawn in the primary colour.
     &__shape {
-        fill: $assistant;
-        stroke: ibexa.$ibexa-color-white;
-        stroke-width: 2.5;
+        fill: ibexa.$ibexa-color-white;
+        stroke: $assistant;
+        stroke-width: 4;
+        stroke-linejoin: round;
     }
 
     &__dot {
-        fill: ibexa.$ibexa-color-white;
+        fill: $assistant;
         transform-box: fill-box;
         transform-origin: center;
         animation: masilia-launcher-dot 1.2s ease-in-out infinite;
@@ -107,11 +109,11 @@ $assistant-dark: #a80027;
         animation: masilia-bot-bulb 1.6s ease-in-out infinite;
 
         circle {
-            fill: ibexa.$ibexa-color-white;
+            fill: $assistant;
         }
 
         path {
-            fill: $assistant;
+            fill: ibexa.$ibexa-color-white;
         }
     }
 }

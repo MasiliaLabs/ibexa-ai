@@ -11,7 +11,7 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 - The on-demand chunk of the chat has a content hash in its file name: a browser can no longer pair a cached older copy of it with the scripts of the page ("Cannot find module" error, a launcher that does not change after an update).
 
 ### Changed
-- The launcher of the chat is a chatty speech bubble (SVG, `#db0032`): its three dots keep typing, a spark badge pulses, and the label "Ask the assistant" is typed above it once when the page opens, then fades. The animated robot (`AssistantMark.tsx`) is kept as another look. Motion follows the reduced-motion preference.
+- The launcher of the chat is a chatty speech bubble (SVG, outlined, in the primary colour of the admin): its three dots keep typing, a spark badge pulses, and the label "Ask the assistant" is typed above it once when the page opens, then fades. The animated robot (`AssistantMark.tsx`) is kept as another look. Motion follows the reduced-motion preference.
 
 ## [2.3.0] - 2026-11-17
 
