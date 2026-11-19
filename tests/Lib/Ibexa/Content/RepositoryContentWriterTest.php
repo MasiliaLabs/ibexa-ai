@@ -106,6 +106,18 @@ final class RepositoryContentWriterTest extends TestCase
         $this->writer()->create('article', [2], ['title' => ''], 'eng-GB');
     }
 
+    public function testTheMessageNamesTheFieldIbexaRefusedAndWhy(): void
+    {
+        $this->contents->method('newContentCreateStruct')->willReturn(new ContentCreateStruct(['mainLanguageCode' => 'eng-GB', 'fields' => []]));
+        $error = new \Ibexa\Core\FieldType\ValidationError('The title is too short.');
+        $this->contents->method('createContent')->willThrowException(new ContentFieldValidationException([7 => ['eng-GB' => $error]]));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Field "title" (eng-GB): The title is too short.');
+
+        $this->writer()->create('article', [2], ['title' => 'x'], 'eng-GB');
+    }
+
     public function testAnUpdateSetsTheGivenFieldsInTheLanguageAndPublishesTheDraft(): void
     {
         $struct = new ContentUpdateStruct(['initialLanguageCode' => 'eng-GB', 'fields' => []]);

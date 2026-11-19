@@ -8,6 +8,8 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 - The summary of an earlier conversation (a message that starts with "## Previous conversation summary:") shows its Markdown rendered, in the bubble of the message, instead of raw text.
 
 ### Fixed
+- `ibexa_author` fields (the sender and recipients of a form, the authors of an article) are filled: the assistant gives "Name <email>", an e-mail address or `{name, email}`; before, a plain text was refused by Ibexa and no form block could be created.
+- A content that Ibexa refuses to create says which field and why (`Field "recipients" (eng-GB): …`), as the validation before the approval already did; the type creation names the field definitions it refused. The model can correct the field instead of repeating the call.
 - The on-demand chunk of the chat has a content hash in its file name: a browser can no longer pair a cached older copy of it with the scripts of the page ("Cannot find module" error, a launcher that does not change after an update).
 
 ### Changed

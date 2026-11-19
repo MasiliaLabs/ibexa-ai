@@ -55,7 +55,7 @@ final readonly class RepositoryContentWriter implements ContentWriter
         } catch (BadStateException|ContentFieldValidationException|ContentValidationException|IbexaInvalidArgumentException|UnauthorizedException $e) {
             $this->repository->rollback();
 
-            throw new \RuntimeException(sprintf('Failed to create content of type "%s": %s', $contentType, $e->getMessage()), previous: $e);
+            throw new \RuntimeException(sprintf('Failed to create content of type "%s": %s', $contentType, $this->reason($type, $e)), previous: $e);
         } catch (Throwable $e) {
             $this->repository->rollback();
 
@@ -99,6 +99,22 @@ final readonly class RepositoryContentWriter implements ContentWriter
         } catch (Throwable $e) {
             return [$e->getMessage()];
         }
+    }
+
+    /**
+     * Why Ibexa refused: for a field that did not validate, which field and what is wrong with it ("Field "recipients" (eng-GB): …"),
+     * so that the model can correct that field instead of repeating the same call; else Ibexa's own message.
+     */
+    private function reason(ContentType $type, Throwable $e): string
+    {
+        if ($e instanceof ContentFieldValidationException) {
+            $problems = $this->problems($type, $e->getFieldErrors());
+            if ($problems !== []) {
+                return $e->getMessage() . ' ' . implode('; ', $problems);
+            }
+        }
+
+        return $e->getMessage();
     }
 
     /**

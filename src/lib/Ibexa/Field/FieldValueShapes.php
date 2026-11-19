@@ -57,6 +57,11 @@ final class FieldValueShapes
             ['oneOf' => [['type' => 'string'], ['type' => 'object', 'required' => ['description'], 'properties' => ['description' => ['type' => 'string'], 'size' => ['type' => 'string'], 'quality' => ['type' => 'string']]]]],
             'a photo of a sunset over the ocean',
         ],
+        'ibexa_author' => [
+            'an author or a list of authors: "Name <email>", an e-mail address, or {name, email}. The sender and the recipients of a form take one.',
+            ['oneOf' => [['type' => 'string'], ['type' => 'object', 'properties' => ['name' => ['type' => 'string'], 'email' => ['type' => 'string', 'format' => 'email']]], ['type' => 'array', 'items' => ['oneOf' => [['type' => 'string'], ['type' => 'object']]]]]],
+            'Contact <contact@example.org>',
+        ],
         'ibexa_keyword' => ['a comma-separated string ("acme, exit") or a list of words.', ['oneOf' => [['type' => 'string'], ['type' => 'array', 'items' => ['type' => 'string']]]], 'acme, exit, environment'],
         'ibexa_gmap_location' => ['{latitude, longitude, address} (also lat / lng).', ['type' => 'object', 'required' => ['latitude', 'longitude'], 'properties' => ['latitude' => ['type' => 'number'], 'longitude' => ['type' => 'number'], 'address' => ['type' => 'string']]], ['latitude' => 33.5731, 'longitude' => -7.5898, 'address' => 'Casablanca']],
         'ibexa_object_relation' => ['the integer id of the target content.', ['type' => 'integer', 'minimum' => 1], 1176],

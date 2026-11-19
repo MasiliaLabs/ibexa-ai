@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masilia\IbexaAi\Os\Capability\Structure;
 
 use Ibexa\AdminUi\Service\MetaFieldType\MetaFieldDefinitionServiceInterface;
+use Ibexa\Contracts\Core\Repository\Exceptions\ContentTypeFieldDefinitionValidationException;
 use Ibexa\Contracts\Core\Repository\LanguageService;
 use Ibexa\Contracts\Core\Repository\Repository;
 use Masilia\Contracts\IbexaAi\Os\CapabilityResult;
@@ -111,11 +112,34 @@ final class TypeCreateCapability extends TypeCapability
             $draft = $service->createContentType($struct, [$service->loadContentTypeGroupByIdentifier((string) $arguments['group'])]);
             $service->publishContentTypeDraft($draft);
             $this->repository->commit();
+        } catch (ContentTypeFieldDefinitionValidationException $e) {
+            $this->repository->rollback();
+            throw new \RuntimeException(trim($e->getMessage() . ' ' . $this->describe($e->getFieldErrors())), previous: $e);
         } catch (\Throwable $e) {
             $this->repository->rollback();
             throw $e;
         }
 
         return CapabilityResult::ok(sprintf('Content type "%s" created with %d field(s)', $arguments['identifier'], count($fields)), ['type' => $arguments['identifier']]);
+    }
+
+    /**
+     * The field definitions Ibexa refused, as "field.setting: what is wrong" (the errors are nested by field, then by what is wrong).
+     *
+     * @param array<mixed> $errors
+     */
+    private function describe(array $errors, string $path = ''): string
+    {
+        $found = [];
+        foreach ($errors as $key => $error) {
+            $where = $path === '' ? (string) $key : $path . '.' . $key;
+            if (is_array($error)) {
+                $found[] = $this->describe($error, $where);
+            } elseif (is_object($error) && method_exists($error, 'getTranslatableMessage')) {
+                $found[] = $where . ': ' . $error->getTranslatableMessage();
+            }
+        }
+
+        return implode('; ', array_filter($found));
     }
 }
