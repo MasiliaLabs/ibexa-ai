@@ -125,6 +125,20 @@ vendor/bin/phpunit
 vendor/bin/phpstan analyse --memory-limit=2G --no-progress
 ```
 
+## AI agent skill
+
+This package ships a skill for AI coding agents (Claude Code and other agents that read `SKILL.md` skills): how to install, configure, operate and troubleshoot `masilia/ibexa-ai`. It lives in [`skills/masilia-ibexa-ai`](skills/masilia-ibexa-ai/SKILL.md) and comes with the package.
+
+```bash
+# For the project (committed with it): from the installed package
+mkdir -p .claude/skills && cp -r vendor/masilia/ibexa-ai/skills/masilia-ibexa-ai .claude/skills/
+
+# For all your projects: global
+mkdir -p ~/.claude/skills && cp -r vendor/masilia/ibexa-ai/skills/masilia-ibexa-ai ~/.claude/skills/
+```
+
+Restart the agent (or reload its skills) to pick it up. Update the copy after `composer update`.
+
 ## The Masilia packages
 
 | Package | What it does |
