@@ -1,4 +1,4 @@
-import { ActionBarPrimitive, ErrorPrimitive, MessagePrimitive, useAuiState } from '@assistant-ui/react';
+import { ActionBarPrimitive, ErrorPrimitive, MessagePrimitive, TextMessagePartProvider, useAuiState } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
 import { Icon } from '../../shared/ids';
@@ -7,6 +7,7 @@ import type { AttachmentPiece } from '../attachments';
 import { attachmentUrl } from '../runtime/uploads';
 import { mentionHref, splitMentions } from '../mentions';
 import { collectSources } from '../sources';
+import { parseSummary } from '../summary';
 import { groupSteps } from '../steps';
 import type { SourcePart } from '../sources';
 import { Markdown } from './Markdown';
@@ -153,7 +154,29 @@ function Sources() {
  * What the user wrote: a content they mentioned is a link that opens it, and the documents they attached are
  * chips (the text of a document is for the agent, not for the conversation).
  */
+/** The summary of an earlier conversation: a folded card, open on demand, its Markdown rendered. */
+function SummaryCard({ title, body }: { title: string; body: string }) {
+    return (
+        <details className="masilia-chat__summary">
+            <summary className="masilia-chat__summary-head">
+                <Icon name="history" size="small" />
+                <span className="masilia-chat__summary-title">{title}</span>
+                <span className="masilia-chat__summary-hint">Show</span>
+            </summary>
+            <div className="masilia-chat__summary-body">
+                <TextMessagePartProvider text={body}>
+                    <Markdown />
+                </TextMessagePartProvider>
+            </div>
+        </details>
+    );
+}
+
 function UserText({ text }: { text: string }) {
+    const summary = parseSummary(text);
+    if (summary !== null) {
+        return <SummaryCard title={summary.title} body={summary.body} />;
+    }
     const { body, attachments } = splitAttachments(text);
 
     return (

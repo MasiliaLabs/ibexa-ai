@@ -1406,3 +1406,66 @@ html {
     font-family: monospace;
     font-size: ibexa.$ibexa-text-font-size-extra-small;
 }
+
+// The summary of an earlier conversation: a folded card with its Markdown rendered.
+.masilia-chat__message--user:has(.masilia-chat__summary) .masilia-chat__bubble {
+    max-width: 100%;
+    padding: 0;
+    background: transparent;
+    white-space: normal;
+}
+
+.masilia-chat__summary {
+    width: 100%;
+    background: ibexa.$ibexa-color-white;
+    border: calculateRem(1px) solid ibexa.$ibexa-color-light;
+    border-left: calculateRem(4px) solid $assistant;
+    border-radius: calculateRem(8px);
+    box-shadow: 0 calculateRem(2px) calculateRem(6px) rgba(19, 28, 38, 0.08);
+}
+
+.masilia-chat__summary-head {
+    display: flex;
+    align-items: center;
+    gap: calculateRem(8px);
+    padding: calculateRem(10px) calculateRem(14px);
+    color: ibexa.$ibexa-color-dark;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+
+    &::-webkit-details-marker {
+        display: none;
+    }
+
+    svg {
+        fill: $assistant;
+    }
+
+    &:focus-visible {
+        outline: calculateRem(2px) solid ibexa.$ibexa-color-primary-200;
+        outline-offset: calculateRem(-2px);
+    }
+}
+
+.masilia-chat__summary-title {
+    flex-grow: 1;
+}
+
+.masilia-chat__summary-hint {
+    color: ibexa.$ibexa-color-dark-400;
+    font-size: calculateRem(12px);
+    font-weight: 400;
+
+    .masilia-chat__summary[open] & {
+        display: none;
+    }
+}
+
+.masilia-chat__summary-body {
+    max-height: calculateRem(360px);
+    padding: 0 calculateRem(14px) calculateRem(12px);
+    overflow-y: auto;
+    border-top: calculateRem(1px) solid ibexa.$ibexa-color-light;
+    font-size: calculateRem(13px);
+}
