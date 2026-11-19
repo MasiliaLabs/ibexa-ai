@@ -4,6 +4,8 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-11-19
+
 ### Fixed
 - A blank project can install the package: a migration now creates `app_ai_provider`, `app_ai_model`, `app_ai_provider_siteaccess` and `app_ai_request_log`, which no migration created before (the next migration failed with "Table app_ai_provider doesn't exist"). It is additive and idempotent: a database that already has the tables is left as it is.
 
@@ -133,7 +135,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.2...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.3...HEAD
+[2.3.3]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.2.0...2.3.0
