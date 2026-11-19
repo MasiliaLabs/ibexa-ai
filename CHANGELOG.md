@@ -4,6 +4,8 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-11-19
+
 ### Added
 - The summary of an earlier conversation (a message that starts with "## Previous conversation summary:") shows its Markdown rendered, in the bubble of the message, instead of raw text.
 
@@ -123,7 +125,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.0...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.1...HEAD
+[2.3.1]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.2.0...2.3.0
 [2.2.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.1.0...2.2.0
 [2.1.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.0.0...2.1.0
