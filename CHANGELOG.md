@@ -5,7 +5,7 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 ## [Unreleased]
 
 ### Changed
-- The launcher of the chat is a small animated robot (SVG, palette of the admin): it floats, blinks, pulses its antenna and waves on hover. Motion stops with the reduced-motion preference.
+- The launcher of the chat is a chatty speech bubble (SVG, `#db0032`): its three dots keep typing, a spark badge pulses, and the label "Ask the assistant" is typed above it once when the page opens, then fades. The animated robot (`AssistantMark.tsx`) is kept as another look. Motion follows the reduced-motion preference.
 
 ## [2.3.0] - 2026-11-17
 

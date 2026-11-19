@@ -16,8 +16,11 @@ $dock-top: calculateRem(59px); // under the admin's top bar
     z-index: 1000;
 }
 
-// The launcher is the assistant itself: a small robot that floats in the corner, blinks, pulses its antenna and waves when the pointer
-// is over it. No frame around it: the drawing is the button.
+// The launcher: a chatty speech bubble in the red of the assistant, with a label typed above it once. The robot below (.masilia-bot)
+// is kept for another look; AssistantLauncher.tsx and AssistantMark.tsx are the two drawings.
+$assistant: #db0032;
+$assistant-dark: #a80027;
+
 .masilia-chat__launcher {
     display: inline-flex;
     padding: 0;
@@ -28,7 +31,7 @@ $dock-top: calculateRem(59px); // under the admin's top bar
     transition: transform ibexa.$ibexa-admin-transition-duration ibexa.$ibexa-admin-transition;
 
     &:hover {
-        transform: scale(1.12);
+        transform: scale(1.08);
     }
 
     &:active {
@@ -42,6 +45,123 @@ $dock-top: calculateRem(59px); // under the admin's top bar
     }
 }
 
+.masilia-launcher {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: calculateRem(8px);
+    animation: masilia-launcher-float 3.2s ease-in-out infinite;
+
+    &__label {
+        padding: calculateRem(7px) calculateRem(14px);
+        background: ibexa.$ibexa-color-white;
+        border: calculateRem(2px) solid $assistant;
+        border-radius: calculateRem(14px) calculateRem(14px) calculateRem(4px) calculateRem(14px);
+        color: $assistant-dark;
+        font-size: calculateRem(14px);
+        font-weight: 700;
+        opacity: 0;
+        pointer-events: none;
+        // Typed and shown once, then gone: only the bubble stays on the page.
+        animation: masilia-launcher-pop 6s ease-in-out 0.8s 1 both;
+    }
+
+    &__type {
+        display: block;
+        width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        border-right: calculateRem(2px) solid $assistant;
+        animation: masilia-launcher-type 6s steps(17) 0.8s 1 both;
+    }
+
+    &__bubble {
+        display: block;
+        overflow: visible;
+    }
+
+    &__shape {
+        fill: $assistant;
+        stroke: ibexa.$ibexa-color-white;
+        stroke-width: 2.5;
+    }
+
+    &__dot {
+        fill: ibexa.$ibexa-color-white;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: masilia-launcher-dot 1.2s ease-in-out infinite;
+
+        &:nth-of-type(2) {
+            animation-delay: 0.18s;
+        }
+
+        &:nth-of-type(3) {
+            animation-delay: 0.36s;
+        }
+    }
+
+    &__badge {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: masilia-bot-bulb 1.6s ease-in-out infinite;
+
+        circle {
+            fill: ibexa.$ibexa-color-white;
+        }
+
+        path {
+            fill: $assistant;
+        }
+    }
+}
+
+@keyframes masilia-launcher-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(calc(-1 * 5px)); }
+}
+
+@keyframes masilia-launcher-dot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.55; }
+    30% { transform: translateY(calc(-1 * 4px)); opacity: 1; }
+}
+
+@keyframes masilia-launcher-pop {
+    0% { opacity: 0; transform: translateY(8px) scale(0.85); }
+    10%, 78% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(4px) scale(0.95); }
+}
+
+@keyframes masilia-launcher-type {
+    0% { width: 0; }
+    35%, 100% { width: 17ch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .masilia-launcher,
+    .masilia-launcher__dot,
+    .masilia-launcher__badge {
+        animation: none;
+    }
+
+    // No typing and no fade: the label is simply there for a few seconds.
+    .masilia-launcher__label {
+        opacity: 1;
+        animation: masilia-launcher-fade 6s linear 0.8s 1 both;
+    }
+
+    .masilia-launcher__type {
+        width: 17ch;
+        animation: none;
+    }
+}
+
+@keyframes masilia-launcher-fade {
+    0%, 80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+// The robot look (AssistantMark.tsx): kept, not used by default.
 .masilia-bot {
     display: block;
     overflow: visible;

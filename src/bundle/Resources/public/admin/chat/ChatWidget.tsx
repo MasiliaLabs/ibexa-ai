@@ -6,7 +6,7 @@ import { Thread } from './components/Thread';
 import { runContext } from './runtime/pageContext';
 import type { ChatRuntime } from './runtime/types';
 import { createSuggestionsConfig } from './suggestions';
-import { AssistantMark } from './AssistantMark';
+import { AssistantLauncher } from './AssistantLauncher';
 
 interface ChatWidgetProps {
     chat: ChatRuntime;
@@ -97,7 +97,7 @@ export function ChatWidget({ chat }: ChatWidgetProps) {
                 ) : (
                     <div className="masilia-chat__anchor">
                         <button ref={launcher} type="button" className="masilia-chat__launcher" title="Content assistant" aria-label="Open the assistant" onClick={() => setOpen(true)}>
-                            <AssistantMark />
+                            <AssistantLauncher />
                         </button>
                     </div>
                 )}
