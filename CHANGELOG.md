@@ -5,7 +5,7 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 ## [Unreleased]
 
 ### Added
-- The summary of an earlier conversation (a message that starts with "## Previous conversation summary:") shows as a folded card with its Markdown rendered, instead of raw text.
+- The summary of an earlier conversation (a message that starts with "## Previous conversation summary:") shows its Markdown rendered, in the bubble of the message, instead of raw text.
 
 ### Fixed
 - The on-demand chunk of the chat has a content hash in its file name: a browser can no longer pair a cached older copy of it with the scripts of the page ("Cannot find module" error, a launcher that does not change after an update).

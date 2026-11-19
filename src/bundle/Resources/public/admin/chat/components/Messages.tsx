@@ -154,28 +154,19 @@ function Sources() {
  * What the user wrote: a content they mentioned is a link that opens it, and the documents they attached are
  * chips (the text of a document is for the agent, not for the conversation).
  */
-/** The summary of an earlier conversation: a folded card, open on demand, its Markdown rendered. */
-function SummaryCard({ title, body }: { title: string; body: string }) {
+/** The summary of an earlier conversation: its text, with the Markdown rendered, in the bubble of the message like any other text. */
+function SummaryText({ body }: { body: string }) {
     return (
-        <details className="masilia-chat__summary">
-            <summary className="masilia-chat__summary-head">
-                <Icon name="history" size="small" />
-                <span className="masilia-chat__summary-title">{title}</span>
-                <span className="masilia-chat__summary-hint">Show</span>
-            </summary>
-            <div className="masilia-chat__summary-body">
-                <TextMessagePartProvider text={body}>
-                    <Markdown />
-                </TextMessagePartProvider>
-            </div>
-        </details>
+        <TextMessagePartProvider text={body}>
+            <Markdown />
+        </TextMessagePartProvider>
     );
 }
 
 function UserText({ text }: { text: string }) {
     const summary = parseSummary(text);
     if (summary !== null) {
-        return <SummaryCard title={summary.title} body={summary.body} />;
+        return <SummaryText body={summary.body} />;
     }
     const { body, attachments } = splitAttachments(text);
 
