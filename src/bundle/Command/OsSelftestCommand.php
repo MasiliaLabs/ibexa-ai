@@ -130,7 +130,8 @@ final class OsSelftestCommand extends Command
             $step('A refers to nothing', 'relations.list', ['content_id' => $a['content_id']], static fn (array $d): ?string => $d['incoming_total'] === 0 ? null : 'unexpected incoming relation');
             $step('copy B below the parent', 'location.copy', ['location_id' => $b['location_id'], 'target_parent_location_id' => $parent], null, 'copy');
             // The admin's "copy" is one content: what is under B is not copied.
-            $step('what is under B was not copied', 'tree.browse', ['location_id' => $answers['copy']['location_id'] ?? 0], static fn (array $d): ?string => ($d['total'] ?? 0) === 0 ? null : 'the copy of B has children');
+            // The subtree of a location holds the location itself: only a content other than the copy would be a child.
+            $step('what is under B was not copied', 'tree.browse', ['location_id' => $answers['copy']['location_id'] ?? 0], static fn (array $d): ?string => array_filter($d['items'] ?? [], static fn (array $item): bool => ($item['content_id'] ?? null) !== ($answers['copy']['content_id'] ?? null)) === [] ? null : 'the copy of B has children');
             $step('copy B and what is under it', 'location.copy_subtree', ['location_id' => $b['location_id'], 'target_parent_location_id' => $parent], null, 'subtree');
             // The copy of the subtree copied A as well (shown under B): those copies are ours to delete.
             array_push($contents, ...$this->subtreeContentIds((int) ($answers['subtree']['location_id'] ?? 0)));
@@ -159,7 +160,7 @@ final class OsSelftestCommand extends Command
             $step('move B under itself is refused', 'location.move', ['location_id' => $b['location_id'], 'new_parent_location_id' => $answers['copy']['location_id'] ?? 0], null, null, true);
             $step('remove the extra location of A', 'location.remove', ['location_id' => $answers['added']['location_id'] ?? 0]);
             $this->domains($step, $answers, $a['content_id'], $stamp);
-            $this->structure($step, $answers, $contents, $parent, $stamp);
+            $this->structure($step, $answers, $contents, $parent, $stamp, $io);
             $this->access($step, $answers, $stamp, $io);
 
             $context = new SelftestContext(
@@ -437,7 +438,7 @@ final class OsSelftestCommand extends Command
      * @param array<string, array<string, mixed>>  $answers
      * @param list<int>                            $contents
      */
-    private function structure(callable $step, array &$answers, array &$contents, int $parent, string $stamp): void
+    private function structure(callable $step, array &$answers, array &$contents, int $parent, string $stamp, SymfonyStyle $io): void
     {
         $group = 'selftest_' . $stamp;
         $type = 'selftest_type_' . $stamp;
@@ -459,7 +460,21 @@ final class OsSelftestCommand extends Command
         $step('remove a field', 'structure.field.remove', ['type' => $type, 'field' => 'summary']);
         $step('a missing field cannot be removed', 'structure.field.remove', ['type' => $type, 'field' => 'summary'], null, null, true);
         $step('rename the type', 'structure.type.update', ['type' => $type, 'name' => 'Selftest renamed']);
-        $step('name it in French', 'structure.type.translate', ['type' => $type, 'language_code' => 'fre-FR', 'name' => 'Type de test']);
+        // Names the type in a language the repository has besides its default one: a blank project has only one.
+        $languages = $this->repository->getContentLanguageService();
+        $default = $languages->getDefaultLanguageCode();
+        $other = null;
+        foreach ($languages->loadLanguages() as $language) {
+            if ($language->languageCode !== $default && $language->enabled) {
+                $other = $language->languageCode;
+                break;
+            }
+        }
+        if ($other !== null) {
+            $step(sprintf('name it in %s', $other), 'structure.type.translate', ['type' => $type, 'language_code' => $other, 'name' => 'Selftest translated']);
+        } else {
+            $io->writeln(' <comment>skip</comment> name it in a second language (the repository has only one)');
+        }
         $step('the type is listed in its group', 'structure.type.list', ['group' => $group], static fn (array $d): ?string => count($d['types']) === 1 && $d['types'][0]['fields'] === ['body:ibexa_text', 'title:ibexa_string'] ? null : 'unexpected list');
         $step('a non-empty group cannot be deleted', 'structure.group.delete', ['group' => $group], null, null, true);
 

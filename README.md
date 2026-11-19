@@ -74,11 +74,15 @@ composer require masilia/ibexa-ai
 
    Without an explicit key, one is derived from `APP_SECRET`: changing the secret would make the stored keys unreadable. If keys were stored before encryption existed, run `php bin/console masilia:ai:encrypt-keys` (safe to repeat, `--dry-run` shows what it would do).
 
-4. Build the admin assets and give a role the policies:
+4. Install the npm dependencies of the chat, build the admin assets and give a role the policies. Composer does not install the npm packages the chat widget imports; without them the build fails with `contains a reference to the file "@assistant-ui/react"` errors (also during Composer's post-update scripts):
 
    ```bash
-   yarn ibexa-generate-tsconfig && yarn encore dev   # or: yarn encore production
+   yarn add @ag-ui/client @assistant-ui/react @assistant-ui/react-ag-ui @assistant-ui/react-markdown remark-gfm
+   yarn ibexa-generate-tsconfig
+   php bin/console ibexa:encore:compile
    ```
+
+   Inside DDEV, prefix each command with `ddev exec`. The admin build is `ibexa:encore:compile`: `yarn encore dev --config-name ibexa` does not work ("Configuration with the name ibexa was not found").
 
    | Policy (`masilia_ai`) | Lets the role… |
    | --- | --- |

@@ -4,6 +4,12 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Fixed
+- `masilia:ai:os:selftest` no longer fails on a blank project: the type is named in a second language only when the repository has one (it assumed `fre-FR`), and "what is under B was not copied" ignores the copy itself (the subtree of a location contains the location), so it only fails when a real child was copied.
+
+### Changed
+- README and agent skill: the npm packages the chat needs (`@ag-ui/client`, `@assistant-ui/react`, `@assistant-ui/react-ag-ui`, `@assistant-ui/react-markdown`, `remark-gfm`) are listed in the install steps, and the admin build is `php bin/console ibexa:encore:compile` (`yarn encore dev --config-name ibexa` does not exist).
+
 ## [2.3.3] - 2026-11-19
 
 ### Fixed
