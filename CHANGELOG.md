@@ -4,6 +4,8 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.3.5] - 2026-11-19
+
 ### Added
 - Docs: a *With Symfony Flex* section in the README and in the skill: the Masilia recipes (`MasiliaLabs/recipes`) enable the bundle and write its route and config files on `composer require`.
 
@@ -146,7 +148,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.4...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.5...HEAD
+[2.3.5]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.4...2.3.5
 [2.3.4]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.3...2.3.4
 [2.3.3]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.2...2.3.3
 [2.3.2]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.1...2.3.2
