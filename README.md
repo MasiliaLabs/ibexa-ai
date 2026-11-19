@@ -94,6 +94,24 @@ composer require masilia/ibexa-ai
 
    The Administrator role has them all.
 
+### With Symfony Flex
+
+The Masilia recipes do the first steps for you. Add their endpoint once to the `composer.json` of your project, after the one of Ibexa:
+
+```json
+"extra": {
+    "symfony": {
+        "endpoint": [
+            "https://api.github.com/repos/ibexa/recipes/contents/index.json?ref=flex/main",
+            "https://api.github.com/repos/MasiliaLabs/recipes/contents/index.json?ref=flex/main",
+            "flex://defaults"
+        ]
+    }
+}
+```
+
+Then `composer require masilia/ibexa-ai` enables the bundle and writes `config/routes/masilia_ibexa_ai.yaml` and `config/packages/masilia_ibexa_ai.yaml`. What is left is yours: `AI_ENCRYPTION_KEY`, the migrations, the five npm packages of the chat, the admin build and the `masilia_ai` policies. The manual steps above and below stay valid.
+
 ## Configuration
 
 ```yaml
