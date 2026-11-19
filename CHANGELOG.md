@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Fixed
+- A blank project can install the package: a migration now creates `app_ai_provider`, `app_ai_model`, `app_ai_provider_siteaccess` and `app_ai_request_log`, which no migration created before (the next migration failed with "Table app_ai_provider doesn't exist"). It is additive and idempotent: a database that already has the tables is left as it is.
+
 ## [2.3.2] - 2026-11-19
 
 ### Added
