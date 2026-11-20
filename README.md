@@ -129,6 +129,23 @@ masilia_ibexa_ai:
     encryption_key: '%env(AI_ENCRYPTION_KEY)%'
 ```
 
+## Providers and models installed
+
+`doctrine:migrations:migrate` also fills the catalog, so a new project only has to give an API key (**AI Assistant**, the key of a provider). The migration (`Version20261120000000`) reads what exists and only adds what is missing: a provider with no row of its identifier is created (without a key), a model the provider does not have is added, and the active chat model is set for the providers it creates. It never changes or removes a row that exists. The list is the one of **2026-11-20**, read on the documentation of each provider; models change often, add and remove yours in the admin.
+
+| Provider | Models (chat unless noted) | Active chat model |
+| --- | --- | --- |
+| OpenAI | `gpt-6.2-astra`, `gpt-6.2-sol`, `gpt-6.1-terra`, `gpt-6-luna` | `gpt-6.2-astra` |
+| Anthropic | `claude-fable-5-2`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5` | `claude-sonnet-5-5` |
+| Google Gemini | `gemini-3.8-flash`, `gemini-3.6-flash`, `gemini-3.5-flash-lite`; images: `gemini-3.1-flash-image`, `gemini-3-pro-image` | `gemini-3.8-flash` (image: `gemini-3.1-flash-image`) |
+| Qwen | `qwen3.7-plus`, `qwen3.6-plus`, `qwen3.6-flash`, `qwen3.5-plus`, `qwen3.5-flash`, `qwen-max`, `qwen-plus`, `qwen-flash` | `qwen3.7-plus` |
+| Kimi | `kimi-k3` | `kimi-k3` |
+| MiniMax | `MiniMax-M3.1-Flash`, `MiniMax-M3` | `MiniMax-M3` |
+| MiMo | `mimo-v2.5-pro`, `mimo-v2.5` | `mimo-v2.5-pro` |
+| Mistral, Ollama | none: Mistral does not state its API names, Ollama depends on what you pulled | none |
+
+On a project that already has providers, only the missing models are added (and the providers that are missing); the keys, the active models and the rows you made are left as they are.
+
 ## Usage
 
 Open **AI Assistant** in the admin, add a provider (a key, an endpoint for local models), pick its chat model and assign it to a siteaccess. **Check again** tests the engine. Then open the chat from the floating button and ask, for example, *"list the children of the home page"* or *"create a folder called News under the home page"* — the second one shows an approval card.

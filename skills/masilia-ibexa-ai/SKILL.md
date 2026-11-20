@@ -13,6 +13,7 @@ The "AI OS" of the Ibexa admin, built on Neuron AI v4. Instead of hard-coded too
 With the Masilia recipes endpoint in the `composer.json` (`https://api.github.com/repos/MasiliaLabs/recipes/contents/index.json?ref=flex/main` in `extra.symfony.endpoint`, after Ibexa's), `composer require` already enables the bundle and writes the route and config files (see the README, section *With Symfony Flex*); then do what is left. Without the endpoint, do everything by hand.
 
 ## Operate
+The migrations also install the providers and their current models (as of 2026-11-20: `Version20261120000000`; it only adds what is missing and never changes a row that exists): a new project only needs an API key in **AI Assistant**. Mistral and Ollama come without models: add the ones you use.
 - Admin > **AI Assistant** (`/ai/settings`): add a provider (key; endpoint for local models), choose its chat (and image) model, assign it to a siteaccess, "Check again" tests the engine. One provider answers per siteaccess; `masilia_ibexa_ai.connection` is the fallback.
 - Admin > **What the assistant can do** (`/ai/capabilities`): every capability, its risk, what it needs, whether the user can use it. Domain `access` (roles/users) is off until `os.domains.access: true`.
 - Checks: `masilia:ai:os:coverage [--strict]` lists admin routes no capability covers (0 unmapped is the bar); `masilia:ai:os:selftest <parentLocationId>` runs every capability on throwaway folders and deletes them: it must end "All steps passed; the throwaway folders are gone". Run both after changing capabilities.

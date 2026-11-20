@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Added
+- A migration (`Version20261120000000`) installs the providers of the assistant and their current models (OpenAI, Anthropic, Gemini, Qwen, Kimi, MiniMax, MiMo; Mistral and Ollama without models), as of 2026-11-20: a missing provider is created without an API key, a missing model is added, and the active chat (and image) model is set for the providers it creates. It never changes or removes a row that exists, and can be run again without duplicates. The admin onboarding for an empty project no longer shows: the providers exist, each waiting for its key.
+
 ## [2.3.5] - 2026-11-19
 
 ### Added
