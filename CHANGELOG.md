@@ -4,6 +4,8 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-20
+
 ### Fixed
 - The pages **AI Assistant** and **What the assistant can do** are wrapped in the `container ibexa-container` section that every Ibexa admin list uses, so that they have the margins of the other pages.
 
@@ -154,7 +156,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.5...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.0...HEAD
+[2.4.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.5...2.4.0
 [2.3.5]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.4...2.3.5
 [2.3.4]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.3...2.3.4
 [2.3.3]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.2...2.3.3
