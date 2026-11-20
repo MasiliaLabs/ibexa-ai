@@ -26,5 +26,5 @@ Implement the contract in `Masilia\Contracts\IbexaAi` and tag it `masilia.ibexa_
 - Chat button shows old UI after a release: the chat chunk is lazy and hashed; one hard reload.
 - Assistant refuses an action: read the role policies (`masilia_ai/write` etc.); the refusal text names what is missing.
 - Look at the assistant log of operations for validation errors; they are detailed per field.
-- After SQL changes or restores, clear `cache:clear` and `cache:pool:clear cache.redis cache.app`.
+- After SQL changes or restores, clear `cache:clear` and `cache:pool:clear --all`.
 Never type the user's passwords or API keys on their behalf; they enter them in the admin.
