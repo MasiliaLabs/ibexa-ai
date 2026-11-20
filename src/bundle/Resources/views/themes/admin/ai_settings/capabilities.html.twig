@@ -24,7 +24,9 @@
 
 {% block content %}
     {# The page is a React application: it gets what it shows here (the coverage and the activity only for an administrator). #}
-    <div id="masilia-capabilities-root" data-page="{{ { overview: overview, coverage: coverage, activity: activity }|json_encode|e('html_attr') }}"></div>
+    <section class="container ibexa-container">
+        <div id="masilia-capabilities-root" data-page="{{ { overview: overview, coverage: coverage, activity: activity }|json_encode|e('html_attr') }}"></div>
+    </section>
 {% endblock %}
 
 {% block javascripts %}
