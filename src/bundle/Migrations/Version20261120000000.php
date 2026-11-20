@@ -138,9 +138,12 @@ final class Version20261120000000 extends AbstractMigration
     {
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'This migration is written for MySQL / MariaDB.');
 
+        // On a project whose tables are not there yet (a dry run before the migration that creates them) every provider is "missing".
+        $tablesExist = $this->connection->createSchemaManager()->tablesExist(['app_ai_provider']);
+
         foreach (self::CATALOG as $identifier => $provider) {
             // Read here (not written): the statements below are queued, so a dry run shows them without changing anything.
-            $created = (int) $this->connection->fetchOne('SELECT COUNT(*) FROM app_ai_provider WHERE identifier = ?', [$identifier]) === 0;
+            $created = !$tablesExist || (int) $this->connection->fetchOne('SELECT COUNT(*) FROM app_ai_provider WHERE identifier = ?', [$identifier]) === 0;
 
             if ($created) {
                 $this->addSql(

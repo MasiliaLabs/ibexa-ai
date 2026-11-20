@@ -6,6 +6,7 @@ namespace Masilia\IbexaAi\Tests\Bundle\Migrations;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Schema;
 use Masilia\Bundle\IbexaAi\Migrations\Version20261120000000;
 use Masilia\IbexaAi\Provider\ProviderId;
@@ -60,14 +61,24 @@ final class ProvidersCatalogMigrationTest extends TestCase
         }
     }
 
+    public function testBeforeTheTablesExistEveryProviderIsMissingSoADryRunDoesNotFail(): void
+    {
+        $statements = $this->statements(providers: 5, tablesExist: false);
+
+        $this->assertCount(count(Version20261120000000::CATALOG), array_filter($statements, static fn (array $s): bool => str_starts_with($s[0], 'INSERT INTO app_ai_provider')));
+    }
+
     /**
      * @return list<array{0: string, 1: array<int, mixed>}>
      */
-    private function statements(int $providers): array
+    private function statements(int $providers, bool $tablesExist = true): array
     {
         $connection = $this->createMock(Connection::class);
         $connection->method('getDatabasePlatform')->willReturn(new MySQLPlatform());
         $connection->method('fetchOne')->willReturn($providers);
+        $manager = $this->createStub(AbstractSchemaManager::class);
+        $manager->method('tablesExist')->willReturn($tablesExist);
+        $connection->method('createSchemaManager')->willReturn($manager);
 
         $migration = new Version20261120000000($connection, new NullLogger());
         $migration->up(new Schema());
