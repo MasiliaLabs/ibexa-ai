@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import { AssistantLauncher } from './AssistantLauncher';
 import { AssetsBridge } from './bridge';
-import { loadChatApp } from './loader';
+import { chatAvailable, loadChatApp } from './loader';
 
 const ROOT_ID = 'masilia-ai-chat-root';
 
@@ -41,7 +41,7 @@ function mount(): void {
     const client = (window as unknown as { ReactDOMClient?: ReactDomClient }).ReactDOMClient;
     // The button is only there for who the role lets use the assistant (see ChatAccessConfig).
     const allowed = (window as unknown as { ibexa?: { adminUiConfig?: { masiliaAi?: { canUse?: boolean } } } }).ibexa?.adminUiConfig?.masiliaAi?.canUse === true;
-    if (!allowed || client === undefined || document.getElementById(ROOT_ID) !== null) {
+    if (!chatAvailable || !allowed || client === undefined || document.getElementById(ROOT_ID) !== null) {
         return;
     }
 
