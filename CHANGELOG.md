@@ -4,6 +4,8 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-11-20
+
 ### Fixed
 - The coverage of the admin routes knows `ibexa.content.download.field_id.filename`, a file download added by ibexa/core 5.0.11: `masilia:ai:os:coverage --strict` no longer reports it as unmapped.
 
@@ -164,7 +166,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.1...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.2...HEAD
+[2.4.2]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.1...2.4.2
 [2.4.1]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.0...2.4.1
 [2.4.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.5...2.4.0
 [2.3.5]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.3.4...2.3.5
