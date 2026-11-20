@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Changed
+- The pages **AI Assistant** and **What the assistant can do** are no longer wrapped in the `container ibexa-container` section (2.4.0 added it): they are back to the root of the React application in the content block.
+
 ## [2.4.0] - 2026-11-20
 
 ### Fixed
