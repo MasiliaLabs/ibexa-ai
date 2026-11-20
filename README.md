@@ -74,10 +74,10 @@ composer require masilia/ibexa-ai
 
    Without an explicit key, one is derived from `APP_SECRET`: changing the secret would make the stored keys unreadable. If keys were stored before encryption existed, run `php bin/console masilia:ai:encrypt-keys` (safe to repeat, `--dry-run` shows what it would do).
 
-4. Install the npm dependencies of the chat (and `react-popper`, which the dropdown of the admin kit needs), build the admin assets and give a role the policies. Composer does not install the npm packages the chat widget imports; without them the build fails with `contains a reference to the file "@assistant-ui/react"` errors (also during Composer's post-update scripts: run the `yarn add` **before** `composer require` so that they pass):
+4. Install the npm dependencies of the chat, build the admin assets and give a role the policies. Composer does not install the npm packages the chat widget imports; without them the build fails with `contains a reference to the file "@assistant-ui/react"` errors (also during Composer's post-update scripts: run the `yarn add` **before** `composer require` so that they pass):
 
    ```bash
-   yarn add react-popper @popperjs/core @ag-ui/client @assistant-ui/react @assistant-ui/react-ag-ui @assistant-ui/react-markdown remark-gfm
+   yarn add @ag-ui/client @assistant-ui/react @assistant-ui/react-ag-ui @assistant-ui/react-markdown remark-gfm
    yarn ibexa-generate-tsconfig
    php bin/console ibexa:encore:compile
    ```
