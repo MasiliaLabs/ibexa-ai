@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Added
+- Docs: a *Stay informed* section in the README: how to be told of new releases (GitHub Watch, the releases feed, `composer outdated`, Dependabot) and where to read what changes.
+
 ### Fixed
 - The admin builds on a project that does not have the npm packages of the chat (`@ag-ui/client`, `@assistant-ui/*`, `remark-gfm`), which Composer cannot install: the build failed with "contains a reference to the file @assistant-ui/react", so Composer ended in error and the instructions of the recipes were not printed. The chat is now left out of the build when those packages are missing (no launcher in the admin; the build says which packages to `yarn add`), and built as before when they are there.
 
