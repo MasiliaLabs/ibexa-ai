@@ -133,6 +133,7 @@ out_of_scope:
   ibexa.content.create.proxy: "Redirect of the creation form."
   ibexa.content.download: "File download by the browser."
   ibexa.content.download.field_id: "File download by the browser."
+  ibexa.content.download.field_id.filename: "File download by the browser."
   ibexa.content.on_the_fly.*: "Create and edit inside a modal of another form (UI plumbing); content.create and content.update do the same."
   ibexa.content.preview: "Rendering a preview in the browser."
   ibexa.content.preview.default: "Rendering a preview in the browser."

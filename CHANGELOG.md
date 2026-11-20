@@ -4,6 +4,10 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Fixed
+- The coverage of the admin routes knows `ibexa.content.download.field_id.filename`, a file download added by ibexa/core 5.0.11: `masilia:ai:os:coverage --strict` no longer reports it as unmapped.
+- Docs: `react-popper` is installed with the npm packages of the chat, before `composer require`.
+
 ## [2.4.1] - 2026-11-20
 
 ### Changed
