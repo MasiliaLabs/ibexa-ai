@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" target-language="fr" datatype="plaintext" original="file.ext">
+    <body>
+      <trans-unit id="role.policy.masilia_ai" resname="role.policy.masilia_ai">
+        <source>AI Assistant</source>
+        <target>Assistant IA</target>
+        <note>key: role.policy.masilia_ai</note>
+      </trans-unit>
+      <trans-unit id="role.policy.masilia_ai.all_functions" resname="role.policy.masilia_ai.all_functions">
+        <source>AI Assistant / All functions</source>
+        <target>Assistant IA / Toutes les fonctions</target>
+        <note>key: role.policy.masilia_ai.all_functions</note>
+      </trans-unit>
+      <trans-unit id="role.policy.masilia_ai.use" resname="role.policy.masilia_ai.use">
+        <source>AI Assistant / Use</source>
+        <target>Assistant IA / Utiliser</target>
+        <note>key: role.policy.masilia_ai.use</note>
+      </trans-unit>
+      <trans-unit id="role.policy.masilia_ai.write" resname="role.policy.masilia_ai.write">
+        <source>AI Assistant / Write (change content)</source>
+        <target>Assistant IA / Écrire (modifier le contenu)</target>
+        <note>key: role.policy.masilia_ai.write</note>
+      </trans-unit>
+      <trans-unit id="role.policy.masilia_ai.destructive" resname="role.policy.masilia_ai.destructive">
+        <source>AI Assistant / Destructive actions</source>
+        <target>Assistant IA / Actions destructrices</target>
+        <note>key: role.policy.masilia_ai.destructive</note>
+      </trans-unit>
+      <trans-unit id="role.policy.masilia_ai.structure" resname="role.policy.masilia_ai.structure">
+        <source>AI Assistant / Structure (content model)</source>
+        <target>Assistant IA / Structure (modèle de contenu)</target>
+        <note>key: role.policy.masilia_ai.structure</note>
+      </trans-unit>
+      <trans-unit id="role.policy.masilia_ai.access" resname="role.policy.masilia_ai.access">
+        <source>AI Assistant / Access (roles and users)</source>
+        <target>Assistant IA / Accès (rôles et utilisateurs)</target>
+        <note>key: role.policy.masilia_ai.access</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

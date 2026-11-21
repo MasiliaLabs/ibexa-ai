@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Added
+- Labels (English and French, domain `forms`) for the policies of the module `masilia_ai` in Admin > Roles: `role.policy.masilia_ai` and its functions. Before, the role editor showed the raw keys.
+
 ## [2.4.3] - 2026-11-20
 
 ### Added
