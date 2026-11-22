@@ -4,8 +4,13 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [2.4.4] - 2026-11-22
+
 ### Added
 - Labels (English and French, domain `forms`) for the policies of the module `masilia_ai` in Admin > Roles: `role.policy.masilia_ai` and its functions. Before, the role editor showed the raw keys.
+
+### Changed
+- Docs (the agent skill): clear every cache pool (`cache:pool:clear --all`) after restoring a database or changing the SQL by hand.
 
 ## [2.4.3] - 2026-11-20
 
@@ -177,7 +182,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.3...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.4...HEAD
+[2.4.4]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.3...2.4.4
 [2.4.3]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.2...2.4.3
 [2.4.2]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.1...2.4.2
 [2.4.1]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.0...2.4.1
