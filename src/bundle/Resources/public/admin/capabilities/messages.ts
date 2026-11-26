@@ -3,7 +3,7 @@ import { createTranslator } from '@masilia-admin-kit/i18n';
 /** The texts of the capabilities page, in English: what shows when the admin has no translation of a key (see the translation files of the bundle). */
 export const DEFAULTS: Readonly<Record<string, string>> = {
     'capabilities.intro': 'The assistant acts through capabilities: each one is a typed action on the content repository, run with the rights of whoever asks. Reading runs at once; anything that changes something is shown on an approval card first, and recorded.',
-    'capabilities.title': 'What the assistant can do',
+    'capabilities.title': 'AI Assistant capabilities',
     'tab.capabilities': 'Capabilities',
     'tab.coverage': 'Coverage',
     'tab.activity': 'Activity',

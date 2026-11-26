@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="capabilities.title" resname="capabilities.title">
         <source>capabilities.title</source>
-        <target>Ce que l&#x27;assistant peut faire</target>
+        <target>Capacités de l&#x27;assistant IA</target>
       </trans-unit>
       <trans-unit id="column.capability" resname="column.capability">
         <source>column.capability</source>
@@ -128,7 +128,7 @@
       </trans-unit>
       <trans-unit id="settings.title" resname="settings.title">
         <source>settings.title</source>
-        <target>Réglages de l&#x27;assistant IA</target>
+        <target>Paramètres de l&#x27;assistant IA</target>
       </trans-unit>
       <trans-unit id="skills.help" resname="skills.help">
         <source>skills.help</source>
