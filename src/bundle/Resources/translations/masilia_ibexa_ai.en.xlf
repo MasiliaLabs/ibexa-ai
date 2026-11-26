@@ -38,10 +38,6 @@
         <source>answer.yes</source>
         <target>yes</target>
       </trans-unit>
-      <trans-unit id="breadcrumb.admin" resname="breadcrumb.admin">
-        <source>breadcrumb.admin</source>
-        <target>Admin</target>
-      </trans-unit>
       <trans-unit id="capabilities.intro" resname="capabilities.intro">
         <source>capabilities.intro</source>
         <target>The assistant acts through capabilities: each one is a typed action on the content repository, run with the rights of whoever asks. Reading runs at once; anything that changes something is shown on an approval card first, and recorded.</target>

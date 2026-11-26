@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 
 import { ConfirmDialog } from '@masilia-admin-kit/ConfirmDialog';
-import { FilterCard } from '@masilia-admin-kit/FilterCard';
+import { FilterButton, FilterCard } from '@masilia-admin-kit/FilterCard';
 import { SearchInput } from '@masilia-admin-kit/SearchInput';
 import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
+import { Button } from '@masilia-admin-kit/ids';
 import { emptyModelDraft, emptyProviderDraft, modelToDraft, providerToDraft } from '../forms';
 import type { ModelDraft, ProviderDraft } from '../forms';
 import { providerLabel, searchProviders } from '../providers';
@@ -70,14 +71,13 @@ export function ProvidersTab({ settings }: ProvidersTabProps): React.ReactElemen
                 search={<SearchInput value={query} onChange={setQuery} placeholder="Search providers and models" clearLabel="Clear the search" />}
                 actions={(
                     <>
-                        {hasProviders ? <button type="button" className="btn ibexa-btn ibexa-btn--secondary ibexa-adaptive-filters__submit-btn" onClick={() => addModel(null)}>Add a model</button> : null}
-                        <button
-                            type="button"
-                            className="btn ibexa-btn ibexa-btn--primary ibexa-adaptive-filters__submit-btn"
+                        {hasProviders ? <FilterButton onClick={() => addModel(null)}>Add a model</FilterButton> : null}
+                        <FilterButton
+                            variant="primary"
                             onClick={() => setEditing({ kind: 'provider', draft: emptyProviderDraft(providerTypes[0]?.value ?? 'openai', currentSiteaccess !== '' ? [currentSiteaccess] : []), hasStoredKey: false })}
                         >
                             Add a provider
-                        </button>
+                        </FilterButton>
                     </>
                 )}
             />
@@ -99,7 +99,7 @@ export function ProvidersTab({ settings }: ProvidersTabProps): React.ReactElemen
                     columns={[]}
                     rows={[]}
                     rowKey={() => ''}
-                    empty={{ info: `No provider or model matches “${query}”.`, action: <button type="button" className="btn ibexa-btn ibexa-btn--ghost" onClick={() => setQuery('')}>Clear the search</button> }}
+                    empty={{ info: `No provider or model matches “${query}”.`, action: <Button type="tertiary" onClick={() => setQuery('')}>Clear the search</Button> }}
                     label="Providers"
                 />
             ) : (

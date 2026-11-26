@@ -1,4 +1,4 @@
-import { adminHeaders, route } from '../shared/admin';
+import { csrfHeaders, route } from '@masilia-admin-kit/admin';
 import type { Health, Snapshot, TestResult, Usage } from './types';
 
 /** Outcome of a call: HTTP errors are values, not exceptions, so a screen always has a message to show. */
@@ -83,7 +83,7 @@ export function cleanProviderMessage(message: string): string {
 export async function request<T>(url: string, init?: RequestInit, fetcher: Fetcher = (u, i) => fetch(u, i)): Promise<ApiResult<T>> {
     let response: Response;
     try {
-        response = await fetcher(url, { ...init, headers: adminHeaders({ Accept: 'application/json', ...(init?.headers as Record<string, string> | undefined) }) });
+        response = await fetcher(url, { ...init, headers: csrfHeaders({ Accept: 'application/json', ...(init?.headers as Record<string, string> | undefined) }) });
     } catch {
         return { ok: false, status: 0, message: 'Network error. Check your connection and try again.', body: null };
     }

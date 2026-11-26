@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { Button, Icon } from '../../shared/ids';
+import { Button, Icon } from '@masilia-admin-kit/ids';
 import { fetchThreads, renameThread } from '../runtime/threads';
 import { groupThreads, whenLabel } from '../runtime/threadsView';
 import type { ThreadSummary } from '../runtime/threadsView';

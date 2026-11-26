@@ -1,33 +1,9 @@
-{% extends "@ibexadesign/ui/layout.html.twig" %}
+{# The page is a React application: it gets what it shows here (the coverage and the activity only for an administrator). #}
+{% extends '@ibexadesign/masilia_kit/page.html.twig' %}
 
 {% trans_default_domain 'masilia_ibexa_ai' %}
 
-{% block body_class %}ibexa-ai-capabilities-view{% endblock %}
-
-{% block stylesheets %}
-    {{ parent() }}
-    {{ encore_entry_link_tags('ibexa-admin-ui-ai-capabilities-react-css', null, 'ibexa') }}
-{% endblock %}
-
-{% block breadcrumbs %}
-    {% include '@ibexadesign/ui/breadcrumbs.html.twig' with { items: [
-        { value: 'breadcrumb.admin'|trans },
-        { value: 'capabilities.title'|trans }
-    ]} %}
-{% endblock %}
-
-{% block title %}{{ 'capabilities.title'|trans }}{% endblock %}
-
-{% block header %}
-    {% include '@ibexadesign/ui/page_title.html.twig' with { title: 'capabilities.title'|trans } %}
-{% endblock %}
-
-{% block content %}
-    {# The page is a React application: it gets what it shows here (the coverage and the activity only for an administrator). #}
-    <div id="masilia-capabilities-root" data-page="{{ { overview: overview, coverage: coverage, activity: activity }|json_encode|e('html_attr') }}"></div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    {{ encore_entry_script_tags('ibexa-admin-ui-ai-capabilities-react-js', null, 'ibexa') }}
-{% endblock %}
+{% set kit_title = 'capabilities.title'|trans %}
+{% set kit_entry = 'ai-capabilities-react' %}
+{% set kit_body_class = 'ibexa-ai-capabilities-view' %}
+{% set kit_root = { id: 'masilia-capabilities-root', data: { page: { overview: overview, coverage: coverage, activity: activity }|json_encode } } %}

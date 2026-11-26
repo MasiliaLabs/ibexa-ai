@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { route } from '../shared/admin';
+import { route } from '@masilia-admin-kit/admin';
 
 export interface MentionHit {
     contentId: number;

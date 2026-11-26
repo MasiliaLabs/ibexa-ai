@@ -7,6 +7,7 @@ import { Notice } from '@masilia-admin-kit/Notice';
 import { Section } from '@masilia-admin-kit/Section';
 import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
 import type { Column } from '@masilia-admin-kit/Table';
+import { Alert } from '@masilia-admin-kit/Alert';
 import { modelOptionLabel, modelsOf, providerLabel } from '../providers';
 import type { Model, Provider, ProviderType, TestResult } from '../types';
 
@@ -101,10 +102,7 @@ export function ProviderCard(props: ProviderCardProps): React.ReactElement {
             />
             {testing ? <Notice role="status">Testing the connection…</Notice> : null}
             {testResult !== null ? (
-                <div className={`ibexa-alert ibexa-alert--${testResult.success ? 'success' : 'error'}`} role="status">
-                    {testResult.message}
-                    {testResult.streamTested && testResult.streamOk === false ? ' Streaming did not work.' : ''}
-                </div>
+                <Alert type={testResult.success ? 'success' : 'error'} role="status" title={<>{testResult.message}{testResult.streamTested && testResult.streamOk === false ? ' Streaming did not work.' : ''}</>} />
             ) : null}
 
             <div className="masilia-kit-row">

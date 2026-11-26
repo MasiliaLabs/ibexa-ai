@@ -2,7 +2,7 @@ import { ComposerPrimitive, useAui, useAuiState } from '@assistant-ui/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
-import { Icon } from '../../shared/ids';
+import { Icon } from '@masilia-admin-kit/ids';
 import { MAX_IMAGE_BYTES, encodeAttachments, formatBytes, isImageFile, isTextFile, toTextAttachment, tooMuch } from '../attachments';
 import type { Attachment } from '../attachments';
 import { encodeMentions, insertMention, labelFor, mentionTrigger } from '../mentions';

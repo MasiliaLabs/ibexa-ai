@@ -4,6 +4,9 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+### Changed
+- Admin: the settings and capabilities pages are built on the components and the page template of `masilia/ibexa-admin-kit` (alerts, the buttons of the filter bar, the providers, the page skeleton), and the copies of the kit's helpers in `shared/` (`ids`, `icons`, `notify`, `admin`) are gone: the chat widget imports the kit's, with `csrfHeaders` for the requests that carried only the token. **It needs the release of the kit that has them** (`masilia/ibexa-admin-kit` after 0.1.6): the constraint is raised then.
+
 ## [2.4.4] - 2026-11-22
 
 ### Added

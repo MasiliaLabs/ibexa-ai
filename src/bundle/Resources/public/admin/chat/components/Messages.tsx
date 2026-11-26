@@ -1,7 +1,7 @@
 import { ActionBarPrimitive, ErrorPrimitive, MessagePrimitive, TextMessagePartProvider, useAuiState } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
-import { Icon } from '../../shared/ids';
+import { Icon } from '@masilia-admin-kit/ids';
 import { formatBytes, splitAttachments } from '../attachments';
 import type { AttachmentPiece } from '../attachments';
 import { attachmentUrl } from '../runtime/uploads';

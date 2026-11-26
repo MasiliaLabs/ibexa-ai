@@ -38,10 +38,6 @@
         <source>answer.yes</source>
         <target>oui</target>
       </trans-unit>
-      <trans-unit id="breadcrumb.admin" resname="breadcrumb.admin">
-        <source>breadcrumb.admin</source>
-        <target>Administration</target>
-      </trans-unit>
       <trans-unit id="capabilities.intro" resname="capabilities.intro">
         <source>capabilities.intro</source>
         <target>L&#x27;assistant agit par capacités : chacune est une action typée sur le dépôt de contenus, exécutée avec les droits de la personne qui la demande. Une lecture s&#x27;exécute aussitôt ; tout ce qui modifie quelque chose est d&#x27;abord montré sur une carte d&#x27;approbation, puis enregistré.</target>

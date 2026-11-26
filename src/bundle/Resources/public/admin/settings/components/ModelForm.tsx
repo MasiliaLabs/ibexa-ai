@@ -5,6 +5,7 @@ import { Dialog } from '@masilia-admin-kit/Dialog';
 import { DropdownField } from '@masilia-admin-kit/Dropdown';
 import { TextField } from '@masilia-admin-kit/Field';
 import { Button } from '@masilia-admin-kit/ids';
+import { Alert } from '@masilia-admin-kit/Alert';
 import { validateModel } from '../forms';
 import type { Errors, ModelDraft } from '../forms';
 import type { Provider } from '../types';
@@ -58,7 +59,7 @@ export function ModelForm({ initial, providers, fixedProvider, onSave, onClose }
             )}
         >
             <form onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
-                {serverError !== null ? <div className="ibexa-alert ibexa-alert--error" role="alert">{serverError}</div> : null}
+                {serverError !== null ? <Alert type="error" title={serverError} /> : null}
 
                 {fixedProvider && provider !== undefined ? (
                     <TextField label="Provider" value={provider.name} readOnly onChange={() => undefined} />

@@ -1,7 +1,7 @@
 import { SuggestionPrimitive, ThreadPrimitive, useAuiState } from '@assistant-ui/react';
 import React, { useState } from 'react';
 
-import { Button, Icon } from '../../shared/ids';
+import { Button, Icon } from '@masilia-admin-kit/ids';
 import type { ChatRuntime } from '../runtime/types';
 import { Composer } from './Composer';
 import { History } from './History';

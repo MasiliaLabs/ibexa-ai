@@ -6,6 +6,7 @@ import { IconSvg } from '@masilia-admin-kit/IconSvg';
 import { Notice } from '@masilia-admin-kit/Notice';
 import { TableHeader } from '@masilia-admin-kit/Table';
 import { Tag } from '@masilia-admin-kit/ids';
+import { Alert } from '@masilia-admin-kit/Alert';
 import type { EngineSummary } from '../providers';
 
 const STATE_LABEL: Record<EngineSummary['state'], string> = {
@@ -48,7 +49,7 @@ export function EngineBanner({ summary, siteaccess, onRefresh, checking = false 
                     </>
                 )}
             />
-            {summary.state === 'offline' && summary.message !== '' ? <div className="ibexa-alert ibexa-alert--error" role="alert">{summary.message}</div> : null}
+            {summary.state === 'offline' && summary.message !== '' ? <Alert type="error" title={summary.message} /> : null}
             {summary.guidance !== null ? <Notice>{summary.guidance}</Notice> : null}
         </section>
     );

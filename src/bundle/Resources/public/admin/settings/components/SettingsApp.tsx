@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 
-import { iconPath } from '@masilia-admin-kit/icons';
-import { AssetsProvider, TranslatorProvider } from '@masilia-admin-kit/ids';
+import { AdminProviders } from '@masilia-admin-kit/AdminProviders';
 import { Spinner } from '@masilia-admin-kit/Spinner';
 import { Tabs } from '@masilia-admin-kit/Tabs';
+import { Alert } from '@masilia-admin-kit/Alert';
 import { t } from '../messages';
 import { describeEngine } from '../providers';
 import { useSettings } from '../useSettings';
@@ -31,28 +31,26 @@ export function SettingsApp(): React.ReactElement {
     }
 
     if (settings.loadError !== null) {
-        return <div className="ibexa-alert ibexa-alert--error" role="alert">{settings.loadError}</div>;
+        return <Alert type="error" title={settings.loadError} />;
     }
 
     return (
-        <TranslatorProvider value={{ trans: (id) => t(id) }}>
-            <AssetsProvider value={{ getIconPath: iconPath }}>
-                <EngineBanner summary={summary} siteaccess={snapshot.currentSiteaccess} checking={settings.checking} onRefresh={() => void settings.refreshHealth()} />
-                <Tabs
-                    label="AI settings"
-                    active={tab}
-                    onChange={setTab}
-                    tabs={[
-                        { id: 'providers', label: 'Providers', content: <ProvidersTab settings={settings} /> },
-                        { id: 'usage', label: 'Usage', content: <UsageTab types={snapshot.providerTypes} /> },
-                        {
-                            id: 'matrix',
-                            label: 'Siteaccesses',
-                            content: <MatrixTab providers={snapshot.providers} types={snapshot.providerTypes} siteaccesses={snapshot.siteaccesses} currentSiteaccess={snapshot.currentSiteaccess} />,
-                        },
-                    ]}
-                />
-            </AssetsProvider>
-        </TranslatorProvider>
+        <AdminProviders t={t}>
+            <EngineBanner summary={summary} siteaccess={snapshot.currentSiteaccess} checking={settings.checking} onRefresh={() => void settings.refreshHealth()} />
+            <Tabs
+                label="AI settings"
+                active={tab}
+                onChange={setTab}
+                tabs={[
+                    { id: 'providers', label: 'Providers', content: <ProvidersTab settings={settings} /> },
+                    { id: 'usage', label: 'Usage', content: <UsageTab types={snapshot.providerTypes} /> },
+                    {
+                        id: 'matrix',
+                        label: 'Siteaccesses',
+                        content: <MatrixTab providers={snapshot.providers} types={snapshot.providerTypes} siteaccesses={snapshot.siteaccesses} currentSiteaccess={snapshot.currentSiteaccess} />,
+                    },
+                ]}
+            />
+        </AdminProviders>
     );
 }

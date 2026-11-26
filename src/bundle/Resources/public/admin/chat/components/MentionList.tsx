@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Icon } from '../../shared/ids';
+import { Icon } from '@masilia-admin-kit/ids';
 import type { MentionHit, MentionSearch } from '../mentionSearch';
 
 export interface MentionOption extends MentionHit {

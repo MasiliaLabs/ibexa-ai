@@ -4,6 +4,7 @@ import { Dialog } from '@masilia-admin-kit/Dialog';
 import { DropdownField, MultiDropdownField } from '@masilia-admin-kit/Dropdown';
 import { TextField } from '@masilia-admin-kit/Field';
 import { Button } from '@masilia-admin-kit/ids';
+import { Alert } from '@masilia-admin-kit/Alert';
 import { validateProvider } from '../forms';
 import type { Errors, ProviderDraft } from '../forms';
 import { providerLabel } from '../providers';
@@ -60,7 +61,7 @@ export function ProviderForm({ initial, types, siteaccesses, currentSiteaccess, 
             )}
         >
             <form onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
-                {serverError !== null ? <div className="ibexa-alert ibexa-alert--error" role="alert">{serverError}</div> : null}
+                {serverError !== null ? <Alert type="error" title={serverError} /> : null}
 
                 <DropdownField
                     label="Provider"

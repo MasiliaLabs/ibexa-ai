@@ -1,6 +1,6 @@
 import type { ThreadSummary } from './threadsView';
 
-import { adminHeaders, route } from '../../shared/admin';
+import { csrfHeaders, route } from '@masilia-admin-kit/admin';
 
 const threadsUrl = (): string => route('masilia.ibexa_ai.agent.threads');
 const threadUrl = (id: string): string => route('masilia.ibexa_ai.agent.thread_delete', { threadId: id });
@@ -16,7 +16,7 @@ export async function fetchThreads(): Promise<ThreadSummary[]> {
 }
 
 export async function deleteThread(id: string): Promise<void> {
-    const response = await fetch(threadUrl(id), { method: 'DELETE', headers: adminHeaders() });
+    const response = await fetch(threadUrl(id), { method: 'DELETE', headers: csrfHeaders() });
     if (!response.ok && response.status !== 404) {
         throw new Error(`HTTP ${response.status}`);
     }
@@ -26,7 +26,7 @@ export async function deleteThread(id: string): Promise<void> {
 export async function renameThread(id: string, title: string): Promise<string> {
     const response = await fetch(threadUrl(id), {
         method: 'PATCH',
-        headers: adminHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }),
+        headers: csrfHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }),
         body: JSON.stringify({ title }),
     });
     if (!response.ok) {

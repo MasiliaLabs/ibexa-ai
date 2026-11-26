@@ -4,11 +4,11 @@ import type { ThreadHistoryAdapter, ThreadMessageLike } from '@assistant-ui/reac
 import { fromAgUiMessages, useAgUiInterrupts, useAgUiRuntime } from '@assistant-ui/react-ag-ui';
 import { useMemo, useRef, useState } from 'react';
 
-import { notify } from '../../shared/notify';
+import { notify } from '@masilia-admin-kit/notify';
 import { runContext } from './pageContext';
 import { sharesPage } from './sharePage';
 import { isStaleDecision, withInterrupts, withPendingCalls } from './pending';
-import { adminHeaders, route } from '../../shared/admin';
+import { csrfHeaders, route } from '@masilia-admin-kit/admin';
 import type { Wire } from './pending';
 import { deleteThread, newThreadId } from './threads';
 import type { ChatRuntime } from './types';
@@ -58,7 +58,7 @@ export function useAguiRuntime(): ChatRuntime {
     // The conversation in use. A new one is made up here: the server creates it on its first message.
     const current = useRef<string>(newThreadId());
     const [threadId, setThreadId] = useState<string | null>(null);
-    const [agent] = useState(() => new HttpAgent({ url: route('masilia.ibexa_ai.agent.agui'), headers: adminHeaders(), threadId: current.current }));
+    const [agent] = useState(() => new HttpAgent({ url: route('masilia.ibexa_ai.agent.agui'), headers: csrfHeaders(), threadId: current.current }));
 
     const use = (id: string): void => {
         current.current = id;

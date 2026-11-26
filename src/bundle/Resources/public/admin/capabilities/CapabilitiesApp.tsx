@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 
 import { FilterCard, FilterSelect } from '@masilia-admin-kit/FilterCard';
-import { iconPath } from '@masilia-admin-kit/icons';
-import { AssetsProvider, Tag, TranslatorProvider } from '@masilia-admin-kit/ids';
+import { AdminProviders } from '@masilia-admin-kit/AdminProviders';
+import { Tag } from '@masilia-admin-kit/ids';
 import { SearchInput } from '@masilia-admin-kit/SearchInput';
 import { Notice } from '@masilia-admin-kit/Notice';
 import { Section } from '@masilia-admin-kit/Section';
@@ -10,6 +10,7 @@ import { StatTile } from '@masilia-admin-kit/StatTile';
 import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
 import type { Column } from '@masilia-admin-kit/Table';
 import { Tabs } from '@masilia-admin-kit/Tabs';
+import { Alert } from '@masilia-admin-kit/Alert';
 import { NO_FILTERS, countCapabilities, filterDomains, needsOf, riskTagType, risksOf, startsOpen } from './filters';
 import type { Filters } from './filters';
 import { t } from './messages';
@@ -94,9 +95,7 @@ function CoverageTab({ coverage }: { coverage: CoverageDto }): React.ReactElemen
                 {' '}{t('coverage.check')} <code>masilia:ai:os:coverage --strict</code>
             </Notice>
             {coverage.unmapped.length > 0 ? (
-                <div className="ibexa-alert ibexa-alert--warning" role="note">
-                    <strong>{t('coverage.unmapped.title')}</strong> ({t('coverage.unmapped.why')}): {coverage.unmapped.join(', ')}
-                </div>
+                <Alert type="warning" role="note" title={<><strong>{t('coverage.unmapped.title')}</strong> ({t('coverage.unmapped.why')}): {coverage.unmapped.join(', ')}</>} />
             ) : <p>{t('coverage.none')}</p>}
         </>
     );
@@ -141,19 +140,17 @@ export function CapabilitiesApp({ data }: { data: PageData }): React.ReactElemen
     }
 
     return (
-        <TranslatorProvider value={{ trans: (id) => t(id) }}>
-            <AssetsProvider value={{ getIconPath: iconPath }}>
-                <div className="masilia-caps">
-                    <Notice>{t('capabilities.intro')}</Notice>
-                    <div className="masilia-kit-stats">
-                        <StatTile value={overview.totals.capabilities} label={t('stat.capabilities')} />
-                        <StatTile value={overview.totals.domains} label={t('stat.domains', { on: overview.totals.enabled_domains })} />
-                        <StatTile value={overview.totals.usable} label={t('stat.usable')} />
-                        {coverage !== null ? <StatTile value={`${coverage.covered} / ${coverage.routes - coverage.out_of_scope}`} label={t('stat.covered')} /> : null}
-                    </div>
-                    <Tabs label={t('capabilities.title')} active={tab} onChange={setTab} tabs={tabs} />
+        <AdminProviders t={t}>
+            <div className="masilia-caps">
+                <Notice>{t('capabilities.intro')}</Notice>
+                <div className="masilia-kit-stats">
+                    <StatTile value={overview.totals.capabilities} label={t('stat.capabilities')} />
+                    <StatTile value={overview.totals.domains} label={t('stat.domains', { on: overview.totals.enabled_domains })} />
+                    <StatTile value={overview.totals.usable} label={t('stat.usable')} />
+                    {coverage !== null ? <StatTile value={`${coverage.covered} / ${coverage.routes - coverage.out_of_scope}`} label={t('stat.covered')} /> : null}
                 </div>
-            </AssetsProvider>
-        </TranslatorProvider>
+                <Tabs label={t('capabilities.title')} active={tab} onChange={setTab} tabs={tabs} />
+            </div>
+        </AdminProviders>
     );
 }

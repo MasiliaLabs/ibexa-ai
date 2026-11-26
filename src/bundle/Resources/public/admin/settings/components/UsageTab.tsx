@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { FilterCard, FilterSelect } from '@masilia-admin-kit/FilterCard';
+import { FilterButton, FilterCard, FilterSelect } from '@masilia-admin-kit/FilterCard';
 import { Spinner } from '@masilia-admin-kit/Spinner';
 import { StatTile } from '@masilia-admin-kit/StatTile';
 import { DataTable, TableHeader } from '@masilia-admin-kit/Table';
 import type { Column } from '@masilia-admin-kit/Table';
+import { Alert } from '@masilia-admin-kit/Alert';
 import { api } from '../api';
 import { providerLabel } from '../providers';
 import type { ProviderType, ProviderUsage, Usage } from '../types';
@@ -38,7 +39,7 @@ export function UsageTab({ types }: UsageTabProps): React.ReactElement {
 
     if (usage === null) {
         return error !== null
-            ? <div className="ibexa-alert ibexa-alert--error" role="alert">{error}</div>
+            ? <Alert type="error" title={error} />
             : <p role="status"><Spinner label="Loading the usage…" /> Loading the usage…</p>;
     }
 
@@ -71,14 +72,14 @@ export function UsageTab({ types }: UsageTabProps): React.ReactElement {
         <div aria-busy={loading}>
             <FilterCard
                 actions={(
-                    <button type="button" className="btn ibexa-btn ibexa-btn--secondary ibexa-adaptive-filters__submit-btn" disabled={loading} onClick={() => void load()}>
+                    <FilterButton disabled={loading} onClick={() => void load()}>
                         {loading ? 'Refreshing…' : 'Refresh'}
-                    </button>
+                    </FilterButton>
                 )}
             >
                 <FilterSelect label="Period" value={windowKey} options={WINDOWS.map((option) => ({ value: option.key, label: option.label }))} onChange={setWindowKey} />
             </FilterCard>
-            {error !== null ? <div className="ibexa-alert ibexa-alert--error" role="alert">{error}</div> : null}
+            {error !== null ? <Alert type="error" title={error} /> : null}
 
             <div className="masilia-kit-stats">
                 <StatTile value={formatCount(totals.total)} label="Requests" />
