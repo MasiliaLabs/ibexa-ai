@@ -20,8 +20,8 @@ An AI assistant for the Ibexa admin, built on [Neuron AI](https://neuron-ai.dev)
 - **Risk tiers and approval**: every capability is `read`, `write`, `destructive` or `access`. Anything that changes something shows an **approval card** with a preview; `propose_changes` groups a batch. What the user's role does not allow is refused *before* the card.
 - **Audit**: what the assistant did, for whom, and with what result.
 - **A chat** in the admin (a floating widget built with [assistant-ui](https://www.assistant-ui.com) over the AG-UI protocol), for everyone whose role has `masilia_ai/use`. Conversations are kept and can be renamed or deleted.
-- **Providers per siteaccess**: OpenAI, Anthropic, Gemini, Mistral, Ollama, Qwen, Kimi, MiniMax and MiMo, configured in the admin (**AI Assistant** page), one provider answering for a siteaccess. API keys are **encrypted at rest**. A fallback `connection` can be set in configuration.
-- **Two admin pages**: **AI Assistant** (`/ai/settings`: engine status, providers and models, usage, siteaccesses) and **What the assistant can do** (`/ai/capabilities`: every capability, its risk, what it needs, and whether you can use it).
+- **Providers per siteaccess**: OpenAI, Anthropic, Gemini, Mistral, Ollama, Qwen, Kimi, MiniMax and MiMo, configured in the admin (**AI Assistant settings** page), one provider answering for a siteaccess. API keys are **encrypted at rest**. A fallback `connection` can be set in configuration.
+- **Two admin pages**: **AI Assistant settings** (`/ai/settings`: engine status, providers and models, usage, siteaccesses) and **AI Assistant capabilities** (`/ai/capabilities`: every capability, its risk, what it needs, and whether you can use it).
 - **Extensible**: other packages add capabilities, field inputs and skills through the contracts in `Masilia\Contracts\IbexaAi` (`masilia.ibexa_ai.capability` tag). [`masilia/ibexa-ai-craft`](https://github.com/MasiliaLabs/ibexa-ai-craft) and [`masilia/ibexa-ai-editor`](https://github.com/MasiliaLabs/ibexa-ai-editor) are built that way.
 
 ## Requirements
@@ -131,7 +131,7 @@ masilia_ibexa_ai:
 
 ## Providers and models installed
 
-`doctrine:migrations:migrate` also fills the catalog, so a new project only has to give an API key (**AI Assistant**, the key of a provider). The migration (`Version20261120000000`) reads what exists and only adds what is missing: a provider with no row of its identifier is created (without a key), a model the provider does not have is added, and the active chat model is set for the providers it creates. It never changes or removes a row that exists. The list is the one of **2026-11-20**, read on the documentation of each provider; models change often, add and remove yours in the admin.
+`doctrine:migrations:migrate` also fills the catalog, so a new project only has to give an API key (**AI Assistant settings**, the key of a provider). The migration (`Version20261120000000`) reads what exists and only adds what is missing: a provider with no row of its identifier is created (without a key), a model the provider does not have is added, and the active chat model is set for the providers it creates. It never changes or removes a row that exists. The list is the one of **2026-11-20**, read on the documentation of each provider; models change often, add and remove yours in the admin.
 
 | Provider | Models (chat unless noted) | Active chat model |
 | --- | --- | --- |
@@ -148,7 +148,7 @@ On a project that already has providers, only the missing models are added (and 
 
 ## Usage
 
-Open **AI Assistant** in the admin, add a provider (a key, an endpoint for local models), pick its chat model and assign it to a siteaccess. **Check again** tests the engine. Then open the chat from the floating button and ask, for example, *"list the children of the home page"* or *"create a folder called News under the home page"* — the second one shows an approval card.
+Open **AI Assistant settings** in the admin, add a provider (a key, an endpoint for local models), pick its chat model and assign it to a siteaccess. **Check again** tests the engine. Then open the chat from the floating button and ask, for example, *"list the children of the home page"* or *"create a folder called News under the home page"* — the second one shows an approval card.
 
 Checks for developers and for your deployments:
 

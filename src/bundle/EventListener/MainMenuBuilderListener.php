@@ -9,7 +9,7 @@ use Knp\Menu\ItemInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Adds "AI Assistant" (settings) and "What the assistant can do" under the Admin menu group of the Ibexa sidebar.
+ * Adds "AI Assistant settings" and "AI Assistant capabilities" under the Admin menu group of the Ibexa sidebar.
  *
  * The menu keys 'main__admin' and 'main__admin__ai_settings' are Ibexa internal conventions,
  * not a public API: if they change, the entry silently disappears (the null check below

@@ -120,11 +120,11 @@
       </trans-unit>
       <trans-unit id="menu.ai_capabilities" resname="menu.ai_capabilities">
         <source>menu.ai_capabilities</source>
-        <target>Ce que l&#x27;assistant peut faire</target>
+        <target>Capacités de l&#x27;assistant IA</target>
       </trans-unit>
       <trans-unit id="menu.ai_settings" resname="menu.ai_settings">
         <source>menu.ai_settings</source>
-        <target>Assistant IA</target>
+        <target>Paramètres de l&#x27;assistant IA</target>
       </trans-unit>
       <trans-unit id="settings.title" resname="settings.title">
         <source>settings.title</source>

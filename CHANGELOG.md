@@ -5,6 +5,7 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 ## [Unreleased]
 
 ### Changed
+- The entries of the **Admin** menu are **AI Assistant settings** (was "AI Assistant") and **AI Assistant capabilities** (was "What the assistant can do"); in French, "Paramètres de l'assistant IA" and "Capacités de l'assistant IA". The titles of the two pages are unchanged.
 - Admin: the settings and capabilities pages are built on the components and the page template of `masilia/ibexa-admin-kit` (alerts, the buttons of the filter bar, the providers, the page skeleton), and the copies of the kit's helpers in `shared/` (`ids`, `icons`, `notify`, `admin`) are gone: the chat widget imports the kit's, with `csrfHeaders` for the requests that carried only the token. Two changes show: the "Clear the search" button of the providers list is the design system's tertiary button (it was a ghost button), and the first breadcrumb is the admin's own "Admin" (it was "Administration" in French). **It needs the release of the kit that has them** (`masilia/ibexa-admin-kit` after 0.1.6): the constraint is raised then.
 
 ## [2.4.4] - 2026-11-22
