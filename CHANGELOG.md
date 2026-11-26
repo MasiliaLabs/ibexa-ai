@@ -4,9 +4,12 @@ All notable changes to `masilia/ibexa-ai` are documented here. The format follow
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-26
+
 ### Changed
+- **Breaking:** requires `masilia/ibexa-admin-kit` `^0.2` (it was `^0.1`); update the two together, see [UPGRADE.md](UPGRADE.md). Packages built on the OS allow `^3.0` of this package.
 - The entries of the **Admin** menu are **AI Assistant settings** (was "AI Assistant") and **AI Assistant capabilities** (was "What the assistant can do"); in French, "Paramètres de l'assistant IA" and "Capacités de l'assistant IA". The titles of the two pages (heading, breadcrumb and browser tab) are the same: "AI Assistant settings" (was "AI Assistant Settings", in French "Paramètres" instead of "Réglages") and "AI Assistant capabilities" (was "What the assistant can do").
-- Admin: the settings and capabilities pages are built on the components and the page template of `masilia/ibexa-admin-kit` (alerts, the buttons of the filter bar, the providers, the page skeleton), and the copies of the kit's helpers in `shared/` (`ids`, `icons`, `notify`, `admin`) are gone: the chat widget imports the kit's, with `csrfHeaders` for the requests that carried only the token. Two changes show: the "Clear the search" button of the providers list is the design system's tertiary button (it was a ghost button), and the first breadcrumb is the admin's own "Admin" (it was "Administration" in French). **It needs the release of the kit that has them** (`masilia/ibexa-admin-kit` after 0.1.6): the constraint is raised then.
+- Admin: the settings and capabilities pages are built on the components and the page template of `masilia/ibexa-admin-kit` (alerts, the buttons of the filter bar, the providers, the page skeleton), and the copies of the kit's helpers in `shared/` (`ids`, `icons`, `notify`, `admin`) are gone: the chat widget imports the kit's, with `csrfHeaders` for the requests that carried only the token. Two changes show: the "Clear the search" button of the providers list is the design system's tertiary button (it was a ghost button), and the first breadcrumb is the admin's own "Admin" (it was "Administration" in French). It needs `masilia/ibexa-admin-kit` `^0.2`.
 
 ## [2.4.4] - 2026-11-22
 
@@ -186,7 +189,8 @@ The AI OS: a registry of capabilities that mirror the Ibexa admin.
 
 First release: the assistant for Ibexa 5 on Neuron AI, with a provider layer, content suggestions, and an agent with an approval flow.
 
-[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.4...HEAD
+[Unreleased]: https://github.com/MasiliaLabs/ibexa-ai/compare/3.0.0...HEAD
+[3.0.0]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.4...3.0.0
 [2.4.4]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.3...2.4.4
 [2.4.3]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.2...2.4.3
 [2.4.2]: https://github.com/MasiliaLabs/ibexa-ai/compare/2.4.1...2.4.2

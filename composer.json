@@ -40,7 +40,7 @@
         "ibexa/admin-ui": "^5.0",
         "ibexa/core": "^5.0",
         "ibexa/rest": "^5.0",
-        "masilia/ibexa-admin-kit": "^0.1.1",
+        "masilia/ibexa-admin-kit": "^0.2",
         "neuron-core/neuron-ai": "^4.1",
         "psr/cache": "^3.0",
         "psr/log": "^3.0",
@@ -95,7 +95,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4.x-dev"
+            "dev-master": "3.0.x-dev"
         }
     },
     "config": {
